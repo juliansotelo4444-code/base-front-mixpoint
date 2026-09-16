@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
+import ProductPicker from '../components/ProductPicker';
 import { IconPlus, IconBuscar } from '../components/Icons';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
@@ -49,6 +50,15 @@ export default function Recepciones() {
     function actualizarItem(i, campo, valor) {
         const nuevos = [...items];
         nuevos[i] = { ...nuevos[i], [campo]: valor };
+        setItems(nuevos);
+    }
+    function handleSelectProducto(i, id, p) {
+        const nuevos = [...items];
+        nuevos[i] = {
+            ...nuevos[i],
+            producto_id: id,
+            precio_unitario: (p && Number(p.precio_compra) > 0) ? p.precio_compra : nuevos[i].precio_unitario
+        };
         setItems(nuevos);
     }
     function agregarItem() { setItems([...items, { producto_id: '', cantidad: '', precio_unitario: '', numero_lote: '', fecha_vencimiento: '' }]); }
@@ -166,11 +176,15 @@ export default function Recepciones() {
                             <div className="stack gap-sm">
                                 {items.map((it, i) => (
                                     <div key={i} className="card" style={{ padding: 12, background: 'var(--color-surface-sunken)' }}>
-                                        <div className="row gap-sm" style={{ marginBottom: 8 }}>
-                                            <select value={it.producto_id} onChange={e => actualizarItem(i, 'producto_id', e.target.value)} style={{ flex: 2, padding: '9px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}>
-                                                <option value="">Producto…</option>
-                                                {productos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                                            </select>
+                                        <div className="row gap-sm" style={{ marginBottom: 8, alignItems: 'center' }}>
+                                            <div style={{ flex: 2.5, minWidth: 200 }}>
+                                                <ProductPicker
+                                                    productos={productos}
+                                                    value={it.producto_id}
+                                                    onChange={(id, p) => handleSelectProducto(i, id, p)}
+                                                    placeholder="Buscar producto por nombre o código…"
+                                                />
+                                            </div>
                                             <input type="number" step="0.01" placeholder="Cantidad" value={it.cantidad} onChange={e => actualizarItem(i, 'cantidad', e.target.value)}
                                                    style={{ flex: 1, padding: '9px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }} />
                                             <input type="number" step="0.01" placeholder="Costo unit." value={it.precio_unitario} onChange={e => actualizarItem(i, 'precio_unitario', e.target.value)}

@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
+import ProductPicker from '../components/ProductPicker';
+import RemitoImprimible from '../components/RemitoImprimible';
 import { IconPlus, IconBuscar } from '../components/Icons';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
 const ESTADOS = {
-    pendiente: 'badge-warning', entregado: 'badge-primary', facturado: 'badge-success', anulado: 'badge-danger'
+    pendiente: 'badge-warning',
+    entregado: 'badge-primary',
+    facturado: 'badge-success',
+    anulado: 'badge-danger'
 };
 
 export default function Remitos() {
@@ -18,6 +23,7 @@ export default function Remitos() {
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [detalle, setDetalle] = useState(null);
+    const [remitoParaImprimir, setRemitoParaImprimir] = useState(null);
     const [error, setError] = useState('');
 
     const [clienteId, setClienteId] = useState('');
@@ -25,7 +31,8 @@ export default function Remitos() {
     const [direccion, setDireccion] = useState('');
     const [transportista, setTransportista] = useState('');
     const [observaciones, setObservaciones] = useState('');
-    const [items, setItems] = useState([{ producto_id: '', cantidad: '', precio_unitario: '' }]);
+    const [permitirSinStock, setPermitirSinStock] = useState(true);
+    const [items, setItems] = useState([{ producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
 
     async function cargar() {
         setLoading(true);
@@ -38,49 +45,113 @@ export default function Remitos() {
         client.get('/clientes', { params: { activo: 1 } }).then(r => setClientes(r.data));
         client.get('/productos', { params: { activo: 1 } }).then(r => setProductos(r.data));
     }, []);
+
     useEffect(() => { cargar(); }, [estadoFiltro]);
 
     const remitosFiltrados = q
-        ? remitos.filter(r => r.cliente_nombre.toLowerCase().includes(q.toLowerCase()) || r.numero.toLowerCase().includes(q.toLowerCase()))
+        ? remitos.filter(r => (r.cliente_nombre && r.cliente_nombre.toLowerCase().includes(q.toLowerCase())) || (r.numero && r.numero.toLowerCase().includes(q.toLowerCase())))
         : remitos;
 
     function abrirNuevo() {
-        setClienteId(''); setFecha(new Date().toISOString().slice(0, 10)); setDireccion(''); setTransportista(''); setObservaciones('');
-        setItems([{ producto_id: '', cantidad: '', precio_unitario: '' }]);
+        setClienteId('');
+        setFecha(new Date().toISOString().slice(0, 10));
+        setDireccion('');
+        setTransportista('');
+        setObservaciones('');
+        setPermitirSinStock(true);
+        setItems([{ producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
         setError('');
         setModalOpen(true);
     }
 
-    function actualizarItem(i, campo, valor) {
+    // Sugiere el precio unitario según cliente o cantidad
+    function calcularPrecioSugerido(prod, cant, clienteObj) {
+        if (!prod) return 0;
+        const c = Number(cant) || 0;
+        const lista = clienteObj?.lista_precio;
+
+        if (lista === 'treintaKg' && Number(prod.precio_30kg) > 0) return Number(prod.precio_30kg);
+        if (lista === 'veinticincoKg' && Number(prod.precio_25kg) > 0) return Number(prod.precio_25kg);
+        if (lista === 'diezKg' && Number(prod.precio_10kg) > 0) return Number(prod.precio_10kg);
+        if (lista === 'cincoKg' && Number(prod.precio_5kg) > 0) return Number(prod.precio_5kg);
+
+        // Por volumen si no está forzado por lista
+        if (c >= 30 && Number(prod.precio_30kg) > 0) return Number(prod.precio_30kg);
+        if (c >= 25 && Number(prod.precio_25kg) > 0) return Number(prod.precio_25kg);
+        if (c >= 10 && Number(prod.precio_10kg) > 0) return Number(prod.precio_10kg);
+        if (c >= 5 && Number(prod.precio_5kg) > 0) return Number(prod.precio_5kg);
+
+        return Number(prod.precio_venta) || 0;
+    }
+
+    function handleSelectProducto(index, prodId, prod) {
         const nuevos = [...items];
-        nuevos[i] = { ...nuevos[i], [campo]: valor };
-        if (campo === 'producto_id') {
-            const prod = productos.find(p => p.id === Number(valor));
-            if (prod) nuevos[i].precio_unitario = prod.precio_venta;
+        const clienteActual = clientes.find(c => c.id === Number(clienteId));
+        nuevos[index] = {
+            ...nuevos[index],
+            producto_id: prodId,
+            unidad_medida: prod?.unidad_medida || 'kg',
+            precio_unitario: calcularPrecioSugerido(prod, nuevos[index].cantidad, clienteActual)
+        };
+        setItems(nuevos);
+    }
+
+    function actualizarCantidad(index, cant) {
+        const nuevos = [...items];
+        const prod = productos.find(p => p.id === Number(nuevos[index].producto_id));
+        const clienteActual = clientes.find(c => c.id === Number(clienteId));
+        nuevos[index].cantidad = cant;
+        // Solo recalculamos el precio si el usuario aún no ingresó un precio personalizado o cambió de escala
+        if (prod) {
+            nuevos[index].precio_unitario = calcularPrecioSugerido(prod, cant, clienteActual);
         }
         setItems(nuevos);
     }
-    function agregarItem() { setItems([...items, { producto_id: '', cantidad: '', precio_unitario: '' }]); }
-    function quitarItem(i) { setItems(items.filter((_, idx) => idx !== i)); }
+
+    function actualizarPrecioManual(index, precio) {
+        const nuevos = [...items];
+        nuevos[index].precio_unitario = precio;
+        setItems(nuevos);
+    }
+
+    function agregarItem() {
+        setItems([...items, { producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
+    }
+
+    function quitarItem(i) {
+        setItems(items.filter((_, idx) => idx !== i));
+    }
 
     const total = items.reduce((acc, it) => acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0);
 
     async function guardar(e) {
         e.preventDefault();
         setError('');
-        const itemsValidos = items.filter(it => it.producto_id && it.cantidad);
+        const itemsValidos = items.filter(it => it.producto_id && Number(it.cantidad) > 0);
         if (!clienteId || itemsValidos.length === 0) {
-            setError('Elegí un cliente y al menos un producto con cantidad.');
+            setError('Elegí un cliente y al menos un producto con cantidad válida.');
             return;
         }
+
         try {
-            await client.post('/remitos', {
+            const { data } = await client.post('/remitos', {
                 cliente_id: Number(clienteId),
-                fecha, direccion_entrega: direccion, transportista, observaciones,
-                items: itemsValidos.map(it => ({ producto_id: Number(it.producto_id), cantidad: Number(it.cantidad), precio_unitario: Number(it.precio_unitario) || 0 }))
+                fecha,
+                direccion_entrega: direccion,
+                transportista,
+                observaciones,
+                permitir_sin_stock: permitirSinStock,
+                items: itemsValidos.map(it => ({
+                    producto_id: Number(it.producto_id),
+                    cantidad: Number(it.cantidad),
+                    precio_unitario: Number(it.precio_unitario) || 0
+                }))
             });
+
             setModalOpen(false);
             cargar();
+            // Abrir directamente la vista imprimible del remito recién creado
+            imprimirRemito(data.id);
         } catch (err) {
             setError(err.response?.data?.error || 'Error al crear el remito.');
         }
@@ -89,6 +160,11 @@ export default function Remitos() {
     async function verDetalle(r) {
         const { data } = await client.get(`/remitos/${r.id}`);
         setDetalle(data);
+    }
+
+    async function imprimirRemito(id) {
+        const { data } = await client.get(`/remitos/${id}`);
+        setRemitoParaImprimir(data);
     }
 
     async function cambiarEstado(id, estado) {
@@ -101,20 +177,32 @@ export default function Remitos() {
         <div className="stack gap-lg">
             <div className="spread">
                 <div>
-                    <h1 style={{ fontSize: 26 }}>Remitos</h1>
-                    <p className="muted text-sm" style={{ marginTop: 4 }}>{remitos.length} remitos</p>
+                    <h1 style={{ fontSize: 26 }}>Remitos comerciales</h1>
+                    <p className="muted text-sm" style={{ marginTop: 4 }}>
+                        {remitos.length} remitos registrados · Distribuidora Mix Point
+                    </p>
                 </div>
-                <button className="btn btn-primary" onClick={abrirNuevo}><IconPlus /> Nuevo remito</button>
+                <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14 }}>
+                    <IconPlus /> Generar nuevo remito
+                </button>
             </div>
 
             <div className="card">
                 <div className="spread" style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-border)' }}>
-                    <div className="row gap-sm" style={{ maxWidth: 320 }}>
+                    <div className="row gap-sm" style={{ maxWidth: 360 }}>
                         <IconBuscar style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
-                        <input placeholder="Buscar por cliente o número…" value={q} onChange={e => setQ(e.target.value)}
-                               style={{ border: 'none', outline: 'none', width: '100%', fontSize: 14, background: 'transparent' }} />
+                        <input
+                            placeholder="Buscar por cliente o número de remito…"
+                            value={q}
+                            onChange={e => setQ(e.target.value)}
+                            style={{ border: 'none', outline: 'none', width: '100%', fontSize: 14, background: 'transparent' }}
+                        />
                     </div>
-                    <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}>
+                    <select
+                        value={estadoFiltro}
+                        onChange={e => setEstadoFiltro(e.target.value)}
+                        style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                    >
                         <option value="">Todos los estados</option>
                         <option value="pendiente">Pendiente</option>
                         <option value="entregado">Entregado</option>
@@ -122,130 +210,310 @@ export default function Remitos() {
                         <option value="anulado">Anulado</option>
                     </select>
                 </div>
+
                 <div className="table-wrap">
                     <table className="data-table">
-                        <thead><tr><th>Número</th><th>Cliente</th><th>Fecha</th><th>Estado</th><th className="text-right">Total</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th className="text-right">Total</th>
+                                <th className="text-right">Acciones</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {remitosFiltrados.map(r => (
-                                <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => verDetalle(r)}>
-                                    <td className="mono">{r.numero}</td>
-                                    <td style={{ fontWeight: 600 }}>{r.cliente_nombre}</td>
+                                <tr key={r.id}>
+                                    <td className="mono" style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--color-primary-dark)' }} onClick={() => verDetalle(r)}>
+                                        {r.numero}
+                                    </td>
+                                    <td style={{ fontWeight: 600, cursor: 'pointer' }} onClick={() => verDetalle(r)}>
+                                        {r.cliente_nombre}
+                                    </td>
                                     <td className="mono">{r.fecha}</td>
                                     <td><span className={`badge ${ESTADOS[r.estado]}`}>{r.estado}</span></td>
-                                    <td className="text-right mono">{fmtMoney(r.total)}</td>
+                                    <td className="text-right mono" style={{ fontWeight: 600 }}>{fmtMoney(r.total)}</td>
+                                    <td className="text-right">
+                                        <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => imprimirRemito(r.id)}
+                                                title="Imprimir o guardar PDF"
+                                            >
+                                                🖨️ Imprimir / PDF
+                                            </button>
+                                            <button
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={() => verDetalle(r)}
+                                            >
+                                                Ver detalle
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                     {!loading && remitosFiltrados.length === 0 && (
-                        <div className="empty-state"><div className="icon">🧾</div><p>No hay remitos que coincidan.</p></div>
+                        <div className="empty-state">
+                            <div className="icon">🧾</div>
+                            <p>No hay remitos registrados que coincidan.</p>
+                        </div>
                     )}
                 </div>
             </div>
 
+            {/* MODAL NUEVO REMITO */}
             {modalOpen && (
-                <Modal title="Nuevo remito" onClose={() => setModalOpen(false)} width={720}>
+                <Modal title="Generar nuevo remito" onClose={() => setModalOpen(false)} width={860}>
                     <form onSubmit={guardar} className="stack gap-md">
                         {error && <div className="alert-banner error">{error}</div>}
                         <div className="form-grid">
                             <div className="field">
-                                <label>Cliente *</label>
-                                <select required value={clienteId} onChange={e => setClienteId(e.target.value)}>
-                                    <option value="">Seleccionar…</option>
-                                    {clientes.map(c => <option key={c.id} value={c.id}>{c.razon_social}</option>)}
+                                <label>Cliente destinatario *</label>
+                                <select
+                                    required
+                                    value={clienteId}
+                                    onChange={e => {
+                                        const cId = e.target.value;
+                                        setClienteId(cId);
+                                        const c = clientes.find(x => x.id === Number(cId));
+                                        if (c && c.direccion) setDireccion(c.direccion);
+                                    }}
+                                >
+                                    <option value="">Seleccionar cliente…</option>
+                                    {clientes.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.razon_social} ({c.condicion_iva || 'CF'}) {c.lista_precio ? `· Lista: ${c.lista_precio}` : ''}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="field">
-                                <label>Fecha</label>
+                                <label>Fecha de emisión</label>
                                 <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
                             </div>
                             <div className="field">
                                 <label>Dirección de entrega</label>
-                                <input value={direccion} onChange={e => setDireccion(e.target.value)} />
+                                <input
+                                    placeholder="Ej: Av. Corrientes 4520, CABA o Retiro en depósito"
+                                    value={direccion}
+                                    onChange={e => setDireccion(e.target.value)}
+                                />
                             </div>
                             <div className="field">
-                                <label>Transportista</label>
-                                <input value={transportista} onChange={e => setTransportista(e.target.value)} />
+                                <label>Transportista / Chofer</label>
+                                <input
+                                    placeholder="Ej: Flete propio / Juan Pérez"
+                                    value={transportista}
+                                    onChange={e => setTransportista(e.target.value)}
+                                />
                             </div>
                         </div>
 
                         <div>
-                            <div className="spread" style={{ marginBottom: 8 }}>
-                                <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text-muted)' }}>Productos</label>
-                                <button type="button" className="btn btn-ghost btn-sm" onClick={agregarItem}><IconPlus /> Agregar ítem</button>
+                            <div className="spread" style={{ marginBottom: 8, marginTop: 6 }}>
+                                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+                                    Mercadería a entregar (Catálogo Mix Point)
+                                </label>
+                                <button type="button" className="btn btn-secondary btn-sm" onClick={agregarItem}>
+                                    <IconPlus /> Agregar ítem
+                                </button>
                             </div>
+
                             <div className="stack gap-sm">
                                 {items.map((it, i) => {
                                     const prod = productos.find(p => p.id === Number(it.producto_id));
-                                    const excedeStock = prod && Number(it.cantidad) > prod.stock_actual;
+                                    const excedeStock = prod && Number(it.cantidad) > Number(prod.stock_actual);
+
                                     return (
-                                        <div key={i} className="row gap-sm" style={{ alignItems: 'flex-start' }}>
-                                            <select value={it.producto_id} onChange={e => actualizarItem(i, 'producto_id', e.target.value)} style={{ flex: 3, padding: '9px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}>
-                                                <option value="">Producto…</option>
-                                                {productos.map(p => <option key={p.id} value={p.id}>{p.nombre} (stock: {p.stock_actual} {p.unidad_medida})</option>)}
-                                            </select>
-                                            <input type="number" step="0.01" placeholder="Cant." value={it.cantidad} onChange={e => actualizarItem(i, 'cantidad', e.target.value)}
-                                                   style={{ flex: 1, padding: '9px 10px', borderRadius: 6, border: `1px solid ${excedeStock ? 'var(--color-danger)' : 'var(--color-border-strong)'}` }} />
-                                            <input type="number" step="0.01" placeholder="Precio unit." value={it.precio_unitario} onChange={e => actualizarItem(i, 'precio_unitario', e.target.value)}
-                                                   style={{ flex: 1, padding: '9px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }} />
-                                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => quitarItem(i)} disabled={items.length === 1}>✕</button>
+                                        <div key={i} className="row gap-sm" style={{ alignItems: 'center', background: '#faf9f6', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}>
+                                            <div style={{ flex: 3.5 }}>
+                                                <ProductPicker
+                                                    productos={productos}
+                                                    value={it.producto_id}
+                                                    onChange={(id, p) => handleSelectProducto(i, id, p)}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1.2 }}>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder={`Cant. (${prod?.unidad_medida || 'kg'})`}
+                                                    value={it.cantidad}
+                                                    onChange={e => actualizarCantidad(i, e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px 10px',
+                                                        borderRadius: 6,
+                                                        border: `1px solid ${excedeStock && !permitirSinStock ? 'var(--color-danger)' : 'var(--color-border-strong)'}`
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1.3 }}>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder="P. Unitario ($)"
+                                                    value={it.precio_unitario}
+                                                    onChange={e => actualizarPrecioManual(i, e.target.value)}
+                                                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                                />
+                                            </div>
+                                            <div className="mono text-right" style={{ flex: 1.2, fontWeight: 600, fontSize: 13 }}>
+                                                {fmtMoney((Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0))}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={() => quitarItem(i)}
+                                                disabled={items.length === 1}
+                                                style={{ color: 'var(--color-danger)' }}
+                                            >
+                                                ✕
+                                            </button>
                                         </div>
                                     );
                                 })}
                             </div>
                         </div>
 
+                        <div className="spread" style={{ background: '#f6f3eb', padding: '10px 14px', borderRadius: 6 }}>
+                            <label className="row gap-xs text-sm" style={{ cursor: 'pointer', margin: 0 }}>
+                                <input
+                                    type="checkbox"
+                                    checked={permitirSinStock}
+                                    onChange={e => setPermitirSinStock(e.target.checked)}
+                                />
+                                <span>Permitir emitir remito sin stock previo (mercadería física en depósito / en tránsito)</span>
+                            </label>
+                        </div>
+
                         <div className="field">
-                            <label>Observaciones</label>
-                            <textarea rows={2} value={observaciones} onChange={e => setObservaciones(e.target.value)} />
+                            <label>Observaciones del remito</label>
+                            <textarea
+                                rows={2}
+                                placeholder="Anotaciones para el chofer o el cliente..."
+                                value={observaciones}
+                                onChange={e => setObservaciones(e.target.value)}
+                            />
                         </div>
 
                         <div className="spread" style={{ borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
-                            <span className="muted text-sm">Total del remito</span>
-                            <span className="mono" style={{ fontSize: 20, fontWeight: 600 }}>{fmtMoney(total)}</span>
+                            <span className="muted">Total del remito:</span>
+                            <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+                                {fmtMoney(total)}
+                            </span>
                         </div>
 
                         <div className="row gap-sm" style={{ justifyContent: 'flex-end' }}>
-                            <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
-                            <button type="submit" className="btn btn-primary">Crear remito</button>
+                            <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>
+                                Cancelar
+                            </button>
+                            <button type="submit" className="btn btn-primary" style={{ padding: '10px 20px' }}>
+                                ✅ Confirmar y Generar Remito
+                            </button>
                         </div>
                     </form>
                 </Modal>
             )}
 
+            {/* MODAL DETALLE DE REMITO */}
             {detalle && (
-                <Modal title={`Remito ${detalle.numero}`} onClose={() => setDetalle(null)} width={620}>
+                <Modal title={`Remito ${detalle.numero}`} onClose={() => setDetalle(null)} width={680}>
                     <div className="stack gap-md">
                         <div className="spread">
                             <div>
-                                <p style={{ fontWeight: 600 }}>{detalle.cliente_nombre}</p>
-                                <p className="text-sm muted">{detalle.fecha} {detalle.direccion_entrega && `· ${detalle.direccion_entrega}`}</p>
+                                <p style={{ fontWeight: 700, fontSize: 16 }}>{detalle.cliente_nombre}</p>
+                                <p className="text-sm muted">
+                                    CUIT: {detalle.cliente_cuit || '—'} · Condición IVA: {detalle.cliente_condicion_iva || 'CF'}
+                                </p>
+                                <p className="text-sm muted">
+                                    Fecha: {detalle.fecha} {detalle.direccion_entrega && `· Entrega: ${detalle.direccion_entrega}`}
+                                </p>
                             </div>
                             <span className={`badge ${ESTADOS[detalle.estado]}`}>{detalle.estado}</span>
                         </div>
+
                         <table className="data-table">
-                            <thead><tr><th>Producto</th><th className="text-right">Cant.</th><th className="text-right">Precio</th><th className="text-right">Subtotal</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Producto</th>
+                                    <th className="text-right">Cant.</th>
+                                    <th className="text-right">Precio</th>
+                                    <th className="text-right">Subtotal</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 {detalle.items.map(it => (
                                     <tr key={it.id}>
-                                        <td>{it.producto_nombre}</td>
+                                        <td className="mono text-sm">{it.producto_codigo || `MP-${it.producto_id}`}</td>
+                                        <td><strong>{it.producto_nombre}</strong></td>
                                         <td className="text-right mono">{it.cantidad} {it.unidad_medida}</td>
                                         <td className="text-right mono">{fmtMoney(it.precio_unitario)}</td>
-                                        <td className="text-right mono">{fmtMoney(it.subtotal)}</td>
+                                        <td className="text-right mono" style={{ fontWeight: 600 }}>{fmtMoney(it.subtotal)}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        <div className="spread"><span className="muted">Total</span><span className="mono" style={{ fontWeight: 600, fontSize: 17 }}>{fmtMoney(detalle.total)}</span></div>
-                        {detalle.estado !== 'anulado' && (
-                            <div className="row gap-sm" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
-                                {detalle.estado === 'pendiente' && <button className="btn btn-secondary btn-sm" onClick={() => cambiarEstado(detalle.id, 'entregado')}>Marcar entregado</button>}
-                                {detalle.estado === 'entregado' && <button className="btn btn-secondary btn-sm" onClick={() => cambiarEstado(detalle.id, 'facturado')}>Marcar facturado</button>}
-                                <button className="btn btn-danger btn-sm" onClick={() => { if (confirm('¿Anular remito? Esto devuelve el stock.')) cambiarEstado(detalle.id, 'anulado'); }}>Anular</button>
-                            </div>
-                        )}
+
+                        <div className="spread" style={{ padding: '8px 0', borderTop: '1px solid var(--color-border)' }}>
+                            <span className="muted">Total del comprobante:</span>
+                            <span className="mono" style={{ fontWeight: 700, fontSize: 18, color: 'var(--color-primary-dark)' }}>
+                                {fmtMoney(detalle.total)}
+                            </span>
+                        </div>
+
+                        <div className="spread" style={{ borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
+                            <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() => {
+                                    const id = detalle.id;
+                                    setDetalle(null);
+                                    imprimirRemito(id);
+                                }}
+                            >
+                                🖨️ Imprimir Remito / Guardar PDF
+                            </button>
+
+                            {detalle.estado !== 'anulado' && (
+                                <div className="row gap-xs">
+                                    {detalle.estado === 'pendiente' && (
+                                        <button className="btn btn-secondary btn-sm" onClick={() => cambiarEstado(detalle.id, 'entregado')}>
+                                            Marcar entregado
+                                        </button>
+                                    )}
+                                    {detalle.estado === 'entregado' && (
+                                        <button className="btn btn-secondary btn-sm" onClick={() => cambiarEstado(detalle.id, 'facturado')}>
+                                            Marcar facturado
+                                        </button>
+                                    )}
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={() => {
+                                            if (confirm('¿Anular remito? Esto devolverá el stock a los lotes.')) {
+                                                cambiarEstado(detalle.id, 'anulado');
+                                            }
+                                        }}
+                                    >
+                                        Anular
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </Modal>
+            )}
+
+            {/* VISTA IMPRIMIBLE DE REMITO (A4 / PDF) */}
+            {remitoParaImprimir && (
+                <RemitoImprimible
+                    remito={remitoParaImprimir}
+                    onClose={() => setRemitoParaImprimir(null)}
+                />
             )}
         </div>
     );

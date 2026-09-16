@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
+import CuentaCorrienteModal from '../components/CuentaCorrienteModal';
 import { IconPlus, IconBuscar, IconEditar, IconBaja } from '../components/Icons';
 
 const emptyForm = { razon_social: '', cuit: '', condicion_iva: 'Responsable Inscripto', direccion: '', localidad: '', telefono: '', email: '', observaciones: '' };
@@ -10,6 +11,7 @@ export default function Proveedores() {
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
+    const [proveedorCtaCte, setProveedorCtaCte] = useState(null);
     const [editando, setEditando] = useState(null);
     const [form, setForm] = useState(emptyForm);
     const [error, setError] = useState('');
@@ -75,11 +77,19 @@ export default function Proveedores() {
                                     <td className="mono muted">{p.cuit || '—'}</td>
                                     <td>{p.localidad || '—'}</td>
                                     <td className="mono">{p.telefono || '—'}</td>
-                                    <td className={`text-right mono ${p.saldo_cuenta > 0 ? '' : 'muted'}`}>
+                                    <td
+                                        className={`text-right mono ${Number(p.saldo_cuenta) > 0 ? 'text-danger' : 'muted'}`}
+                                        style={{ cursor: 'pointer', fontWeight: Number(p.saldo_cuenta) > 0 ? 700 : 400 }}
+                                        onClick={() => setProveedorCtaCte(p)}
+                                        title="Click para ver cuenta corriente"
+                                    >
                                         {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(p.saldo_cuenta)}
                                     </td>
                                     <td>
                                         <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => setProveedorCtaCte(p)} title="Ver cuenta corriente y registrar pagos">
+                                                💳 Cta. Cte.
+                                            </button>
                                             <button className="btn btn-ghost btn-sm" onClick={() => abrirEditar(p)}><IconEditar /></button>
                                             <button className="btn btn-ghost btn-sm" onClick={() => darDeBaja(p)}><IconBaja /></button>
                                         </div>
@@ -142,6 +152,15 @@ export default function Proveedores() {
                         </div>
                     </form>
                 </Modal>
+            )}
+
+            {proveedorCtaCte && (
+                <CuentaCorrienteModal
+                    entidadTipo="proveedor"
+                    entidad={proveedorCtaCte}
+                    onClose={() => setProveedorCtaCte(null)}
+                    onActualizar={cargar}
+                />
             )}
         </div>
     );

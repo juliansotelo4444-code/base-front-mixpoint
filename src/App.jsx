@@ -10,6 +10,7 @@ import Remitos from './pages/Remitos';
 import Recepciones from './pages/Recepciones';
 import Gastos from './pages/Gastos';
 import Usuarios from './pages/Usuarios';
+import PedidosWeb from './pages/PedidosWeb';
 
 function RutaPrivada({ children }) {
     const { usuario } = useAuth();
@@ -33,6 +34,7 @@ export default function App() {
                     <Route path="/" element={<RutaPrivada><Layout /></RutaPrivada>}>
                         <Route index element={<Dashboard />} />
                         <Route path="remitos" element={<Remitos />} />
+                        <Route path="pedidos-web" element={<PedidosWeb />} />
                         <Route path="recepciones" element={<Recepciones />} />
                         <Route path="productos" element={<Productos />} />
                         <Route path="clientes" element={<Clientes />} />

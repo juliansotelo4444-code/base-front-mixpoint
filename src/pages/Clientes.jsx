@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
+import CuentaCorrienteModal from '../components/CuentaCorrienteModal';
 import { IconPlus, IconBuscar, IconEditar, IconBaja } from '../components/Icons';
 
 const emptyForm = { razon_social: '', cuit: '', condicion_iva: 'Consumidor Final', direccion: '', localidad: '', telefono: '', email: '', observaciones: '' };
@@ -10,6 +11,7 @@ export default function Clientes() {
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
+    const [clienteCtaCte, setClienteCtaCte] = useState(null);
     const [editando, setEditando] = useState(null);
     const [form, setForm] = useState(emptyForm);
     const [error, setError] = useState('');
@@ -97,11 +99,19 @@ export default function Clientes() {
                                     <td className="mono muted">{c.cuit || '—'}</td>
                                     <td>{c.localidad || '—'}</td>
                                     <td className="mono">{c.telefono || '—'}</td>
-                                    <td className={`text-right mono ${c.saldo_cuenta > 0 ? '' : 'muted'}`}>
+                                    <td
+                                        className={`text-right mono ${Number(c.saldo_cuenta) > 0 ? 'text-danger' : 'muted'}`}
+                                        style={{ cursor: 'pointer', fontWeight: Number(c.saldo_cuenta) > 0 ? 700 : 400 }}
+                                        onClick={() => setClienteCtaCte(c)}
+                                        title="Click para ver cuenta corriente"
+                                    >
                                         {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(c.saldo_cuenta)}
                                     </td>
                                     <td>
                                         <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => setClienteCtaCte(c)} title="Ver cuenta corriente y registrar cobros">
+                                                💳 Cta. Cte.
+                                            </button>
                                             <button className="btn btn-ghost btn-sm" onClick={() => abrirEditar(c)}><IconEditar /></button>
                                             <button className="btn btn-ghost btn-sm" onClick={() => darDeBaja(c)}><IconBaja /></button>
                                         </div>
@@ -168,6 +178,15 @@ export default function Clientes() {
                         </div>
                     </form>
                 </Modal>
+            )}
+
+            {clienteCtaCte && (
+                <CuentaCorrienteModal
+                    entidadTipo="cliente"
+                    entidad={clienteCtaCte}
+                    onClose={() => setClienteCtaCte(null)}
+                    onActualizar={cargar}
+                />
             )}
         </div>
     );

@@ -1,13 +1,14 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-    IconDashboard, IconRemito, IconRecepcion, IconProducto,
+    IconDashboard, IconRemito, IconCarrito, IconRecepcion, IconProducto,
     IconClientes, IconProveedores, IconGastos, IconUsuarios, IconLogout
 } from './Icons';
 
 const NAV_ITEMS = [
     { to: '/', label: 'Panel', icon: IconDashboard, end: true },
     { to: '/remitos', label: 'Remitos', icon: IconRemito },
+    { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
     { to: '/recepciones', label: 'Recepción de mercadería', icon: IconRecepcion },
     { to: '/productos', label: 'Productos y stock', icon: IconProducto },
     { to: '/clientes', label: 'Clientes', icon: IconClientes },
@@ -32,11 +33,20 @@ export default function Layout() {
                 color: 'var(--color-text-on-dark)', display: 'flex', flexDirection: 'column',
                 position: 'sticky', top: 0, height: '100vh', flexShrink: 0
             }}>
-                <div style={{ padding: '22px 22px 18px' }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--color-primary)' }}>
-                        MIX POINT                    </div>
-                    <div style={{ fontSize: 11.5, color: 'var(--color-text-on-dark-muted)', marginTop: 2 }}>
-                        Gestión interna
+                <div style={{ padding: '20px 18px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <img
+                        src="/logo-mixpoint.png"
+                        alt="Mix Point"
+                        style={{ width: 44, height: 44, borderRadius: '50%', border: '1.5px solid var(--color-primary)', objectFit: 'cover' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                    <div>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 800, letterSpacing: '0.02em', color: 'var(--color-primary)' }}>
+                            MIX POINT
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--color-text-on-dark-muted)', marginTop: 1, letterSpacing: '0.04em' }}>
+                            DISTRIBUIDORA MAYORISTA
+                        </div>
                     </div>
                 </div>
 

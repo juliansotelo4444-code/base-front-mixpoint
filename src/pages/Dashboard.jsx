@@ -5,6 +5,8 @@ import { IconAlerta, IconReloj } from '../components/Icons';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
 
+import { Link } from 'react-router-dom';
+
 export default function Dashboard() {
     const [resumen, setResumen] = useState(null);
     const [evolucion, setEvolucion] = useState(null);
@@ -38,9 +40,16 @@ export default function Dashboard() {
 
     return (
         <div className="stack gap-lg">
-            <div>
-                <h1 style={{ fontSize: 26 }}>Panel general</h1>
-                <p className="muted text-sm" style={{ marginTop: 4 }}>Resumen del mes en curso</p>
+            <div className="spread">
+                <div>
+                    <h1 style={{ fontSize: 26 }}>Panel de control general</h1>
+                    <p className="muted text-sm" style={{ marginTop: 4 }}>
+                        Resumen operativo y comercial · Distribuidora Mix Point
+                    </p>
+                </div>
+                <Link to="/remitos" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+                    + Generar nuevo remito
+                </Link>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
