@@ -51,3 +51,9 @@ export const IconBaja = (p) => (
 export const IconCarrito = (p) => (
     <svg {...common} {...p}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
 );
+export const IconMenu = (p) => (
+    <svg {...common} {...p}><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+);
+export const IconClose = (p) => (
+    <svg {...common} {...p}><path d="M18 6L6 18M6 6l12 12" /></svg>
+);

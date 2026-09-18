@@ -143,7 +143,7 @@ export default function Productos() {
 
     return (
         <div className="stack gap-lg">
-            <div className="spread">
+            <div className="spread page-header">
                 <div>
                     <h1 style={{ fontSize: 26 }}>Catálogo de productos y stock</h1>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>

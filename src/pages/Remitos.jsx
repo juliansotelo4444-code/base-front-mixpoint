@@ -175,7 +175,7 @@ export default function Remitos() {
 
     return (
         <div className="stack gap-lg">
-            <div className="spread">
+            <div className="spread page-header">
                 <div>
                     <h1 style={{ fontSize: 26 }}>Remitos comerciales</h1>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>
@@ -188,8 +188,8 @@ export default function Remitos() {
             </div>
 
             <div className="card">
-                <div className="spread" style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-border)' }}>
-                    <div className="row gap-sm" style={{ maxWidth: 360 }}>
+                <div className="spread" style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: 10 }}>
+                    <div className="row gap-sm" style={{ maxWidth: 360, flex: 1 }}>
                         <IconBuscar style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
                         <input
                             placeholder="Buscar por cliente o número de remito…"
@@ -329,51 +329,56 @@ export default function Remitos() {
                                     const excedeStock = prod && Number(it.cantidad) > Number(prod.stock_actual);
 
                                     return (
-                                        <div key={i} className="row gap-sm" style={{ alignItems: 'center', background: '#faf9f6', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}>
-                                            <div style={{ flex: 3.5 }}>
-                                                <ProductPicker
-                                                    productos={productos}
-                                                    value={it.producto_id}
-                                                    onChange={(id, p) => handleSelectProducto(i, id, p)}
-                                                />
+                                        <div key={i} className="item-row-card">
+                                            <div className="item-row-header">
+                                                <div className="item-row-product">
+                                                    <ProductPicker
+                                                        productos={productos}
+                                                        value={it.producto_id}
+                                                        onChange={(id, p) => handleSelectProducto(i, id, p)}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm item-row-delete"
+                                                    onClick={() => quitarItem(i)}
+                                                    disabled={items.length === 1}
+                                                    style={{ color: 'var(--color-danger)' }}
+                                                    title="Quitar producto"
+                                                >
+                                                    ✕
+                                                </button>
                                             </div>
-                                            <div style={{ flex: 1.2 }}>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    placeholder={`Cant. (${prod?.unidad_medida || 'kg'})`}
-                                                    value={it.cantidad}
-                                                    onChange={e => actualizarCantidad(i, e.target.value)}
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '8px 10px',
-                                                        borderRadius: 6,
-                                                        border: `1px solid ${excedeStock && !permitirSinStock ? 'var(--color-danger)' : 'var(--color-border-strong)'}`
-                                                    }}
-                                                />
+                                            <div className="item-row-details">
+                                                <div className="item-col-cant">
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder={`Cant. (${prod?.unidad_medida || 'kg'})`}
+                                                        value={it.cantidad}
+                                                        onChange={e => actualizarCantidad(i, e.target.value)}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px 10px',
+                                                            borderRadius: 6,
+                                                            border: `1px solid ${excedeStock && !permitirSinStock ? 'var(--color-danger)' : 'var(--color-border-strong)'}`
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="item-col-precio">
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder="P. Unitario ($)"
+                                                        value={it.precio_unitario}
+                                                        onChange={e => actualizarPrecioManual(i, e.target.value)}
+                                                        style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                                    />
+                                                </div>
+                                                <div className="item-col-subtotal mono">
+                                                    {fmtMoney((Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0))}
+                                                </div>
                                             </div>
-                                            <div style={{ flex: 1.3 }}>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    placeholder="P. Unitario ($)"
-                                                    value={it.precio_unitario}
-                                                    onChange={e => actualizarPrecioManual(i, e.target.value)}
-                                                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
-                                                />
-                                            </div>
-                                            <div className="mono text-right" style={{ flex: 1.2, fontWeight: 600, fontSize: 13 }}>
-                                                {fmtMoney((Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0))}
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="btn btn-ghost btn-sm"
-                                                onClick={() => quitarItem(i)}
-                                                disabled={items.length === 1}
-                                                style={{ color: 'var(--color-danger)' }}
-                                            >
-                                                ✕
-                                            </button>
                                         </div>
                                     );
                                 })}

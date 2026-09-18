@@ -52,14 +52,14 @@ export default function Dashboard() {
                 </Link>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+            <div className="dashboard-stats-grid">
                 <StatCard label="Ventas del mes" value={fmtMoney(resumen.ventas_mes.total)} sub={`${resumen.ventas_mes.cantidad} remitos`} accent="primary" />
                 <StatCard label="Compras del mes" value={fmtMoney(resumen.compras_mes.total)} sub={`${resumen.compras_mes.cantidad} recepciones`} accent="accent" />
                 <StatCard label="Gastos del mes" value={fmtMoney(resumen.gastos_mes.total)} sub={`${resumen.gastos_mes.cantidad} registros`} accent="danger" />
                 <StatCard label="Valor de stock" value={fmtMoney(resumen.valor_stock_actual)} sub={`${resumen.remitos_pendientes} remitos pendientes`} accent="neutral" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
+            <div className="dashboard-main-grid">
                 <div className="card card-pad">
                     <h3 style={{ fontSize: 15, marginBottom: 16 }}>Evolución — últimos meses</h3>
                     <ResponsiveContainer width="100%" height={260}>

@@ -102,7 +102,7 @@ export default function PedidosWeb() {
 
     return (
         <div className="stack gap-lg">
-            <div className="spread">
+            <div className="spread page-header">
                 <div>
                     <h1 style={{ fontSize: 26 }}>Bandeja de Pedidos Web</h1>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>

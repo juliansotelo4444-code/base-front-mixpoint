@@ -49,7 +49,7 @@ export default function Proveedores() {
 
     return (
         <div className="stack gap-lg">
-            <div className="spread">
+            <div className="spread page-header">
                 <div>
                     <h1 style={{ fontSize: 26 }}>Proveedores</h1>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>{proveedores.length} proveedores activos</p>

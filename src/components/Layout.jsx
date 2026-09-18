@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
     IconDashboard, IconRemito, IconCarrito, IconRecepcion, IconProducto,
-    IconClientes, IconProveedores, IconGastos, IconUsuarios, IconLogout
+    IconClientes, IconProveedores, IconGastos, IconUsuarios, IconLogout,
+    IconMenu, IconClose
 } from './Icons';
 
 const NAV_ITEMS = [
@@ -20,69 +22,134 @@ const NAV_ITEMS = [
 export default function Layout() {
     const { usuario, logout } = useAuth();
     const navigate = useNavigate();
+    const [menuAbierto, setMenuAbierto] = useState(false);
 
     function handleLogout() {
         logout();
         navigate('/login');
     }
 
+    function cerrarMenu() {
+        setMenuAbierto(false);
+    }
+
     return (
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
-            <aside style={{
-                width: 'var(--sidebar-width)', background: 'var(--color-sidebar)',
-                color: 'var(--color-text-on-dark)', display: 'flex', flexDirection: 'column',
-                position: 'sticky', top: 0, height: '100vh', flexShrink: 0
-            }}>
-                <div style={{ padding: '20px 18px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <img
-                        src="/logo-mixpoint.png"
-                        alt="Mix Point"
-                        style={{ width: 44, height: 44, borderRadius: '50%', border: '1.5px solid var(--color-primary)', objectFit: 'cover' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                    <div>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 800, letterSpacing: '0.02em', color: 'var(--color-primary)' }}>
-                            MIX POINT
-                        </div>
-                        <div style={{ fontSize: 10, color: 'var(--color-text-on-dark-muted)', marginTop: 1, letterSpacing: '0.04em' }}>
-                            DISTRIBUIDORA MAYORISTA
-                        </div>
+        <div className="app-root-layout">
+            {/* BARRA SUPERIOR EXCLUSIVA PARA MÓVIL */}
+            <header className="mobile-topbar no-print">
+                <div className="row gap-sm">
+                    <button
+                        className="mobile-menu-btn"
+                        onClick={() => setMenuAbierto(true)}
+                        aria-label="Abrir menú"
+                    >
+                        <IconMenu />
+                    </button>
+                    <div className="row gap-xs" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+                        <img
+                            src="/logo-mixpoint.png"
+                            alt="Mix Point"
+                            className="mobile-topbar-logo"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                        <span className="mobile-topbar-brand">MIX POINT</span>
                     </div>
                 </div>
+                <div className="row gap-xs">
+                    <div className="user-avatar-pill" title={usuario?.nombre || 'Usuario'}>
+                        {(usuario?.nombre || 'U').charAt(0).toUpperCase()}
+                    </div>
+                </div>
+            </header>
 
-                <nav style={{ flex: 1, padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* FONDO OSCURO DE TELÓN PARA MÓVIL (BACKDROP) */}
+            {menuAbierto && (
+                <div className="sidebar-backdrop no-print" onClick={cerrarMenu} />
+            )}
+
+            {/* BARRA LATERAL (DESKTOP) / CAJÓN DESLIZANTE (MÓVIL) */}
+            <aside className={`app-sidebar ${menuAbierto ? 'open' : ''} no-print`}>
+                <div className="sidebar-header">
+                    <div className="row gap-sm">
+                        <img
+                            src="/logo-mixpoint.png"
+                            alt="Mix Point"
+                            className="sidebar-logo"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                        <div>
+                            <div className="sidebar-brand-name">MIX POINT</div>
+                            <div className="sidebar-brand-sub">DISTRIBUIDORA MAYORISTA</div>
+                        </div>
+                    </div>
+                    {/* Botón cerrar visible sólo en móvil */}
+                    <button className="sidebar-close-btn" onClick={cerrarMenu} aria-label="Cerrar menú">
+                        <IconClose />
+                    </button>
+                </div>
+
+                <nav className="sidebar-nav">
                     {NAV_ITEMS.filter(item => !item.adminOnly || usuario?.rol === 'admin').map(({ to, label, icon: Icon, end }) => (
                         <NavLink
                             key={to}
                             to={to}
                             end={end}
-                            style={({ isActive }) => ({
-                                display: 'flex', alignItems: 'center', gap: 11,
-                                padding: '10px 12px', borderRadius: 7,
-                                fontSize: 13.5, fontWeight: 500, textDecoration: 'none',
-                                color: isActive ? '#fff' : 'var(--color-text-on-dark-muted)',
-                                background: isActive ? 'var(--color-sidebar-hover)' : 'transparent',
-                                borderLeft: isActive ? '2.5px solid var(--color-primary)' : '2.5px solid transparent'
-                            })}
+                            onClick={cerrarMenu}
+                            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                         >
                             <Icon />
-                            {label}
+                            <span>{label}</span>
                         </NavLink>
                     ))}
                 </nav>
 
-                <div style={{ padding: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="sidebar-footer">
                     <div style={{ fontSize: 12.5, fontWeight: 600 }}>{usuario?.nombre}</div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-on-dark-muted)', marginBottom: 10, textTransform: 'capitalize' }}>{usuario?.rol}</div>
-                    <button onClick={handleLogout} className="btn btn-ghost btn-sm" style={{ color: 'var(--color-text-on-dark-muted)', width: '100%', justifyContent: 'flex-start' }}>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-on-dark-muted)', marginBottom: 10, textTransform: 'capitalize' }}>
+                        {usuario?.rol}
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        className="btn btn-ghost btn-sm"
+                        style={{ color: 'var(--color-text-on-dark-muted)', width: '100%', justifyContent: 'flex-start' }}
+                    >
                         <IconLogout /> Cerrar sesión
                     </button>
                 </div>
             </aside>
 
-            <main style={{ flex: 1, minWidth: 0, padding: '28px 36px 60px' }}>
+            {/* CONTENIDO PRINCIPAL */}
+            <main className="main-content">
                 <Outlet />
             </main>
+
+            {/* BARRA INFERIOR DE ACCESO RÁPIDO PARA CELULARES */}
+            <nav className="mobile-bottom-bar no-print">
+                <NavLink to="/" end className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                    <IconDashboard />
+                    <span>Panel</span>
+                </NavLink>
+                <NavLink to="/remitos" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                    <IconRemito />
+                    <span>Remitos</span>
+                </NavLink>
+                <NavLink to="/pedidos-web" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                    <IconCarrito />
+                    <span>Pedidos</span>
+                </NavLink>
+                <NavLink to="/productos" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                    <IconProducto />
+                    <span>Stock</span>
+                </NavLink>
+                <button
+                    type="button"
+                    className={`bottom-tab ${menuAbierto ? 'active' : ''}`}
+                    onClick={() => setMenuAbierto(!menuAbierto)}
+                >
+                    <IconMenu />
+                    <span>Más</span>
+                </button>
+            </nav>
         </div>
     );
 }

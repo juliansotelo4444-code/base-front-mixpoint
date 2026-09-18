@@ -104,7 +104,7 @@ export default function Recepciones() {
 
     return (
         <div className="stack gap-lg">
-            <div className="spread">
+            <div className="spread page-header">
                 <div>
                     <h1 style={{ fontSize: 26 }}>Recepción de mercadería</h1>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>{recepciones.length} recepciones registradas</p>
@@ -176,8 +176,8 @@ export default function Recepciones() {
                             <div className="stack gap-sm">
                                 {items.map((it, i) => (
                                     <div key={i} className="card" style={{ padding: 12, background: 'var(--color-surface-sunken)' }}>
-                                        <div className="row gap-sm" style={{ marginBottom: 8, alignItems: 'center' }}>
-                                            <div style={{ flex: 2.5, minWidth: 200 }}>
+                                        <div className="recepcion-item-top">
+                                            <div style={{ flex: 1, minWidth: 0 }}>
                                                 <ProductPicker
                                                     productos={productos}
                                                     value={it.producto_id}
@@ -185,17 +185,17 @@ export default function Recepciones() {
                                                     placeholder="Buscar producto por nombre o código…"
                                                 />
                                             </div>
-                                            <input type="number" step="0.01" placeholder="Cantidad" value={it.cantidad} onChange={e => actualizarItem(i, 'cantidad', e.target.value)}
-                                                   style={{ flex: 1, padding: '9px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }} />
-                                            <input type="number" step="0.01" placeholder="Costo unit." value={it.precio_unitario} onChange={e => actualizarItem(i, 'precio_unitario', e.target.value)}
-                                                   style={{ flex: 1, padding: '9px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }} />
-                                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => quitarItem(i)} disabled={items.length === 1}>✕</button>
+                                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => quitarItem(i)} disabled={items.length === 1} style={{ color: 'var(--color-danger)' }}>✕</button>
                                         </div>
-                                        <div className="row gap-sm">
+                                        <div className="recepcion-item-grid">
+                                            <input type="number" step="0.01" placeholder="Cantidad" value={it.cantidad} onChange={e => actualizarItem(i, 'cantidad', e.target.value)}
+                                                   style={{ width: '100%', padding: '9px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }} />
+                                            <input type="number" step="0.01" placeholder="Costo unit." value={it.precio_unitario} onChange={e => actualizarItem(i, 'precio_unitario', e.target.value)}
+                                                   style={{ width: '100%', padding: '9px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }} />
                                             <input placeholder="N° de lote (opcional)" value={it.numero_lote} onChange={e => actualizarItem(i, 'numero_lote', e.target.value)}
-                                                   style={{ flex: 1, padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)', fontSize: 13 }} />
+                                                   style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)', fontSize: 13 }} />
                                             <input type="date" title="Fecha de vencimiento" value={it.fecha_vencimiento} onChange={e => actualizarItem(i, 'fecha_vencimiento', e.target.value)}
-                                                   style={{ flex: 1, padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)', fontSize: 13 }} />
+                                                   style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)', fontSize: 13 }} />
                                         </div>
                                     </div>
                                 ))}

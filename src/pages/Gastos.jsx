@@ -75,7 +75,7 @@ export default function Gastos() {
 
     return (
         <div className="stack gap-lg">
-            <div className="spread">
+            <div className="spread page-header">
                 <div>
                     <h1 style={{ fontSize: 26 }}>Gastos generales</h1>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>{filtrados.length} registros · Total: <span className="mono" style={{ fontWeight: 600 }}>{fmtMoney(totalFiltrado)}</span></p>
