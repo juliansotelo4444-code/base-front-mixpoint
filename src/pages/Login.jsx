@@ -49,9 +49,6 @@ export default function Login() {
                     <button className="btn btn-primary" type="submit" disabled={loading} style={{ justifyContent: 'center', marginTop: 4 }}>
                         {loading ? 'Ingresando…' : 'Ingresar'}
                     </button>
-                    <p className="text-sm muted" style={{ textAlign: 'center' }}>
-                        Usuario inicial: admin@frutossecos.com / admin123
-                    </p>
                 </form>
             </div>
         </div>
