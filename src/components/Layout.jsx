@@ -4,16 +4,22 @@ import { useAuth } from '../context/AuthContext';
 import {
     IconDashboard, IconRemito, IconCarrito, IconRecepcion, IconProducto,
     IconClientes, IconProveedores, IconGastos, IconUsuarios, IconLogout,
-    IconMenu, IconClose
+    IconMenu, IconClose, IconMix, IconSync, IconBanco, IconReporte
 } from './Icons';
+import NotificacionesDropdown from './NotificacionesDropdown';
+import JarvisWidget from './JarvisWidget';
 
 const NAV_ITEMS = [
     { to: '/', label: 'Panel', icon: IconDashboard, end: true },
     { to: '/remitos', label: 'Remitos', icon: IconRemito },
     { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
     { to: '/recepciones', label: 'Recepción de mercadería', icon: IconRecepcion },
+    { to: '/produccion', label: 'Armado de Mixes', icon: IconMix },
     { to: '/productos', label: 'Productos y stock', icon: IconProducto },
     { to: '/clientes', label: 'Clientes', icon: IconClientes },
+    { to: '/conciliacion', label: 'Conciliación Bancaria', icon: IconBanco },
+    { to: '/reportes-diarios', label: 'Reportes 8:00 AM', icon: IconReporte },
+    { to: '/sincronizacion-sheets', label: 'Google Sheets', icon: IconSync },
     { to: '/proveedores', label: 'Proveedores', icon: IconProveedores },
     { to: '/gastos', label: 'Gastos', icon: IconGastos },
     { to: '/usuarios', label: 'Usuarios', icon: IconUsuarios, adminOnly: true },
@@ -32,6 +38,12 @@ export default function Layout() {
     function cerrarMenu() {
         setMenuAbierto(false);
     }
+
+    const fechaHoyFormato = new Intl.DateTimeFormat('es-AR', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+    }).format(new Date());
 
     return (
         <div className="app-root-layout">
@@ -55,7 +67,8 @@ export default function Layout() {
                         <span className="mobile-topbar-brand">MIX POINT</span>
                     </div>
                 </div>
-                <div className="row gap-xs">
+                <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                    <NotificacionesDropdown />
                     <div className="user-avatar-pill" title={usuario?.nombre || 'Usuario'}>
                         {(usuario?.nombre || 'U').charAt(0).toUpperCase()}
                     </div>
@@ -119,9 +132,30 @@ export default function Layout() {
             </aside>
 
             {/* CONTENIDO PRINCIPAL */}
-            <main className="main-content">
-                <Outlet />
+            <main className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
+                {/* BARRA SUPERIOR PARA DESKTOP */}
+                <div className="desktop-topbar no-print" style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '8px 24px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    background: 'rgba(17, 20, 29, 0.6)'
+                }}>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'capitalize' }}>
+                        📅 {fechaHoyFormato}
+                    </div>
+                    <NotificacionesDropdown />
+                </div>
+
+                <div style={{ flex: 1 }}>
+                    <Outlet />
+                </div>
             </main>
+
+            {/* ASISTENTE INTELIGENTE CON VOZ "JARVIS" (OMNIPRESENTE) */}
+            <JarvisWidget />
 
             {/* BARRA INFERIOR DE ACCESO RÁPIDO PARA CELULARES */}
             <nav className="mobile-bottom-bar no-print">

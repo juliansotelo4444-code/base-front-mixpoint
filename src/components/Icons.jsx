@@ -57,3 +57,43 @@ export const IconMenu = (p) => (
 export const IconClose = (p) => (
     <svg {...common} {...p}><path d="M18 6L6 18M6 6l12 12" /></svg>
 );
+export const IconMix = (p) => (
+    <svg {...common} {...p}><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 9 9M12 7a5 5 0 0 1 5 5" /><circle cx="12" cy="12" r="2" /></svg>
+);
+
+export const IconSync = (p) => (
+    <svg {...common} {...p}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" /></svg>
+);
+
+export const IconBanco = (p) => (
+    <svg {...common} {...p}><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 3l10 7H2z" /></svg>
+);
+
+export const IconReporte = (p) => (
+    <svg {...common} {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+);
+
+export const IconCampana = (p) => (
+    <svg {...common} {...p}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+);
+
+export const IconMicrofono = (p) => (
+    <svg {...common} {...p}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+);
+
+export const IconMicrofonoOff = (p) => (
+    <svg {...common} {...p}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+);
+
+export const IconBot = (p) => (
+    <svg {...common} {...p}><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="2" /><path d="M12 7v4" /><line x1="8" y1="16" x2="8.01" y2="16" strokeWidth="2.5" /><line x1="16" y1="16" x2="16.01" y2="16" strokeWidth="2.5" /></svg>
+);
+
+export const IconCheck = (p) => (
+    <svg {...common} {...p}><polyline points="20 6 9 17 4 12" /></svg>
+);
+
+export const IconCopy = (p) => (
+    <svg {...common} {...p}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+);
+

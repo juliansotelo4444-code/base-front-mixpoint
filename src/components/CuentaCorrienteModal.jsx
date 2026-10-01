@@ -15,8 +15,33 @@ export default function CuentaCorrienteModal({ entidadTipo, entidad, onClose, on
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState('');
     const [saldoActual, setSaldoActual] = useState(Number(entidad.saldo_cuenta) || 0);
+    const [mensajeCopiado, setMensajeCopiado] = useState(false);
 
     const rutaEntidad = entidadTipo === 'cliente' ? 'clientes' : 'proveedores';
+
+    function generarMensajeWhatsApp() {
+        const estado = saldoActual > 0
+            ? `tu saldo pendiente actual es de *${fmtMoney(saldoActual)}*.`
+            : saldoActual < 0
+            ? `tenés un saldo a favor de *${fmtMoney(Math.abs(saldoActual))}*.`
+            : `tu cuenta corriente se encuentra al día ($0,00).`;
+
+        return `Hola *${entidad.razon_social}*! Te escribimos desde *Mix Point Distribuidora*.\n\nTe informamos que ${estado}\n\nAnte cualquier consulta o para enviarnos comprobante de pago, quedamos a tu disposición.\n\n¡Muchas gracias!`;
+    }
+
+    function abrirWhatsApp() {
+        const tel = (entidad.telefono || '').replace(/[^0-9]/g, '');
+        const msg = encodeURIComponent(generarMensajeWhatsApp());
+        const phoneParam = tel ? (tel.startsWith('54') ? tel : (tel.startsWith('9') ? '54' + tel : '549' + tel)) : '';
+        const url = phoneParam ? `https://wa.me/${phoneParam}?text=${msg}` : `https://wa.me/?text=${msg}`;
+        window.open(url, '_blank');
+    }
+
+    function copiarResumen() {
+        navigator.clipboard.writeText(generarMensajeWhatsApp());
+        setMensajeCopiado(true);
+        setTimeout(() => setMensajeCopiado(false), 3000);
+    }
 
     async function cargarMovimientos() {
         setLoading(true);
@@ -104,10 +129,33 @@ export default function CuentaCorrienteModal({ entidadTipo, entidad, onClose, on
                     </div>
                 </div>
 
-                {/* Botón registrar pago/cobro */}
+                {/* Botón registrar pago/cobro y compartir WhatsApp */}
                 <div className="spread" style={{ alignItems: 'center' }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>
-                        Historial de movimientos ({movimientos.length})
+                    <div className="row gap-sm" style={{ alignItems: 'center' }}>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>
+                            Historial de movimientos ({movimientos.length})
+                        </div>
+                        {entidadTipo === 'cliente' && (
+                            <div className="row gap-xs">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={abrirWhatsApp}
+                                    title="Abrir WhatsApp con mensaje de saldo"
+                                    style={{ color: '#15803d', borderColor: '#bbf7d0', background: '#f0fdf4', fontWeight: 600 }}
+                                >
+                                    💬 WhatsApp
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={copiarResumen}
+                                    title="Copiar texto del mensaje"
+                                >
+                                    {mensajeCopiado ? '✅ Copiado!' : '📋 Copiar'}
+                                </button>
+                            </div>
+                        )}
                     </div>
                     <button
                         type="button"

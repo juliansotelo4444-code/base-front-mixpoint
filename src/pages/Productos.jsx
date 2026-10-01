@@ -34,6 +34,9 @@ export default function Productos() {
     const [ajusteProducto, setAjusteProducto] = useState(null);
     const [ajusteCantidad, setAjusteCantidad] = useState('');
     const [ajusteMotivo, setAjusteMotivo] = useState('');
+    const [ajusteLoteId, setAjusteLoteId] = useState('');
+    const [ajusteLotesDisponibles, setAjusteLotesDisponibles] = useState([]);
+    const [ajusteVencimiento, setAjusteVencimiento] = useState('');
     const [verPreciosId, setVerPreciosId] = useState(null);
 
     async function cargar() {
@@ -110,11 +113,31 @@ export default function Productos() {
         }
     }
 
+    async function abrirAjuste(p) {
+        setAjusteProducto(p);
+        setAjusteCantidad('');
+        setAjusteMotivo('');
+        setAjusteLoteId('');
+        setAjusteVencimiento('');
+        setAjusteLotesDisponibles([]);
+        try {
+            const { data } = await client.get(`/productos/${p.id}`);
+            setAjusteLotesDisponibles(data.lotes || []);
+        } catch (err) {
+            setAjusteLotesDisponibles([]);
+        }
+    }
+
     async function guardarAjuste(e) {
         e.preventDefault();
         const cantidad = Number(ajusteCantidad);
         if (!cantidad) return;
-        await client.post(`/productos/${ajusteProducto.id}/ajuste-stock`, { cantidad, motivo: ajusteMotivo || 'Ajuste manual' });
+        await client.post(`/productos/${ajusteProducto.id}/ajuste-stock`, {
+            cantidad,
+            motivo: ajusteMotivo || 'Ajuste manual',
+            lote_id: ajusteLoteId || null,
+            fecha_vencimiento: ajusteVencimiento || null
+        });
         setAjusteProducto(null);
         setAjusteCantidad('');
         setAjusteMotivo('');
@@ -242,7 +265,7 @@ export default function Productos() {
                                             <button
                                                 className={`mono badge ${bajoStock ? 'badge-danger' : 'badge-neutral'}`}
                                                 style={{ border: 'none', cursor: 'pointer', fontWeight: 600 }}
-                                                onClick={() => setAjusteProducto(p)}
+                                                onClick={() => abrirAjuste(p)}
                                                 title="Clic para realizar ajuste manual de stock"
                                             >
                                                 {p.stock_actual} {p.unidad_medida}
@@ -381,16 +404,53 @@ export default function Productos() {
 
             {/* MODAL AJUSTE DE STOCK */}
             {ajusteProducto && (
-                <Modal title={`Ajustar stock — ${ajusteProducto.nombre}`} onClose={() => setAjusteProducto(null)} width={440}>
+                <Modal title={`Ajustar stock — ${ajusteProducto.nombre}`} onClose={() => setAjusteProducto(null)} width={480}>
                     <form onSubmit={guardarAjuste} className="stack gap-md">
                         <p className="text-sm muted">
                             Stock actual registrado: <strong className="mono">{ajusteProducto.stock_actual} {ajusteProducto.unidad_medida}</strong>.
                             Ingresá un valor positivo para sumar o negativo para restar (mermas, roturas, etc.).
                         </p>
                         <div className="field">
-                            <label>Cantidad a ajustar ({ajusteProducto.unidad_medida})</label>
-                            <input type="number" step="0.01" placeholder="Ej: -5 o 10" value={ajusteCantidad} onChange={e => setAjusteCantidad(e.target.value)} autoFocus />
+                            <label>Cantidad a ajustar ({ajusteProducto.unidad_medida}) *</label>
+                            <input type="number" step="0.01" required placeholder="Ej: -5 o 10" value={ajusteCantidad} onChange={e => setAjusteCantidad(e.target.value)} autoFocus />
                         </div>
+
+                        {Number(ajusteCantidad) < 0 && ajusteLotesDisponibles.length > 0 && (
+                            <div className="field">
+                                <label>Lote específico a descontar (opcional)</label>
+                                <select value={ajusteLoteId} onChange={e => setAjusteLoteId(e.target.value)}>
+                                    <option value="">Descontar por FEFO (más próximo a vencer)</option>
+                                    {ajusteLotesDisponibles.map(l => (
+                                        <option key={l.id} value={l.id}>
+                                            Lote {l.numero_lote || l.id} · Disp: {l.cantidad_actual} {ajusteProducto.unidad_medida} (Vence: {l.fecha_vencimiento || 'S/F'})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {Number(ajusteCantidad) > 0 && (
+                            <div className="form-grid">
+                                <div className="field">
+                                    <label>Asignar a lote existente (opcional)</label>
+                                    <select value={ajusteLoteId} onChange={e => setAjusteLoteId(e.target.value)}>
+                                        <option value="">Crear nuevo lote de ajuste</option>
+                                        {ajusteLotesDisponibles.map(l => (
+                                            <option key={l.id} value={l.id}>
+                                                Lote {l.numero_lote || l.id} (Vence: {l.fecha_vencimiento || 'S/F'})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {!ajusteLoteId && (
+                                    <div className="field">
+                                        <label>Fecha Vto. para nuevo lote</label>
+                                        <input type="date" value={ajusteVencimiento} onChange={e => setAjusteVencimiento(e.target.value)} />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <div className="field">
                             <label>Motivo del ajuste</label>
                             <input placeholder="Ej: merma, rotura de bolsa, conteo físico" value={ajusteMotivo} onChange={e => setAjusteMotivo(e.target.value)} />

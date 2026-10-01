@@ -3,6 +3,7 @@ import client from '../api/client';
 import Modal from '../components/Modal';
 import ProductPicker from '../components/ProductPicker';
 import RemitoImprimible from '../components/RemitoImprimible';
+import HojaDeRutaModal from '../components/HojaDeRutaModal';
 import { IconPlus, IconBuscar } from '../components/Icons';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
@@ -24,6 +25,8 @@ export default function Remitos() {
     const [modalOpen, setModalOpen] = useState(false);
     const [detalle, setDetalle] = useState(null);
     const [remitoParaImprimir, setRemitoParaImprimir] = useState(null);
+    const [hojaDeRutaOpen, setHojaDeRutaOpen] = useState(false);
+    const [seleccionados, setSeleccionados] = useState([]);
     const [error, setError] = useState('');
 
     const [clienteId, setClienteId] = useState('');
@@ -182,9 +185,20 @@ export default function Remitos() {
                         {remitos.length} remitos registrados · Distribuidora Mix Point
                     </p>
                 </div>
-                <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14 }}>
-                    <IconPlus /> Generar nuevo remito
-                </button>
+                <div className="row gap-sm">
+                    {seleccionados.length > 0 && (
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => setHojaDeRutaOpen(true)}
+                            style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', fontWeight: 600 }}
+                        >
+                            🚚 Hoja de Ruta y Picking ({seleccionados.length})
+                        </button>
+                    )}
+                    <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14 }}>
+                        <IconPlus /> Generar nuevo remito
+                    </button>
+                </div>
             </div>
 
             <div className="card">
@@ -215,6 +229,18 @@ export default function Remitos() {
                     <table className="data-table">
                         <thead>
                             <tr>
+                                <th style={{ width: 36, textAlign: 'center' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={remitosFiltrados.length > 0 && seleccionados.length === remitosFiltrados.length}
+                                        onChange={(e) => {
+                                            if (e.target.checked) setSeleccionados(remitosFiltrados.map(r => r.id));
+                                            else setSeleccionados([]);
+                                        }}
+                                        style={{ cursor: 'pointer', width: 16, height: 16 }}
+                                        title="Seleccionar todos"
+                                    />
+                                </th>
                                 <th>Número</th>
                                 <th>Cliente</th>
                                 <th>Fecha</th>
@@ -226,6 +252,17 @@ export default function Remitos() {
                         <tbody>
                             {remitosFiltrados.map(r => (
                                 <tr key={r.id}>
+                                    <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                        <input
+                                            type="checkbox"
+                                            checked={seleccionados.includes(r.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) setSeleccionados([...seleccionados, r.id]);
+                                                else setSeleccionados(seleccionados.filter(id => id !== r.id));
+                                            }}
+                                            style={{ cursor: 'pointer', width: 16, height: 16 }}
+                                        />
+                                    </td>
                                     <td className="mono" style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--color-primary-dark)' }} onClick={() => verDetalle(r)}>
                                         {r.numero}
                                     </td>
@@ -290,6 +327,27 @@ export default function Remitos() {
                                         </option>
                                     ))}
                                 </select>
+                                {(() => {
+                                    const c = clientes.find(x => x.id === Number(clienteId));
+                                    if (!c) return null;
+                                    const deudaConRemito = Number(c.saldo_cuenta || 0) + Number(total || 0);
+                                    const excedeLimite = Number(c.limite_credito) > 0 && deudaConRemito > Number(c.limite_credito);
+
+                                    return (
+                                        <div style={{ marginTop: 6, padding: '8px 12px', background: 'var(--color-surface-sunken)', borderRadius: 6, fontSize: 12, border: excedeLimite ? '1px solid #f87171' : '1px solid var(--color-border)' }}>
+                                            <div className="spread">
+                                                <span>Saldo cta. cte.: <strong className={Number(c.saldo_cuenta) > 0 ? 'text-danger' : 'muted'}>{fmtMoney(c.saldo_cuenta)}</strong></span>
+                                                {Number(c.limite_credito) > 0 && <span>Límite: <strong>{fmtMoney(c.limite_credito)}</strong></span>}
+                                                {Number(c.plazo_dias) > 0 && <span>Plazo: <strong>{c.plazo_dias} días</strong></span>}
+                                            </div>
+                                            {excedeLimite && (
+                                                <div style={{ marginTop: 6, color: 'var(--color-danger)', fontWeight: 600 }}>
+                                                    ⚠️ Alerta de Crédito: Con este remito ({fmtMoney(total)}), el saldo del cliente ({fmtMoney(deudaConRemito)}) superará el límite de crédito ({fmtMoney(c.limite_credito)}).
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                             <div className="field">
                                 <label>Fecha de emisión</label>
@@ -518,6 +576,14 @@ export default function Remitos() {
                 <RemitoImprimible
                     remito={remitoParaImprimir}
                     onClose={() => setRemitoParaImprimir(null)}
+                />
+            )}
+
+            {/* HOJA DE RUTA Y PICKING DE DEPÓSITO */}
+            {hojaDeRutaOpen && (
+                <HojaDeRutaModal
+                    remitoIds={seleccionados}
+                    onClose={() => setHojaDeRutaOpen(false)}
                 />
             )}
         </div>

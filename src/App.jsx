@@ -11,6 +11,10 @@ import Recepciones from './pages/Recepciones';
 import Gastos from './pages/Gastos';
 import Usuarios from './pages/Usuarios';
 import PedidosWeb from './pages/PedidosWeb';
+import Produccion from './pages/Produccion';
+import SincronizacionSheets from './pages/SincronizacionSheets';
+import ConciliacionBancaria from './pages/ConciliacionBancaria';
+import ReportesDiarios from './pages/ReportesDiarios';
 
 function RutaPrivada({ children }) {
     const { usuario } = useAuth();
@@ -36,10 +40,14 @@ export default function App() {
                         <Route path="remitos" element={<Remitos />} />
                         <Route path="pedidos-web" element={<PedidosWeb />} />
                         <Route path="recepciones" element={<Recepciones />} />
+                        <Route path="produccion" element={<Produccion />} />
                         <Route path="productos" element={<Productos />} />
                         <Route path="clientes" element={<Clientes />} />
                         <Route path="proveedores" element={<Proveedores />} />
                         <Route path="gastos" element={<Gastos />} />
+                        <Route path="sincronizacion-sheets" element={<SincronizacionSheets />} />
+                        <Route path="conciliacion" element={<ConciliacionBancaria />} />
+                        <Route path="reportes-diarios" element={<ReportesDiarios />} />
                         <Route path="usuarios" element={<RutaAdmin><Usuarios /></RutaAdmin>} />
                     </Route>
                     <Route path="*" element={<Navigate to="/" replace />} />
@@ -47,5 +55,4 @@ export default function App() {
             </BrowserRouter>
         </AuthProvider>
     );
-};
-// batman
+}

@@ -4,7 +4,30 @@ import Modal from '../components/Modal';
 import CuentaCorrienteModal from '../components/CuentaCorrienteModal';
 import { IconPlus, IconBuscar, IconEditar, IconBaja } from '../components/Icons';
 
-const emptyForm = { razon_social: '', cuit: '', condicion_iva: 'Consumidor Final', direccion: '', localidad: '', telefono: '', email: '', observaciones: '' };
+const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
+
+const LISTA_NOMBRES = {
+    kg: 'Minorista (1kg)',
+    cincoKg: 'Lista 5kg',
+    diezKg: 'Dietéticas (10kg)',
+    veinticincoKg: 'Mayorista (25kg)',
+    treintaKg: 'Bulto (30kg)',
+    general: 'General'
+};
+
+const emptyForm = {
+    razon_social: '',
+    cuit: '',
+    condicion_iva: 'Consumidor Final',
+    direccion: '',
+    localidad: '',
+    telefono: '',
+    email: '',
+    lista_precio: 'kg',
+    limite_credito: '',
+    plazo_dias: '',
+    observaciones: ''
+};
 
 export default function Clientes() {
     const [clientes, setClientes] = useState([]);
@@ -34,7 +57,13 @@ export default function Clientes() {
 
     function abrirEditar(cliente) {
         setEditando(cliente);
-        setForm({ ...emptyForm, ...cliente });
+        setForm({
+            ...emptyForm,
+            ...cliente,
+            lista_precio: cliente.lista_precio || 'kg',
+            limite_credito: cliente.limite_credito ? Number(cliente.limite_credito) : '',
+            plazo_dias: cliente.plazo_dias ? Number(cliente.plazo_dias) : ''
+        });
         setError('');
         setModalOpen(true);
     }
@@ -88,7 +117,7 @@ export default function Clientes() {
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>Razón social</th><th>CUIT</th><th>Localidad</th><th>Teléfono</th>
+                                <th>Razón social</th><th>CUIT</th><th>Localidad</th><th>Lista de precio</th>
                                 <th className="text-right">Saldo cta. cte.</th><th></th>
                             </tr>
                         </thead>
@@ -98,14 +127,31 @@ export default function Clientes() {
                                     <td style={{ fontWeight: 600 }}>{c.razon_social}</td>
                                     <td className="mono muted">{c.cuit || '—'}</td>
                                     <td>{c.localidad || '—'}</td>
-                                    <td className="mono">{c.telefono || '—'}</td>
-                                    <td
-                                        className={`text-right mono ${Number(c.saldo_cuenta) > 0 ? 'text-danger' : 'muted'}`}
-                                        style={{ cursor: 'pointer', fontWeight: Number(c.saldo_cuenta) > 0 ? 700 : 400 }}
-                                        onClick={() => setClienteCtaCte(c)}
-                                        title="Click para ver cuenta corriente"
-                                    >
-                                        {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(c.saldo_cuenta)}
+                                    <td>
+                                        <span className="badge badge-primary" style={{ fontSize: 11.5, background: 'rgba(92,107,52,0.12)', color: 'var(--color-primary)' }}>
+                                            {LISTA_NOMBRES[c.lista_precio] || c.lista_precio || 'General'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div
+                                            className={`text-right mono ${Number(c.saldo_cuenta) > 0 ? 'text-danger' : 'muted'}`}
+                                            style={{ cursor: 'pointer', fontWeight: Number(c.saldo_cuenta) > 0 ? 700 : 400 }}
+                                            onClick={() => setClienteCtaCte(c)}
+                                            title="Click para ver cuenta corriente"
+                                        >
+                                            {fmtMoney(c.saldo_cuenta)}
+                                        </div>
+                                        {Number(c.limite_credito) > 0 && (
+                                            <div className="text-right" style={{ marginTop: 2, fontSize: 11 }}>
+                                                {Number(c.saldo_cuenta) > Number(c.limite_credito) ? (
+                                                    <span className="badge badge-danger" style={{ padding: '2px 6px', fontSize: 10 }}>
+                                                        ⚠️ Supera límite
+                                                    </span>
+                                                ) : (
+                                                    <span className="muted">Máx: {fmtMoney(c.limite_credito)}</span>
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
                                     <td>
                                         <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
@@ -130,7 +176,7 @@ export default function Clientes() {
             </div>
 
             {modalOpen && (
-                <Modal title={editando ? 'Editar cliente' : 'Nuevo cliente'} onClose={() => setModalOpen(false)} width={620}>
+                <Modal title={editando ? 'Editar cliente' : 'Nuevo cliente'} onClose={() => setModalOpen(false)} width={660}>
                     <form onSubmit={guardar} className="stack gap-md">
                         {error && <div className="alert-banner error">{error}</div>}
                         <div className="field">
@@ -140,7 +186,7 @@ export default function Clientes() {
                         <div className="form-grid">
                             <div className="field">
                                 <label>CUIT</label>
-                                <input value={form.cuit || ''} onChange={e => setForm({ ...form, cuit: e.target.value })} />
+                                <input value={form.cuit || ''} onChange={e => setForm({ ...form, cuit: e.target.value })} placeholder="Ej: 30-71234567-8" />
                             </div>
                             <div className="field">
                                 <label>Condición IVA</label>
@@ -152,20 +198,60 @@ export default function Clientes() {
                                 </select>
                             </div>
                             <div className="field">
-                                <label>Dirección</label>
+                                <label>Dirección de entrega</label>
                                 <input value={form.direccion || ''} onChange={e => setForm({ ...form, direccion: e.target.value })} />
                             </div>
                             <div className="field">
-                                <label>Localidad</label>
-                                <input value={form.localidad || ''} onChange={e => setForm({ ...form, localidad: e.target.value })} />
+                                <label>Localidad / Zona</label>
+                                <input value={form.localidad || ''} onChange={e => setForm({ ...form, localidad: e.target.value })} placeholder="Ej: Belgrano / CABA" />
                             </div>
                             <div className="field">
-                                <label>Teléfono</label>
-                                <input value={form.telefono || ''} onChange={e => setForm({ ...form, telefono: e.target.value })} />
+                                <label>Teléfono (con código de área)</label>
+                                <input value={form.telefono || ''} onChange={e => setForm({ ...form, telefono: e.target.value })} placeholder="Ej: 11-4567-8901" />
                             </div>
                             <div className="field">
                                 <label>Email</label>
                                 <input type="email" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
+                            </div>
+                        </div>
+
+                        {/* Configuración Comercial Mayorista */}
+                        <div style={{ background: 'var(--color-surface-sunken)', padding: 14, borderRadius: 8, border: '1px solid var(--color-border)' }}>
+                            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10, color: 'var(--color-primary)' }}>
+                                🏷️ Condiciones Comerciales y Precios
+                            </div>
+                            <div className="form-grid">
+                                <div className="field">
+                                    <label>Lista de Precios Predeterminada</label>
+                                    <select value={form.lista_precio || 'kg'} onChange={e => setForm({ ...form, lista_precio: e.target.value })}>
+                                        <option value="kg">Minorista / Por Kg</option>
+                                        <option value="cincoKg">Lista 5 Kg (Medio mayorista)</option>
+                                        <option value="diezKg">Lista 10 Kg (Dietéticas y Almacenes)</option>
+                                        <option value="veinticincoKg">Lista 25 Kg (Distribución / Bulto)</option>
+                                        <option value="treintaKg">Lista 30 Kg (Gran volumen / Fábrica)</option>
+                                    </select>
+                                </div>
+                                <div className="field">
+                                    <label>Límite de Crédito ($) <span className="muted text-xs">(0 = sin límite)</span></label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1000"
+                                        placeholder="0 = Sin límite"
+                                        value={form.limite_credito}
+                                        onChange={e => setForm({ ...form, limite_credito: e.target.value })}
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label>Plazo de Pago <span className="muted text-xs">(días)</span></label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="0 = Contado"
+                                        value={form.plazo_dias}
+                                        onChange={e => setForm({ ...form, plazo_dias: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div className="field">

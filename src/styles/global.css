@@ -1211,3 +1211,47 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
         display: none !important;
     }
 }
+
+/* =========================================================
+   ESTILOS PARA JARVIS WIDGET & CENTRO DE NOTIFICACIONES
+   ========================================================= */
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.jarvis-fab-wrapper:hover button {
+    transform: scale(1.06) !important;
+}
+
+@media (max-width: 768px) {
+    .jarvis-fab-wrapper {
+        bottom: 74px !important;
+        right: 16px !important;
+    }
+
+    .jarvis-modal {
+        bottom: 136px !important;
+        right: 12px !important;
+        width: calc(100vw - 24px) !important;
+        height: 480px !important;
+    }
+
+    .notificaciones-dropdown {
+        width: calc(100vw - 32px) !important;
+        right: -50px !important;
+    }
+}
