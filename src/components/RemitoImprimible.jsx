@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import QRCode from 'qrcode';
+import { formatearFecha } from '../utils/fechas';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
@@ -347,7 +348,7 @@ export default function RemitoImprimible({ remito, onClose }) {
     const printableRef = useRef(null);
     const [qrDataUrl, setQrDataUrl] = useState('');
     const pages = chunkItems(remito.items || []);
-    const fechaFormateada = remito.fecha ? new Date(remito.fecha + 'T00:00:00').toLocaleDateString('es-AR') : new Date().toLocaleDateString('es-AR');
+    const fechaFormateada = formatearFecha(remito.fecha || new Date());
 
     useEffect(() => {
         const qrTexto = `MIX POINT MAYORISTA\nAlias: mixpoint2026\nRemito: ${remito.numero || ''}\nTotal: ${fmtMoney(remito.total)}\nWhatsApp: 1167873243`;

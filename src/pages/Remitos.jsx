@@ -6,6 +6,7 @@ import RemitoImprimible from '../components/RemitoImprimible';
 import HojaDeRutaModal from '../components/HojaDeRutaModal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconPlus, IconBuscar } from '../components/Icons';
+import { getFechaHoyLocal, formatearFecha } from '../utils/fechas';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
@@ -61,7 +62,7 @@ export default function Remitos() {
 
     // Formulario de Remito
     const [clienteId, setClienteId] = useState('');
-    const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+    const [fecha, setFecha] = useState(getFechaHoyLocal());
     const [direccion, setDireccion] = useState('');
     const [transportista, setTransportista] = useState('');
     const [observaciones, setObservaciones] = useState('');
@@ -120,7 +121,7 @@ export default function Remitos() {
 
     function abrirNuevo() {
         setClienteId('');
-        setFecha(new Date().toISOString().slice(0, 10));
+        setFecha(getFechaHoyLocal());
         setDireccion('');
         setTransportista('');
         setObservaciones('');
@@ -382,7 +383,7 @@ export default function Remitos() {
                                                 <div className="muted mono" style={{ fontSize: 11 }}>📞 {r.cliente_telefono}</div>
                                             )}
                                         </td>
-                                        <td className="mono">{r.fecha}</td>
+                                        <td className="mono">{formatearFecha(r.fecha)}</td>
                                         <td>
                                             <div className="row gap-xs">
                                                 <select
@@ -777,7 +778,7 @@ export default function Remitos() {
                                     CUIT: {detalle.cliente_cuit || '—'} · Condición: {detalle.cliente_condicion_iva || 'CF'}
                                 </p>
                                 <p className="text-sm muted">
-                                    Fecha: {detalle.fecha} {detalle.direccion_entrega && `· Destino: ${detalle.direccion_entrega}`}
+                                    Fecha: {formatearFecha(detalle.fecha)} {detalle.direccion_entrega && `· Destino: ${detalle.direccion_entrega}`}
                                 </p>
                             </div>
                             <div style={{ textAlign: 'right' }}>

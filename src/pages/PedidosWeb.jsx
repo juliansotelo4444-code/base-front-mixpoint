@@ -4,6 +4,7 @@ import Modal from '../components/Modal';
 import RemitoImprimible from '../components/RemitoImprimible';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconBuscar } from '../components/Icons';
+import { formatearFecha } from '../utils/fechas';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
@@ -179,7 +180,7 @@ export default function PedidosWeb() {
                                                 {p.numero}
                                             </td>
                                             <td className="mono text-xs muted" style={{ whiteSpace: 'nowrap' }}>
-                                                {p.fecha}
+                                                {formatearFecha(p.fecha)}
                                             </td>
                                             <td>
                                                 <div style={{ fontWeight: 600 }}>{p.nombre}</div>
