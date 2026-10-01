@@ -57,6 +57,9 @@ export const IconMenu = (p) => (
 export const IconClose = (p) => (
     <svg {...common} {...p}><path d="M18 6L6 18M6 6l12 12" /></svg>
 );
+export const IconFlyer = (p) => (
+    <svg {...common} {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+);
 export const IconMix = (p) => (
     <svg {...common} {...p}><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 9 9M12 7a5 5 0 0 1 5 5" /><circle cx="12" cy="12" r="2" /></svg>
 );

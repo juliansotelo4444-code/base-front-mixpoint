@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
@@ -249,6 +250,23 @@ function getPrintCss() {
             font-weight: 600;
             margin-top: auto;
         }
+        .remito-payment-qr-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fdfbf7;
+            border: 1px solid #d4cbb3;
+            border-radius: 5px;
+            padding: 6px 10px;
+            max-width: 320px;
+        }
+        .remito-qr-img {
+            width: 64px;
+            height: 64px;
+            border: 1px solid #e1dcc9;
+            border-radius: 4px;
+            background: #fff;
+        }
         .remito-totals-box {
             background: #f7f3eb;
             border: 1.5px solid #d4cbb3;
@@ -327,8 +345,18 @@ export default function RemitoImprimible({ remito, onClose }) {
     if (!remito) return null;
 
     const printableRef = useRef(null);
+    const [qrDataUrl, setQrDataUrl] = useState('');
     const pages = chunkItems(remito.items || []);
     const fechaFormateada = remito.fecha ? new Date(remito.fecha + 'T00:00:00').toLocaleDateString('es-AR') : new Date().toLocaleDateString('es-AR');
+
+    useEffect(() => {
+        const qrTexto = `MIX POINT MAYORISTA\nAlias: mixpoint2026\nRemito: ${remito.numero || ''}\nTotal: ${fmtMoney(remito.total)}\nWhatsApp: 1167873243`;
+        QRCode.toDataURL(qrTexto, {
+            margin: 1,
+            width: 140,
+            color: { dark: '#11141D', light: '#FFFFFF' }
+        }).then(url => setQrDataUrl(url)).catch(() => {});
+    }, [remito]);
 
     const handlePrint = () => {
         const content = printableRef.current;
@@ -599,8 +627,31 @@ export default function RemitoImprimible({ remito, onClose }) {
                                 {isLastPage ? (
                                     /* TOTALES Y FIRMAS EN LA ÚLTIMA HOJA */
                                     <>
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-                                            <div className="remito-totals-box" style={{ minWidth: 300 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16, gap: 12 }}>
+                                            <div className="remito-payment-qr-box">
+                                                {qrDataUrl && <img src={qrDataUrl} alt="QR Pago" className="remito-qr-img" />}
+                                                <div style={{ fontSize: 9, lineHeight: 1.35 }}>
+                                                    <div style={{ fontWeight: 800, color: '#1a382b', fontSize: 10 }}>PAGO POR TRANSFERENCIA</div>
+                                                    <div><strong>Alias:</strong> <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '1px 5px', borderRadius: 3 }}>mixpoint2026</span></div>
+                                                    <div><strong>Titular:</strong> Mix Point Mayorista</div>
+                                                    <div><strong>WhatsApp:</strong> 1167873243</div>
+                                                    <div style={{ color: '#555', fontStyle: 'italic', marginTop: 2, fontSize: 8.5 }}>🔍 Trazabilidad de lotes bajo norma FEFO</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="remito-totals-box" style={{ minWidth: 280 }}>
+                                                {Number(remito.descuento_porcentaje) > 0 && (
+                                                    <>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#555', marginBottom: 2 }}>
+                                                            <span>Subtotal lista:</span>
+                                                            <span className="mono">{fmtMoney(Number(remito.total) / (1 - Number(remito.descuento_porcentaje) / 100))}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#B23A3A', fontWeight: 600, marginBottom: 4 }}>
+                                                            <span>Descuento aplicado:</span>
+                                                            <span>-{remito.descuento_porcentaje}%</span>
+                                                        </div>
+                                                    </>
+                                                )}
                                                 <div className="remito-total-row">
                                                     <span>TOTAL MERCADERÍA:</span>
                                                     <span className="mono remito-total-num">{fmtMoney(remito.total)}</span>

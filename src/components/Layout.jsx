@@ -4,15 +4,17 @@ import { useAuth } from '../context/AuthContext';
 import {
     IconDashboard, IconRemito, IconCarrito, IconRecepcion, IconProducto,
     IconClientes, IconProveedores, IconGastos, IconUsuarios, IconLogout,
-    IconMenu, IconClose, IconMix, IconSync, IconBanco, IconReporte
+    IconMenu, IconClose, IconMix, IconSync, IconBanco, IconReporte, IconFlyer
 } from './Icons';
 import NotificacionesDropdown from './NotificacionesDropdown';
 import JarvisWidget from './JarvisWidget';
+import OfflineBanner from './OfflineBanner';
 
 const NAV_ITEMS = [
     { to: '/', label: 'Panel', icon: IconDashboard, end: true },
     { to: '/remitos', label: 'Remitos', icon: IconRemito },
     { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
+    { to: '/catalogo-flyers', label: 'Catálogo y Flyers', icon: IconFlyer },
     { to: '/recepciones', label: 'Recepción de mercadería', icon: IconRecepcion },
     { to: '/produccion', label: 'Armado de Mixes', icon: IconMix },
     { to: '/productos', label: 'Productos y stock', icon: IconProducto },
@@ -47,6 +49,7 @@ export default function Layout() {
 
     return (
         <div className="app-root-layout">
+            <OfflineBanner />
             {/* BARRA SUPERIOR EXCLUSIVA PARA MÓVIL */}
             <header className="mobile-topbar no-print">
                 <div className="row gap-sm">

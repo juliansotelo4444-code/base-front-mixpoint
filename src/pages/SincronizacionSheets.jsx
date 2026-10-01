@@ -181,25 +181,25 @@ export default function SincronizacionSheets() {
                 </div>
 
                 {/* PANEL 2: INSTALACIÓN EN GOOGLE APPS SCRIPT */}
-                <div className="card" style={{ padding: 20 }}>
+                <div className="card" style={{ padding: 20, background: '#FFFFFF' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <h2 style={{ fontSize: 16, fontWeight: 700 }}>Conector Google Apps Script</h2>
+                        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)' }}>Conector Google Apps Script</h2>
                         <button
                             type="button"
                             className="btn btn-ghost btn-sm"
                             onClick={copiarCodigo}
-                            style={{ color: copiado ? '#10b981' : 'var(--color-primary)' }}
+                            style={{ color: copiado ? '#10b981' : 'var(--color-primary-dark)', fontWeight: 600 }}
                         >
                             {copiado ? <IconCheck /> : <IconCopy />}
                             {copiado ? '¡Copiado!' : 'Copiar Código'}
                         </button>
                     </div>
 
-                    <div style={{ fontSize: 12.5, color: '#cbd5e1', lineHeight: 1.5, marginBottom: 12 }}>
+                    <div style={{ fontSize: 12.5, color: 'var(--color-text)', lineHeight: 1.5, marginBottom: 12 }}>
                         Pegá este código en tu Google Sheet para agregar el menú <strong>🌱 Mix Point</strong> con sincronización automática en cada edición:
                     </div>
 
-                    <ol style={{ fontSize: 12, color: '#94a3b8', paddingLeft: 18, marginBottom: 14, lineHeight: 1.6 }}>
+                    <ol style={{ fontSize: 12, color: 'var(--color-text-muted)', paddingLeft: 18, marginBottom: 14, lineHeight: 1.6 }}>
                         <li>En tu hoja de cálculo, ve a <strong>Extensiones &gt; Apps Script</strong>.</li>
                         <li>Borra todo el contenido y pega el bloque inferior.</li>
                         <li>Haz clic en <strong>Implementar &gt; Nueva implementación</strong> (Tipo: Aplicación Web, Acceso: Cualquier persona).</li>
@@ -208,14 +208,14 @@ export default function SincronizacionSheets() {
                     </ol>
 
                     <pre style={{
-                        background: '#0e111a',
+                        background: '#11141D',
                         padding: 12,
                         borderRadius: 8,
                         fontSize: 11,
-                        color: '#a5b4fc',
+                        color: '#F5F1E3',
                         overflowX: 'auto',
                         maxHeight: 180,
-                        border: '1px solid rgba(255, 255, 255, 0.08)'
+                        border: '1px solid var(--color-border-strong)'
                     }}>
                         <code>{appsScriptCode}</code>
                     </pre>
@@ -223,19 +223,19 @@ export default function SincronizacionSheets() {
             </div>
 
             {/* HISTORIAL DE LOGS DE SINCRONIZACIÓN */}
-            <div className="card" style={{ marginTop: 24, padding: 20 }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>Historial de Sincronizaciones</h2>
+            <div className="card" style={{ marginTop: 24, padding: 20, background: '#FFFFFF' }}>
+                <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: 'var(--color-text)' }}>Historial de Sincronizaciones</h2>
                 {logs.length === 0 ? (
-                    <div style={{ color: '#8e9aa8', fontSize: 13, padding: '16px 0' }}>No hay registros de sincronización recientes.</div>
+                    <div style={{ color: 'var(--color-text-muted)', fontSize: 13, padding: '16px 0' }}>No hay registros de sincronización recientes.</div>
                 ) : (
                     <div style={{ overflowX: 'auto' }}>
-                        <table className="table" style={{ width: '100%', fontSize: 12.5 }}>
+                        <table className="data-table" style={{ width: '100%', fontSize: 12.5 }}>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', textAlign: 'left' }}>
-                                    <th style={{ padding: '8px 10px' }}>Fecha</th>
-                                    <th style={{ padding: '8px 10px' }}>Tipo</th>
-                                    <th style={{ padding: '8px 10px' }}>Resultado</th>
-                                    <th style={{ padding: '8px 10px' }}>Detalles</th>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Resultado</th>
+                                    <th>Detalles</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -243,26 +243,19 @@ export default function SincronizacionSheets() {
                                     const esOk = log.resultado === 'exito';
                                     const esError = log.resultado === 'error';
                                     return (
-                                        <tr key={log.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                            <td style={{ padding: '8px 10px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                                        <tr key={log.id}>
+                                            <td className="mono text-xs" style={{ whiteSpace: 'nowrap' }}>
                                                 {new Date(log.fecha).toLocaleString('es-AR')}
                                             </td>
-                                            <td style={{ padding: '8px 10px', textTransform: 'capitalize' }}>
+                                            <td style={{ textTransform: 'capitalize', fontWeight: 600 }}>
                                                 {log.tipo}
                                             </td>
-                                            <td style={{ padding: '8px 10px' }}>
-                                                <span style={{
-                                                    padding: '2px 8px',
-                                                    borderRadius: 12,
-                                                    fontSize: 11,
-                                                    fontWeight: 600,
-                                                    background: esOk ? 'rgba(16, 185, 129, 0.15)' : (esError ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)'),
-                                                    color: esOk ? '#10b981' : (esError ? '#ef4444' : '#f59e0b')
-                                                }}>
+                                            <td>
+                                                <span className={`badge ${esOk ? 'badge-success' : (esError ? 'badge-danger' : 'badge-warning')}`}>
                                                     {log.resultado.toUpperCase()}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '8px 10px', color: '#cbd5e1', maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            <td style={{ color: 'var(--color-text)', maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {log.detalles}
                                             </td>
                                         </tr>

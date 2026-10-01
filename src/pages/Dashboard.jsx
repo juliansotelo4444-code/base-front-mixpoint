@@ -1,131 +1,332 @@
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { Link } from 'react-router-dom';
 import client from '../api/client';
-import { IconAlerta, IconReloj } from '../components/Icons';
+import { useAuth } from '../context/AuthContext';
+import { IconAlerta, IconReloj, IconRemito, IconCarrito, IconProducto, IconRecepcion } from '../components/Icons';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
 
-import { Link } from 'react-router-dom';
+function getSaludo(nombre) {
+    const hora = new Date().getHours();
+    let saludo = '¡Buenas noches';
+    if (hora >= 6 && hora < 12) saludo = '¡Buenos días';
+    else if (hora >= 12 && hora < 20) saludo = '¡Buenas tardes';
+    return `${saludo}, ${nombre || 'Equipo Mix Point'}!`;
+}
+
+const ESTADOS_MAP = [
+    { key: 'pendiente', label: 'Pendiente', badgeClass: 'badge-status-pendiente', icon: '🟡' },
+    { key: 'en_preparacion', label: 'En Preparación', badgeClass: 'badge-status-preparacion', icon: '🔵' },
+    { key: 'esperando_pago', label: 'Esperando Pago', badgeClass: 'badge-status-esperando-pago', icon: '🟣' },
+    { key: 'en_camino', label: 'En Camino', badgeClass: 'badge-status-camino', icon: '🟠' },
+    { key: 'entregado', label: 'Entregado', badgeClass: 'badge-status-entregado', icon: '🟢' },
+    { key: 'facturado', label: 'Facturado', badgeClass: 'badge-status-facturado', icon: '🔷' },
+    { key: 'cancelado', label: 'Cancelado', badgeClass: 'badge-status-cancelado', icon: '🔴' }
+];
 
 export default function Dashboard() {
+    const { usuario } = useAuth();
     const [resumen, setResumen] = useState(null);
     const [evolucion, setEvolucion] = useState(null);
+    const [predicciones, setPredicciones] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [vistaActiva, setVistaActiva] = useState(usuario?.rol === 'admin' ? 'ejecutiva' : 'operativa');
 
     useEffect(() => {
         Promise.all([
             client.get('/dashboard/resumen'),
             client.get('/dashboard/evolucion-mensual'),
-        ]).then(([r1, r2]) => {
+            client.get('/jarvis/prediccion-stock').catch(() => ({ data: { predicciones: [] } }))
+        ]).then(([r1, r2, r3]) => {
             setResumen(r1.data);
             setEvolucion(r2.data);
+            setPredicciones(r3.data?.predicciones || []);
         }).finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <p className="muted">Cargando panel…</p>;
-    if (!resumen) return <p className="muted">No se pudo cargar el panel.</p>;
+    if (loading) return <div style={{ padding: 32, textAlign: 'center' }}><p className="muted">Cargando panel adaptado…</p></div>;
+    if (!resumen) return <div style={{ padding: 32, textAlign: 'center' }}><p className="muted">No se pudo cargar la información del panel.</p></div>;
 
-    // combinar series de evolución mensual en un solo array para el gráfico
+    // Combinar series de evolución mensual
     const meses = Array.from(new Set([
-        ...evolucion.ventas.map(v => v.mes),
-        ...evolucion.gastos.map(v => v.mes),
-        ...evolucion.compras.map(v => v.mes),
+        ...(evolucion?.ventas || []).map(v => v.mes),
+        ...(evolucion?.gastos || []).map(v => v.mes),
+        ...(evolucion?.compras || []).map(v => v.mes),
     ])).sort();
+
     const chartData = meses.map(mes => ({
         mes,
-        Ventas: evolucion.ventas.find(v => v.mes === mes)?.total || 0,
-        Compras: evolucion.compras.find(v => v.mes === mes)?.total || 0,
-        Gastos: evolucion.gastos.find(v => v.mes === mes)?.total || 0,
+        Ventas: evolucion.ventas?.find(v => v.mes === mes)?.total || 0,
+        Compras: evolucion.compras?.find(v => v.mes === mes)?.total || 0,
+        Gastos: evolucion.gastos?.find(v => v.mes === mes)?.total || 0,
     }));
+
+    // Contadores por estado de pedidos
+    const estadosContadores = (resumen.estados_pedidos || []).reduce((acc, it) => {
+        acc[it.estado] = { cantidad: it.cantidad, total: it.total };
+        return acc;
+    }, {});
 
     return (
         <div className="stack gap-lg">
-            <div className="spread">
+            {/* CABECERA CON SALUDO PERSONALIZADO */}
+            <div className="spread page-header" style={{ flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                    <h1 style={{ fontSize: 26 }}>Panel de control general</h1>
+                    <h1 style={{ fontSize: 26, color: 'var(--color-text)' }}>{getSaludo(usuario?.nombre)}</h1>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>
-                        Resumen operativo y comercial · Distribuidora Mix Point
+                        Panel adaptado para {usuario?.rol === 'admin' ? 'Administración y Finanzas' : 'Operaciones y Logística'} · Distribuidora Mix Point
                     </p>
                 </div>
-                <Link to="/remitos" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-                    + Generar nuevo remito
-                </Link>
+                <div className="row gap-sm">
+                    <div style={{ background: '#ECE8DA', borderRadius: 8, padding: 3, display: 'inline-flex' }}>
+                        <button
+                            type="button"
+                            className="btn btn-sm"
+                            style={{
+                                background: vistaActiva === 'ejecutiva' ? '#FFFFFF' : 'transparent',
+                                color: vistaActiva === 'ejecutiva' ? 'var(--color-text)' : 'var(--color-text-muted)',
+                                boxShadow: vistaActiva === 'ejecutiva' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                borderRadius: 6
+                            }}
+                            onClick={() => setVistaActiva('ejecutiva')}
+                        >
+                            💼 Vista Ejecutiva
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-sm"
+                            style={{
+                                background: vistaActiva === 'operativa' ? '#FFFFFF' : 'transparent',
+                                color: vistaActiva === 'operativa' ? 'var(--color-text)' : 'var(--color-text-muted)',
+                                boxShadow: vistaActiva === 'operativa' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                borderRadius: 6
+                            }}
+                            onClick={() => setVistaActiva('operativa')}
+                        >
+                            📦 Vista Depósito
+                        </button>
+                    </div>
+
+                    <Link to="/remitos" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+                        + Generar remito
+                    </Link>
+                </div>
             </div>
 
+            {/* VISUAL TRACKER DEL PIPELINE DE 7 ESTADOS */}
+            <div className="card card-pad" style={{ background: '#FFFFFF' }}>
+                <div className="spread" style={{ marginBottom: 12 }}>
+                    <div>
+                        <h3 style={{ fontSize: 15, fontWeight: 700 }}>Tracker de Pedidos y Remitos (Pipeline de 7 Estados)</h3>
+                        <p className="text-xs muted">Estado de los pedidos de los últimos 30 días</p>
+                    </div>
+                    <Link to="/remitos" className="text-sm" style={{ color: 'var(--color-primary-dark)', fontWeight: 600, textDecoration: 'none' }}>
+                        Gestionar todos los remitos →
+                    </Link>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+                    {ESTADOS_MAP.map(est => {
+                        const count = estadosContadores[est.key]?.cantidad || 0;
+                        const monto = estadosContadores[est.key]?.total || 0;
+
+                        return (
+                            <Link
+                                key={est.key}
+                                to={`/remitos`}
+                                style={{
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    padding: '10px 12px',
+                                    borderRadius: 8,
+                                    border: '1px solid var(--color-border)',
+                                    background: '#FAF9F4',
+                                    transition: 'transform 0.1s ease',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'space-between'
+                                }}
+                            >
+                                <div className="spread" style={{ marginBottom: 6 }}>
+                                    <span style={{ fontSize: 14 }}>{est.icon}</span>
+                                    <span className={`badge ${est.badgeClass}`} style={{ fontSize: 12, padding: '2px 7px' }}>
+                                        {count}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 12, fontWeight: 600 }}>{est.label}</div>
+                                    <div className="mono text-xs muted" style={{ marginTop: 2 }}>{fmtMoney(monto)}</div>
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* TARJETAS DE MÉTRICAS CONSOLIDADAS */}
             <div className="dashboard-stats-grid">
-                <StatCard label="Ventas del mes" value={fmtMoney(resumen.ventas_mes.total)} sub={`${resumen.ventas_mes.cantidad} remitos`} accent="primary" />
+                <StatCard label="Ventas del mes" value={fmtMoney(resumen.ventas_mes.total)} sub={`${resumen.ventas_mes.cantidad} remitos emitidos`} accent="primary" />
                 <StatCard label="Compras del mes" value={fmtMoney(resumen.compras_mes.total)} sub={`${resumen.compras_mes.cantidad} recepciones`} accent="accent" />
                 <StatCard label="Gastos del mes" value={fmtMoney(resumen.gastos_mes.total)} sub={`${resumen.gastos_mes.cantidad} registros`} accent="danger" />
-                <StatCard label="Valor de stock" value={fmtMoney(resumen.valor_stock_actual)} sub={`${resumen.remitos_pendientes} remitos pendientes`} accent="neutral" />
+                <StatCard label="Stock valorizado" value={fmtMoney(resumen.valor_stock_actual)} sub={`${resumen.remitos_pendientes} remitos pendientes`} accent="neutral" />
             </div>
 
-            <div className="dashboard-main-grid">
-                <div className="card card-pad">
-                    <h3 style={{ fontSize: 15, marginBottom: 16 }}>Evolución — últimos meses</h3>
-                    <ResponsiveContainer width="100%" height={260}>
-                        <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                            <XAxis dataKey="mes" tick={{ fontSize: 11.5, fill: 'var(--color-text-muted)' }} axisLine={{ stroke: 'var(--color-border-strong)' }} tickLine={false} />
-                            <YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} axisLine={false} tickLine={false} width={70}
-                                   tickFormatter={(v) => new Intl.NumberFormat('es-AR', { notation: 'compact' }).format(v)} />
-                            <Tooltip formatter={(v) => fmtMoney(v)} contentStyle={{ fontSize: 12.5, borderRadius: 8, border: '1px solid var(--color-border-strong)' }} />
-                            <Legend wrapperStyle={{ fontSize: 12.5 }} />
-                            <Bar dataKey="Ventas" fill="#5C6B34" radius={[3, 3, 0, 0]} />
-                            <Bar dataKey="Compras" fill="#A8632E" radius={[3, 3, 0, 0]} />
-                            <Bar dataKey="Gastos" fill="#A83E32" radius={[3, 3, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+            {/* CONTENIDO SEGÚN VISTA: EJECUTIVA VS OPERATIVA */}
+            {vistaActiva === 'ejecutiva' ? (
+                /* VISTA EJECUTIVA: GRÁFICO DE EVOLUCIÓN + ALERTAS COMERCIALES */
+                <div className="dashboard-main-grid">
+                    <div className="card card-pad" style={{ background: '#FFFFFF' }}>
+                        <h3 style={{ fontSize: 15, marginBottom: 16 }}>Evolución Financiera — Ventas, Compras y Gastos</h3>
+                        <ResponsiveContainer width="100%" height={280}>
+                            <BarChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                <XAxis dataKey="mes" tick={{ fontSize: 11.5, fill: 'var(--color-text-muted)' }} axisLine={{ stroke: 'var(--color-border-strong)' }} tickLine={false} />
+                                <YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} axisLine={false} tickLine={false} width={70}
+                                       tickFormatter={(v) => new Intl.NumberFormat('es-AR', { notation: 'compact' }).format(v)} />
+                                <Tooltip formatter={(v) => fmtMoney(v)} contentStyle={{ fontSize: 12.5, borderRadius: 8, border: '1px solid var(--color-border-strong)' }} />
+                                <Legend wrapperStyle={{ fontSize: 12.5 }} />
+                                <Bar dataKey="Ventas" fill="#5C6B34" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="Compras" fill="#A8632E" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="Gastos" fill="#A83E32" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
 
-                <div className="stack gap-md">
-                    <div className="card card-pad">
-                        <div className="row gap-sm" style={{ marginBottom: 12, color: 'var(--color-danger)' }}>
+                    <div className="stack gap-md">
+                        {/* PREDICCIÓN INTELIGENTE DE QUIEBRE DE STOCK */}
+                        <div className="card card-pad" style={{ background: '#FFFFFF' }}>
+                            <div className="row gap-sm" style={{ marginBottom: 10, color: 'var(--color-primary-dark)' }}>
+                                <span style={{ fontSize: 18 }}>🤖</span>
+                                <h3 style={{ fontSize: 14.5, fontWeight: 700 }}>Predicción de Quiebre de Stock (Jarvis)</h3>
+                            </div>
+                            <p className="text-xs muted" style={{ marginBottom: 10 }}>Basado en el consumo diario de los últimos 30 días</p>
+                            {predicciones.filter(p => p.dias_restantes !== null && p.dias_restantes <= 10).length === 0 ? (
+                                <p className="text-sm muted">✅ Todos los productos tienen rotación con stock suficiente para más de 10 días.</p>
+                            ) : (
+                                <div className="stack gap-xs">
+                                    {predicciones.filter(p => p.dias_restantes !== null && p.dias_restantes <= 10).slice(0, 4).map(p => (
+                                        <div key={p.id} className="spread text-sm" style={{ padding: '6px 8px', background: '#FEF3C7', borderRadius: 6, border: '1px solid #FDE68A' }}>
+                                            <span><strong>{p.nombre}</strong> ({p.stock_actual} {p.unidad})</span>
+                                            <span className="mono badge badge-warning" style={{ fontWeight: 700 }}>
+                                                ~{p.dias_restantes} días
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ACCIONES EJECUTIVAS RÁPIDAS */}
+                        <div className="card card-pad" style={{ background: '#FFFFFF' }}>
+                            <h3 style={{ fontSize: 14.5, marginBottom: 10 }}>Atajos Rápidos</h3>
+                            <div className="stack gap-xs">
+                                <Link to="/conciliacion" className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }}>
+                                    🏦 Validar Transferencias y Conciliación Bancaria
+                                </Link>
+                                <Link to="/reportes-diarios" className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }}>
+                                    📊 Ver Reporte Ejecutivo 8:00 AM
+                                </Link>
+                                <Link to="/catalogo-flyers" className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }}>
+                                    🎨 Generar Catálogo y Flyers de Promoción
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                /* VISTA OPERATIVA: DEPÓSITO, PICKING FEFO Y LOTES POR VENCER */
+                <div className="dashboard-main-grid">
+                    <div className="card card-pad" style={{ background: '#FFFFFF' }}>
+                        <div className="row gap-sm" style={{ marginBottom: 14, color: 'var(--color-danger)' }}>
                             <IconAlerta />
-                            <h3 style={{ fontSize: 14.5 }}>Stock bajo mínimo</h3>
+                            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Stock Bajo Mínimo (Reposición Urgente)</h3>
                         </div>
                         {resumen.productos_bajo_stock.length === 0 ? (
-                            <p className="text-sm muted">Todo el stock está en niveles normales.</p>
+                            <p className="text-sm muted">Todo el stock está en niveles normales en depósito.</p>
                         ) : (
-                            <div className="stack gap-sm">
-                                {resumen.productos_bajo_stock.map(p => (
-                                    <div key={p.id} className="spread text-sm">
-                                        <span>{p.nombre}</span>
-                                        <span className="mono badge badge-danger">{p.stock_actual}/{p.stock_minimo} {p.unidad_medida}</span>
-                                    </div>
-                                ))}
+                            <div className="table-wrap">
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th className="text-right">Stock Actual</th>
+                                            <th className="text-right">Mínimo</th>
+                                            <th className="text-right">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {resumen.productos_bajo_stock.map(p => (
+                                            <tr key={p.id}>
+                                                <td><strong>{p.nombre}</strong></td>
+                                                <td className="text-right mono"><span className="badge badge-danger">{p.stock_actual} {p.unidad_medida}</span></td>
+                                                <td className="text-right mono">{p.stock_minimo} {p.unidad_medida}</td>
+                                                <td className="text-right">
+                                                    <Link to="/recepciones" className="btn btn-secondary btn-sm" style={{ fontSize: 11 }}>
+                                                        + Recibir mercadería
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </div>
 
-                    <div className="card card-pad">
-                        <div className="row gap-sm" style={{ marginBottom: 12, color: 'var(--color-warning)' }}>
-                            <IconReloj />
-                            <h3 style={{ fontSize: 14.5 }}>Lotes por vencer (30 días)</h3>
-                        </div>
-                        {resumen.lotes_por_vencer.length === 0 ? (
-                            <p className="text-sm muted">No hay lotes próximos a vencer.</p>
-                        ) : (
-                            <div className="stack gap-sm">
-                                {resumen.lotes_por_vencer.map(l => (
-                                    <div key={l.id} className="spread text-sm">
-                                        <span>{l.producto_nombre} {l.numero_lote ? `· ${l.numero_lote}` : ''}</span>
-                                        <span className="mono badge badge-warning">{l.fecha_vencimiento}</span>
-                                    </div>
-                                ))}
+                    <div className="stack gap-md">
+                        {/* LOTES POR VENCER (FEFO) */}
+                        <div className="card card-pad" style={{ background: '#FFFFFF' }}>
+                            <div className="row gap-sm" style={{ marginBottom: 12, color: 'var(--color-warning)' }}>
+                                <IconReloj />
+                                <h3 style={{ fontSize: 14.5, fontWeight: 700 }}>Control FEFO — Lotes Próximos a Vencer</h3>
                             </div>
-                        )}
+                            {resumen.lotes_por_vencer.length === 0 ? (
+                                <p className="text-sm muted">No hay lotes próximos a vencer en los siguientes 30 días.</p>
+                            ) : (
+                                <div className="stack gap-sm">
+                                    {resumen.lotes_por_vencer.map(l => (
+                                        <div key={l.id} className="spread text-sm" style={{ padding: '6px 10px', background: '#FFFBEB', borderRadius: 6, border: '1px solid #FDE68A' }}>
+                                            <div>
+                                                <div><strong>{l.producto_nombre}</strong></div>
+                                                <div className="text-xs muted mono">Lote: {l.numero_lote || 'L-GENERAL'} ({l.cantidad_actual} {l.unidad_medida})</div>
+                                            </div>
+                                            <span className="mono badge badge-warning">
+                                                Vto: {l.fecha_vencimiento?.slice(0, 10)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ACCIONES DE DEPÓSITO */}
+                        <div className="card card-pad" style={{ background: '#FFFFFF' }}>
+                            <h3 style={{ fontSize: 14.5, marginBottom: 10 }}>Acciones de Depósito</h3>
+                            <div className="stack gap-xs">
+                                <Link to="/recepciones" className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }}>
+                                    <IconRecepcion /> Registrar Recepción de Mercadería
+                                </Link>
+                                <Link to="/produccion" className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }}>
+                                    🥣 Armado y Fraccionamiento de Mixes
+                                </Link>
+                                <Link to="/remitos" className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }}>
+                                    🚚 Imprimir Hojas de Ruta y Picking
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
 
 function StatCard({ label, value, sub, accent }) {
     return (
-        <div className="card card-pad">
+        <div className="card card-pad" style={{ background: '#FFFFFF' }}>
             <p className="text-sm muted">{label}</p>
-            <p className="mono" style={{ fontSize: 24, fontWeight: 600, margin: '6px 0 4px' }}>{value}</p>
+            <p className="mono" style={{ fontSize: 24, fontWeight: 600, margin: '6px 0 4px', color: 'var(--color-text)' }}>{value}</p>
             <p className={`text-sm badge badge-${accent}`}>{sub}</p>
         </div>
     );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
+import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconPlus, IconBuscar, IconEditar } from '../components/Icons';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
@@ -197,7 +198,7 @@ export default function Productos() {
 
             <div className="card">
                 <div className="spread" style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: 12 }}>
-                    <div className="row gap-sm" style={{ maxWidth: 360, flex: 1 }}>
+                    <div className="row gap-sm" style={{ maxWidth: 420, flex: 1, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: '4px 10px' }}>
                         <IconBuscar style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
                         <input
                             placeholder="Buscar por nombre o código…"
@@ -205,6 +206,7 @@ export default function Productos() {
                             onChange={e => setQ(e.target.value)}
                             style={{ border: 'none', outline: 'none', width: '100%', fontSize: 14, background: 'transparent' }}
                         />
+                        <VoiceSearchButton onResult={texto => setQ(texto)} placeholder="Hablar para buscar productos..." />
                     </div>
                     <div className="row gap-sm">
                         <select
@@ -233,8 +235,9 @@ export default function Productos() {
                                 <th>Categoría</th>
                                 <th className="text-right">Stock disp.</th>
                                 <th className="text-right">Precio 1 kg</th>
-                                <th className="text-right">Escalas mayoristas</th>
+                                <th className="text-right">Escalas mayoristas (5/10/25/30k)</th>
                                 <th className="text-right">Costo estimado</th>
+                                <th className="text-right">Margen / Rentab.</th>
                                 <th className="text-right">Acciones</th>
                             </tr>
                         </thead>
@@ -242,6 +245,9 @@ export default function Productos() {
                             {productos.map(p => {
                                 const bajoStock = Number(p.stock_actual) <= Number(p.stock_minimo);
                                 const isVerPrecios = verPreciosId === p.id;
+                                const costo = Number(p.precio_compra) || 0;
+                                const venta = Number(p.precio_venta) || 0;
+                                const margen = costo > 0 ? (((venta - costo) / costo) * 100).toFixed(1) : null;
 
                                 return (
                                     <tr key={p.id}>
@@ -280,18 +286,28 @@ export default function Productos() {
                                                 onClick={() => setVerPreciosId(isVerPrecios ? null : p.id)}
                                                 style={{ fontSize: 11.5 }}
                                             >
-                                                {isVerPrecios ? 'Ocultar' : 'Ver escalas (5/10/25k)'}
+                                                {isVerPrecios ? 'Ocultar' : 'Ver escalas (5/10/25/30k)'}
                                             </button>
                                             {isVerPrecios && (
                                                 <div style={{ fontSize: 11, textAlign: 'right', marginTop: 4, lineHeight: 1.5 }} className="mono">
                                                     <div>5kg: <strong>{fmtMoney(p.precio_5kg || p.precio_venta)}</strong></div>
                                                     <div>10kg: <strong>{fmtMoney(p.precio_10kg || p.precio_5kg)}</strong></div>
                                                     <div>25kg: <strong>{fmtMoney(p.precio_25kg || p.precio_10kg)}</strong></div>
+                                                    <div>30kg: <strong>{fmtMoney(p.precio_30kg || p.precio_25kg)}</strong></div>
                                                 </div>
                                             )}
                                         </td>
                                         <td className="text-right mono muted text-sm">
                                             {fmtMoney(p.precio_compra)}
+                                        </td>
+                                        <td className="text-right">
+                                            {margen !== null ? (
+                                                <span className={`mono badge ${Number(margen) >= 35 ? 'badge-success' : (Number(margen) > 15 ? 'badge-warning' : 'badge-danger')}`} style={{ fontSize: 11.5 }}>
+                                                    +{margen}%
+                                                </span>
+                                            ) : (
+                                                <span className="muted text-xs">—</span>
+                                            )}
                                         </td>
                                         <td className="text-right">
                                             <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>

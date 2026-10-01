@@ -15,6 +15,7 @@ import Produccion from './pages/Produccion';
 import SincronizacionSheets from './pages/SincronizacionSheets';
 import ConciliacionBancaria from './pages/ConciliacionBancaria';
 import ReportesDiarios from './pages/ReportesDiarios';
+import CatalogoFlyers from './pages/CatalogoFlyers';
 
 function RutaPrivada({ children }) {
     const { usuario } = useAuth();
@@ -39,6 +40,7 @@ export default function App() {
                         <Route index element={<Dashboard />} />
                         <Route path="remitos" element={<Remitos />} />
                         <Route path="pedidos-web" element={<PedidosWeb />} />
+                        <Route path="catalogo-flyers" element={<CatalogoFlyers />} />
                         <Route path="recepciones" element={<Recepciones />} />
                         <Route path="produccion" element={<Produccion />} />
                         <Route path="productos" element={<Productos />} />

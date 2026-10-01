@@ -130,23 +130,23 @@ export default function ReportesDiarios() {
             )}
 
             {/* BARRA DE ESTADO DE PROGRAMACIÓN */}
-            <div className="card" style={{ padding: '14px 18px', marginBottom: 20, background: '#161B26', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div className="card" style={{ padding: '14px 18px', marginBottom: 20, background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ color: 'var(--color-primary, #C9A227)' }}>
+                    <div style={{ color: 'var(--color-primary-dark)' }}>
                         <IconReloj style={{ width: 22, height: 22 }} />
                     </div>
                     <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>
                             Programación Diaria: Todos los días a las 08:00 AM (Hora Argentina)
                         </div>
-                        <div style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                        <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>
                             {config.ultimo_reporte_enviado ? `Último reporte automático emitido: ${config.ultimo_reporte_enviado}` : 'Aún no se ha registrado envío automático hoy.'}
                         </div>
                     </div>
                 </div>
 
                 <div className="row gap-xs" style={{ alignItems: 'center' }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1' }}>Fecha de reporte:</label>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)' }}>Fecha de reporte:</label>
                     <input
                         type="date"
                         className="form-control"
@@ -155,32 +155,32 @@ export default function ReportesDiarios() {
                             setFechaSeleccionada(e.target.value);
                             cargarPreview(e.target.value);
                         }}
-                        style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6 }}
+                        style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
                     />
                 </div>
             </div>
 
             <div className="grid-2 gap-md" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
                 {/* VISTA PREVIA FORMATO WHATSAPP / MÓVIL */}
-                <div className="card" style={{ padding: 20 }}>
-                    <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#fff' }}>
-                        Vista Previa del Mensaje Matutino
+                <div className="card" style={{ padding: 20, background: '#FFFFFF' }}>
+                    <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: 'var(--color-text)' }}>
+                        Vista Previa del Mensaje Matutino (WhatsApp)
                     </h2>
 
                     {cargando ? (
-                        <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Generando balance...</div>
+                        <div style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)' }}>Generando balance...</div>
                     ) : (
                         <div style={{
-                            background: '#0d1418',
-                            border: '1px solid #233138',
+                            background: '#EFEAE2',
+                            border: '1px solid #D1D7DB',
                             borderRadius: 12,
                             padding: 18,
                             fontFamily: 'system-ui, -apple-system, sans-serif',
                             whiteSpace: 'pre-wrap',
                             lineHeight: 1.5,
-                            color: '#e9edef',
+                            color: '#111B21',
                             fontSize: 13,
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                             maxHeight: 520,
                             overflowY: 'auto'
                         }}>
@@ -190,13 +190,13 @@ export default function ReportesDiarios() {
                 </div>
 
                 {/* CONFIGURACIÓN DE CANALES EXTERNOS */}
-                <div className="card" style={{ padding: 20 }}>
-                    <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: '#fff' }}>
+                <div className="card" style={{ padding: 20, background: '#FFFFFF' }}>
+                    <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--color-text)' }}>
                         Canales de Envío Externo (WhatsApp / Telegram)
                     </h2>
                     <form onSubmit={handleGuardarConfig}>
                         <div className="form-group" style={{ marginBottom: 14 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
                                 Webhook WhatsApp / Integrador (Make, Zapier, Twilio)
                             </label>
                             <input
@@ -205,15 +205,15 @@ export default function ReportesDiarios() {
                                 value={config.reporte_webhook_url}
                                 onChange={(e) => setConfig({ ...config, reporte_webhook_url: e.target.value })}
                                 placeholder="https://api.gateway-whatsapp.com/v1/messages"
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6 }}
+                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
                             />
-                            <div style={{ fontSize: 11, color: '#8e9aa8', marginTop: 4 }}>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
                                 Recibe un POST con el texto y la estructura de ventas para enviarlo por WhatsApp.
                             </div>
                         </div>
 
                         <div className="form-group" style={{ marginBottom: 14 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
                                 Telegram Bot Token
                             </label>
                             <input
@@ -222,12 +222,12 @@ export default function ReportesDiarios() {
                                 value={config.telegram_bot_token}
                                 onChange={(e) => setConfig({ ...config, telegram_bot_token: e.target.value })}
                                 placeholder="123456789:ABCdefGhIJKlmNoPQRstuvWXyz"
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6 }}
+                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
                             />
                         </div>
 
                         <div className="form-group" style={{ marginBottom: 18 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
                                 Telegram Chat ID (Grupo gerencial o usuario)
                             </label>
                             <input
@@ -236,7 +236,7 @@ export default function ReportesDiarios() {
                                 value={config.telegram_chat_id}
                                 onChange={(e) => setConfig({ ...config, telegram_chat_id: e.target.value })}
                                 placeholder="-1001234567890 o 98765432"
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6 }}
+                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
                             />
                         </div>
 

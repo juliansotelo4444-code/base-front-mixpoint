@@ -144,22 +144,22 @@ export default function ConciliacionBancaria() {
 
             {/* TARJETAS KPI */}
             <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 20 }}>
-                <div className="card stat-card" style={{ padding: 18, borderLeft: '4px solid #f59e0b' }}>
-                    <div className="stat-label" style={{ fontSize: 12, color: '#94a3b8', textTransform: 'uppercase' }}>Pendiente por Conciliar</div>
-                    <div className="stat-value" style={{ fontSize: 24, fontWeight: 700, color: '#f59e0b', marginTop: 4 }}>
+                <div className="card stat-card" style={{ padding: 18, borderLeft: '4px solid #f59e0b', background: '#FFFFFF' }}>
+                    <div className="stat-label" style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Pendiente por Conciliar</div>
+                    <div className="stat-value mono" style={{ fontSize: 24, fontWeight: 700, color: '#b45309', marginTop: 4 }}>
                         {fmtDinero(metricas.monto_pendiente)}
                     </div>
-                    <div className="stat-sub" style={{ fontSize: 12, color: '#64748b' }}>
+                    <div className="stat-sub" style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
                         {metricas.cantidad_pendientes} transferencias recibidas
                     </div>
                 </div>
 
-                <div className="card stat-card" style={{ padding: 18, borderLeft: '4px solid #10b981' }}>
-                    <div className="stat-label" style={{ fontSize: 12, color: '#94a3b8', textTransform: 'uppercase' }}>Conciliado este Mes</div>
-                    <div className="stat-value" style={{ fontSize: 24, fontWeight: 700, color: '#10b981', marginTop: 4 }}>
+                <div className="card stat-card" style={{ padding: 18, borderLeft: '4px solid #10b981', background: '#FFFFFF' }}>
+                    <div className="stat-label" style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Conciliado este Mes</div>
+                    <div className="stat-value mono" style={{ fontSize: 24, fontWeight: 700, color: '#047857', marginTop: 4 }}>
                         {fmtDinero(metricas.monto_conciliado_mes)}
                     </div>
-                    <div className="stat-sub" style={{ fontSize: 12, color: '#64748b' }}>
+                    <div className="stat-sub" style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
                         {metricas.cantidad_conciliados_mes} cobros imputados a saldo
                     </div>
                 </div>
@@ -167,19 +167,19 @@ export default function ConciliacionBancaria() {
 
             {/* MODAL / PANEL DE IMPORTACIÓN DE EXTRACTOS */}
             {mostrarImportador && (
-                <div className="card" style={{ padding: 20, marginBottom: 24, background: '#171B26', border: '1px solid rgba(201, 162, 39, 0.3)' }}>
-                    <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#fff' }}>
+                <div className="card" style={{ padding: 20, marginBottom: 24, background: '#FFFFFF', border: '1px solid var(--color-border)' }}>
+                    <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: 'var(--color-text)' }}>
                         Importar Extracto Bancario o Mercado Pago
                     </h2>
                     <form onSubmit={handleImportar}>
                         <div className="row gap-md" style={{ marginBottom: 12 }}>
                             <div style={{ minWidth: 200 }}>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Cuenta / Entidad</label>
+                                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>Cuenta / Entidad</label>
                                 <select
                                     className="form-control"
                                     value={cuentaOrigen}
                                     onChange={(e) => setCuentaOrigen(e.target.value)}
-                                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6 }}
+                                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
                                 >
                                     <option value="mercadopago">Mercado Pago</option>
                                     <option value="banco_galicia">Banco Galicia</option>
@@ -193,7 +193,7 @@ export default function ConciliacionBancaria() {
                         </div>
 
                         <div style={{ marginBottom: 14 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
                                 Pegar líneas del extracto (CSV o texto copiado de la tabla bancaria)
                             </label>
                             <textarea
@@ -202,9 +202,9 @@ export default function ConciliacionBancaria() {
                                 value={contenidoTexto}
                                 onChange={(e) => setContenidoTexto(e.target.value)}
                                 placeholder="Fecha,Concepto,Monto,Comprobante,Titular..."
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: 6, fontFamily: 'monospace', fontSize: 12 }}
+                                style={{ width: '100%', padding: '10px 12px', borderRadius: 6, fontFamily: 'monospace', fontSize: 12, border: '1px solid var(--color-border-strong)', background: '#FAF9F4' }}
                             />
-                            <div style={{ fontSize: 11.5, color: '#8e9aa8', marginTop: 4 }}>
+                            <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 4 }}>
                                 Podés copiar y pegar directamente las filas desde tu home banking o el archivo CSV descargado.
                             </div>
                         </div>
@@ -236,7 +236,7 @@ export default function ConciliacionBancaria() {
             )}
 
             {/* PESTAÑAS DE FILTRO */}
-            <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--color-border)', marginBottom: 16 }}>
                 {[
                     { id: 'pendiente', label: `Pendientes (${metricas.cantidad_pendientes})` },
                     { id: 'conciliado', label: 'Conciliados' },
@@ -251,8 +251,8 @@ export default function ConciliacionBancaria() {
                             background: 'none',
                             border: 'none',
                             padding: '10px 16px',
-                            color: estadoFiltro === tab.id ? 'var(--color-primary, #C9A227)' : '#94a3b8',
-                            borderBottom: estadoFiltro === tab.id ? '2px solid var(--color-primary, #C9A227)' : '2px solid transparent',
+                            color: estadoFiltro === tab.id ? 'var(--color-primary-dark)' : 'var(--color-text-muted)',
+                            borderBottom: estadoFiltro === tab.id ? '2px solid var(--color-primary)' : '2px solid transparent',
                             fontWeight: estadoFiltro === tab.id ? 700 : 500,
                             cursor: 'pointer',
                             fontSize: 13
@@ -264,23 +264,23 @@ export default function ConciliacionBancaria() {
             </div>
 
             {/* TABLA DE MOVIMIENTOS */}
-            <div className="card" style={{ padding: 16 }}>
+            <div className="card" style={{ padding: 16, background: '#FFFFFF' }}>
                 {movimientos.length === 0 ? (
-                    <div style={{ padding: '36px 16px', textAlign: 'center', color: '#8e9aa8', fontSize: 13.5 }}>
+                    <div style={{ padding: '36px 16px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13.5 }}>
                         No hay transferencias en este estado.
                     </div>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table className="table" style={{ width: '100%', fontSize: 12.5 }}>
+                    <div className="table-wrap">
+                        <table className="data-table" style={{ width: '100%', fontSize: 12.5 }}>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', textAlign: 'left' }}>
-                                    <th style={{ padding: '10px' }}>Fecha</th>
-                                    <th style={{ padding: '10px' }}>Origen</th>
-                                    <th style={{ padding: '10px' }}>Detalle / Titular</th>
-                                    <th style={{ padding: '10px', textAlign: 'right' }}>Monto</th>
-                                    <th style={{ padding: '10px' }}>Cruce Sugerido (Cliente)</th>
-                                    <th style={{ padding: '10px' }}>Estado</th>
-                                    <th style={{ padding: '10px', textAlign: 'center' }}>Acciones</th>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Origen</th>
+                                    <th>Detalle / Titular</th>
+                                    <th className="text-right">Monto</th>
+                                    <th>Cruce Sugerido (Cliente)</th>
+                                    <th>Estado</th>
+                                    <th style={{ textAlign: 'center' }}>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -289,33 +289,33 @@ export default function ConciliacionBancaria() {
                                     const tieneSugerencia = Boolean(m.cliente_id);
 
                                     return (
-                                        <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                            <td style={{ padding: '10px', whiteSpace: 'nowrap', color: '#94a3b8' }}>
+                                        <tr key={m.id}>
+                                            <td className="mono text-xs" style={{ whiteSpace: 'nowrap' }}>
                                                 {m.fecha_movimiento}
                                             </td>
-                                            <td style={{ padding: '10px' }}>
+                                            <td>
                                                 <span style={{
                                                     padding: '2px 8px',
                                                     borderRadius: 10,
                                                     fontSize: 10.5,
                                                     fontWeight: 600,
-                                                    background: m.cuenta_origen.includes('mercado') ? 'rgba(59, 130, 246, 0.15)' : 'rgba(201, 162, 39, 0.15)',
-                                                    color: m.cuenta_origen.includes('mercado') ? '#60a5fa' : '#E6C86E',
+                                                    background: m.cuenta_origen.includes('mercado') ? '#DBEAFE' : '#FEF3C7',
+                                                    color: m.cuenta_origen.includes('mercado') ? '#1E40AF' : '#92400E',
                                                     textTransform: 'uppercase'
                                                 }}>
                                                     {m.cuenta_origen.replace('_', ' ')}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '10px' }}>
-                                                <div style={{ fontWeight: 600, color: '#fff' }}>{m.titular || m.descripcion || 'Transferencia'}</div>
+                                            <td>
+                                                <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{m.titular || m.descripcion || 'Transferencia'}</div>
                                                 {m.comprobante_nro && (
-                                                    <div style={{ fontSize: 11, color: '#64748b' }}>Comp: {m.comprobante_nro}</div>
+                                                    <div className="muted mono" style={{ fontSize: 11 }}>Comp: {m.comprobante_nro}</div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: '#10b981', fontSize: 13.5 }}>
+                                            <td className="text-right mono" style={{ fontWeight: 700, color: '#047857', fontSize: 13.5 }}>
                                                 {fmtDinero(m.monto)}
                                             </td>
-                                            <td style={{ padding: '10px' }}>
+                                            <td>
                                                 {esPendiente ? (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                                         <select
@@ -325,7 +325,7 @@ export default function ConciliacionBancaria() {
                                                                 ...clientesSeleccionados,
                                                                 [m.id]: parseInt(e.target.value) || null
                                                             })}
-                                                            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 4, maxWidth: 220 }}
+                                                            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 4, maxWidth: 220, border: '1px solid var(--color-border-strong)' }}
                                                         >
                                                             <option value="">-- Seleccionar cliente --</option>
                                                             {clientes.map(c => (
@@ -335,21 +335,21 @@ export default function ConciliacionBancaria() {
                                                             ))}
                                                         </select>
                                                         {m.observaciones && (
-                                                            <div style={{ fontSize: 10.5, color: '#f59e0b' }}>
+                                                            <div style={{ fontSize: 10.5, color: '#B45309' }}>
                                                                 {m.observaciones}
                                                             </div>
                                                         )}
                                                     </div>
                                                 ) : (
                                                     <div>
-                                                        <div style={{ fontWeight: 600, color: '#cbd5e1' }}>{m.cliente_nombre || 'Cliente no asignado'}</div>
+                                                        <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{m.cliente_nombre || 'Cliente no asignado'}</div>
                                                         {m.remito_numero && (
-                                                            <div style={{ fontSize: 11, color: '#64748b' }}>Remito: {m.remito_numero}</div>
+                                                            <div className="muted mono" style={{ fontSize: 11 }}>Remito: {m.remito_numero}</div>
                                                         )}
                                                     </div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '10px' }}>
+                                            <td>
                                                 <span style={{
                                                     padding: '2px 8px',
                                                     borderRadius: 12,

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
 import RemitoImprimible from '../components/RemitoImprimible';
+import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconBuscar } from '../components/Icons';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
@@ -124,7 +125,7 @@ export default function PedidosWeb() {
 
             <div className="card">
                 <div className="spread" style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: 12 }}>
-                    <div className="row gap-sm" style={{ maxWidth: 360, flex: 1 }}>
+                    <div className="row gap-sm" style={{ maxWidth: 420, flex: 1, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: '4px 10px' }}>
                         <IconBuscar style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
                         <input
                             placeholder="Buscar por cliente, teléfono, dirección o producto…"
@@ -132,6 +133,7 @@ export default function PedidosWeb() {
                             onChange={e => setQ(e.target.value)}
                             style={{ border: 'none', outline: 'none', width: '100%', fontSize: 14, background: 'transparent' }}
                         />
+                        <VoiceSearchButton onResult={texto => setQ(texto)} placeholder="Hablar para buscar pedidos web..." />
                     </div>
                     <div className="row gap-sm">
                         <select
@@ -181,18 +183,24 @@ export default function PedidosWeb() {
                                             </td>
                                             <td>
                                                 <div style={{ fontWeight: 600 }}>{p.nombre}</div>
-                                                {p.telefono && (
-                                                    <a
-                                                        href={`https://wa.me/549${String(p.telefono).replace(/\D/g, '')}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="mono text-xs"
-                                                        style={{ color: 'var(--color-primary-dark)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 2 }}
-                                                        title="Enviar WhatsApp al cliente"
-                                                    >
-                                                        📲 {p.telefono}
-                                                    </a>
-                                                )}
+                                                {p.telefono && (() => {
+                                                    const telLimpio = String(p.telefono).replace(/\D/g, '');
+                                                    const telWa = telLimpio.startsWith('549') ? telLimpio : (telLimpio.length >= 10 ? `549${telLimpio}` : '5491167873243');
+                                                    const waMsg = `¡Hola ${p.nombre}! Recibimos tu pedido web #${p.numero} en Mix Point.\nTotal: ${fmtMoney(p.total)}\nDatos para transferencia:\nAlias: *mixpoint2026*\nLínea oficial WhatsApp: 1167873243\n¡Muchas gracias!`;
+
+                                                    return (
+                                                        <a
+                                                            href={`https://wa.me/${telWa}?text=${encodeURIComponent(waMsg)}`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="mono text-xs"
+                                                            style={{ color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '2px 6px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
+                                                            title="Enviar confirmación y datos de pago por WhatsApp (1167873243)"
+                                                        >
+                                                            📲 WhatsApp
+                                                        </a>
+                                                    );
+                                                })()}
                                             </td>
                                             <td>
                                                 <div>{p.direccion || '—'}</div>
