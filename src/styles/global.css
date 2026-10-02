@@ -1336,3 +1336,174 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
         right: -50px !important;
     }
 }
+
+/* =========================================================
+   ANIMACIONES, MICROINTERACCIONES Y PREFERENCIAS UI/UX
+   ========================================================= */
+
+/* Transición suave entre páginas */
+.page-enter {
+    animation: pageFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pageFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Microinteracciones doradas */
+.card-hover-gold {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.card-hover-gold:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(201, 162, 39, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+    border-color: rgba(201, 162, 39, 0.4) !important;
+}
+
+.table-hover-gold tbody tr {
+    transition: background-color 0.15s ease;
+}
+.table-hover-gold tbody tr:hover {
+    background-color: rgba(201, 162, 39, 0.06) !important;
+}
+
+/* Densidad de tablas configurable */
+.density-compact table th,
+.density-compact table td {
+    padding: 5px 8px !important;
+    font-size: 12.5px !important;
+}
+
+.density-comfortable table th,
+.density-comfortable table td {
+    padding: 10px 14px !important;
+    font-size: 13.5px !important;
+}
+
+.density-spacious table th,
+.density-spacious table td {
+    padding: 15px 20px !important;
+    font-size: 14.5px !important;
+}
+
+/* Skeleton Shimmer Loader */
+.skeleton-box {
+    display: inline-block;
+    height: 1em;
+    position: relative;
+    overflow: hidden;
+    background-color: #E6E2D4;
+    border-radius: var(--radius-sm);
+}
+.skeleton-box::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.4) 25%,
+        rgba(255, 255, 255, 0.8) 60%,
+        rgba(255, 255, 255, 0)
+    );
+    animation: skeletonShimmer 1.6s infinite;
+    content: '';
+}
+@keyframes skeletonShimmer {
+    100% { transform: translateX(100%); }
+}
+
+/* Modo Táctico Industrial (Tactical Operations HUD) */
+.tactical-theme {
+    --color-bg: #0A0D14 !important;
+    --color-surface: #101522 !important;
+    --color-surface-sunken: #07090E !important;
+    --color-border: #1E293B !important;
+    --color-border-strong: #334155 !important;
+    --color-text: #E2E8F0 !important;
+    --color-text-muted: #94A3B8 !important;
+    --color-primary: #FF9800 !important;
+    --color-primary-tint: rgba(255, 152, 0, 0.15) !important;
+    --color-accent: #00E676 !important;
+    background-color: #0A0D14 !important;
+    color: #E2E8F0 !important;
+}
+
+.tactical-grid-bg {
+    background-color: #0A0D14;
+    background-image: 
+        linear-gradient(rgba(255, 152, 0, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 152, 0, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+.tactical-radar-scan {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 152, 0, 0.5);
+    background: radial-gradient(circle, rgba(255, 152, 0, 0.12) 0%, rgba(10, 13, 20, 0.85) 70%);
+    overflow: hidden;
+}
+.tactical-radar-scan::before {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 152, 0, 0.3);
+}
+.tactical-radar-scan::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70px;
+    height: 70px;
+    transform-origin: 0 0;
+    background: conic-gradient(from 0deg, rgba(255, 152, 0, 0.45) 0deg, transparent 60deg);
+    animation: radarSweep 3s linear infinite;
+}
+@keyframes radarSweep {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.tactical-hud-card {
+    border: 1px solid rgba(255, 152, 0, 0.28) !important;
+    background: rgba(16, 21, 34, 0.88) !important;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 16px rgba(255, 152, 0, 0.06);
+    position: relative;
+    border-radius: 6px;
+}
+.tactical-hud-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 6px;
+    border-top: 2px solid #FF9800;
+    border-left: 2px solid #FF9800;
+}
+.tactical-hud-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 6px;
+    height: 6px;
+    border-bottom: 2px solid #FF9800;
+    border-right: 2px solid #FF9800;
+}

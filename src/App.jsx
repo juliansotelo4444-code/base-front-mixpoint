@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PreferencesProvider } from './context/PreferencesContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -33,28 +34,30 @@ function RutaAdmin({ children }) {
 export default function App() {
     return (
         <AuthProvider>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/" element={<RutaPrivada><Layout /></RutaPrivada>}>
-                        <Route index element={<Dashboard />} />
-                        <Route path="remitos" element={<Remitos />} />
-                        <Route path="pedidos-web" element={<PedidosWeb />} />
-                        <Route path="catalogo-flyers" element={<CatalogoFlyers />} />
-                        <Route path="recepciones" element={<Recepciones />} />
-                        <Route path="produccion" element={<Produccion />} />
-                        <Route path="productos" element={<Productos />} />
-                        <Route path="clientes" element={<Clientes />} />
-                        <Route path="proveedores" element={<Proveedores />} />
-                        <Route path="gastos" element={<Gastos />} />
-                        <Route path="sincronizacion-sheets" element={<SincronizacionSheets />} />
-                        <Route path="conciliacion" element={<ConciliacionBancaria />} />
-                        <Route path="reportes-diarios" element={<ReportesDiarios />} />
-                        <Route path="usuarios" element={<RutaAdmin><Usuarios /></RutaAdmin>} />
-                    </Route>
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-            </BrowserRouter>
+            <PreferencesProvider>
+                <BrowserRouter>
+                    <Routes>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/" element={<RutaPrivada><Layout /></RutaPrivada>}>
+                            <Route index element={<Dashboard />} />
+                            <Route path="remitos" element={<Remitos />} />
+                            <Route path="pedidos-web" element={<PedidosWeb />} />
+                            <Route path="catalogo-flyers" element={<CatalogoFlyers />} />
+                            <Route path="recepciones" element={<Recepciones />} />
+                            <Route path="produccion" element={<Produccion />} />
+                            <Route path="productos" element={<Productos />} />
+                            <Route path="clientes" element={<Clientes />} />
+                            <Route path="proveedores" element={<Proveedores />} />
+                            <Route path="gastos" element={<Gastos />} />
+                            <Route path="sincronizacion-sheets" element={<SincronizacionSheets />} />
+                            <Route path="conciliacion" element={<ConciliacionBancaria />} />
+                            <Route path="reportes-diarios" element={<ReportesDiarios />} />
+                            <Route path="usuarios" element={<RutaAdmin><Usuarios /></RutaAdmin>} />
+                        </Route>
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </BrowserRouter>
+            </PreferencesProvider>
         </AuthProvider>
     );
 }

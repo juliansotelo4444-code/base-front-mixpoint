@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePreferences } from '../context/PreferencesContext';
 import {
     IconDashboard, IconRemito, IconCarrito, IconRecepcion, IconProducto,
     IconClientes, IconProveedores, IconGastos, IconUsuarios, IconLogout,
@@ -9,6 +10,8 @@ import {
 import NotificacionesDropdown from './NotificacionesDropdown';
 import JarvisWidget from './JarvisWidget';
 import OfflineBanner from './OfflineBanner';
+import SyncStatusIndicator from './SyncStatusIndicator';
+import PreferenciasModal from './PreferenciasModal';
 
 const NAV_ITEMS = [
     { to: '/', label: 'Panel', icon: IconDashboard, end: true },
@@ -29,8 +32,12 @@ const NAV_ITEMS = [
 
 export default function Layout() {
     const { usuario, logout } = useAuth();
+    const { preferences } = usePreferences();
     const navigate = useNavigate();
+    const location = useLocation();
+
     const [menuAbierto, setMenuAbierto] = useState(false);
+    const [modalPrefsAbierto, setModalPrefsAbierto] = useState(false);
 
     function handleLogout() {
         logout();
@@ -47,9 +54,16 @@ export default function Layout() {
         month: 'short'
     }).format(new Date());
 
+    const densityClass = `density-${preferences?.tableDensity || 'comfortable'}`;
+    const hudClass = preferences?.hudMode === 'tactical' ? 'tactical-theme' : '';
+    const pinnedShortcuts = (preferences?.shortcuts || []).map(path =>
+        NAV_ITEMS.find(item => item.to === path)
+    ).filter(Boolean);
+
     return (
-        <div className="app-root-layout">
+        <div className={`app-root-layout ${hudClass}`}>
             <OfflineBanner />
+
             {/* BARRA SUPERIOR EXCLUSIVA PARA MÓVIL */}
             <header className="mobile-topbar no-print">
                 <div className="row gap-sm">
@@ -71,6 +85,22 @@ export default function Layout() {
                     </div>
                 </div>
                 <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                    <SyncStatusIndicator />
+                    <button
+                        type="button"
+                        onClick={() => setModalPrefsAbierto(true)}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-text-on-dark-muted)',
+                            cursor: 'pointer',
+                            fontSize: 16,
+                            padding: '4px 6px'
+                        }}
+                        title="Personalizar interfaz"
+                    >
+                        ⚙️
+                    </button>
                     <NotificacionesDropdown />
                     <div className="user-avatar-pill" title={usuario?.nombre || 'Usuario'}>
                         {(usuario?.nombre || 'U').charAt(0).toUpperCase()}
@@ -98,13 +128,63 @@ export default function Layout() {
                             <div className="sidebar-brand-sub">DISTRIBUIDORA MAYORISTA</div>
                         </div>
                     </div>
-                    {/* Botón cerrar visible sólo en móvil */}
                     <button className="sidebar-close-btn" onClick={cerrarMenu} aria-label="Cerrar menú">
                         <IconClose />
                     </button>
                 </div>
 
                 <nav className="sidebar-nav">
+                    {/* SECCIÓN ACCESOS RÁPIDOS FIJADOS POR USUARIO */}
+                    {pinnedShortcuts.length > 0 && (
+                        <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                            <div style={{
+                                fontSize: 10.5,
+                                fontWeight: 700,
+                                letterSpacing: '0.08em',
+                                color: 'var(--color-primary)',
+                                padding: '4px 14px',
+                                textTransform: 'uppercase',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}>
+                                <span>📌 Accesos Rápidos</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setModalPrefsAbierto(true)}
+                                    style={{ background: 'transparent', border: 'none', color: '#A9A79B', cursor: 'pointer', fontSize: 11 }}
+                                    title="Configurar accesos rápidos"
+                                >
+                                    Editar
+                                </button>
+                            </div>
+                            {pinnedShortcuts.map(({ to, label, icon: Icon, end }) => (
+                                <NavLink
+                                    key={`pin-${to}`}
+                                    to={to}
+                                    end={end}
+                                    onClick={cerrarMenu}
+                                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                                    style={{ paddingLeft: 16 }}
+                                >
+                                    <Icon />
+                                    <span>{label}</span>
+                                </NavLink>
+                            ))}
+                        </div>
+                    )}
+
+                    <div style={{
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        color: 'var(--color-text-on-dark-muted)',
+                        padding: '4px 14px 8px 14px',
+                        textTransform: 'uppercase'
+                    }}>
+                        Módulos Generales
+                    </div>
+
                     {NAV_ITEMS.filter(item => !item.adminOnly || usuario?.rol === 'admin').map(({ to, label, icon: Icon, end }) => (
                         <NavLink
                             key={to}
@@ -120,10 +200,24 @@ export default function Layout() {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <div style={{ fontSize: 12.5, fontWeight: 600 }}>{usuario?.nombre}</div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-on-dark-muted)', marginBottom: 10, textTransform: 'capitalize' }}>
-                        {usuario?.rol}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <div>
+                            <div style={{ fontSize: 12.5, fontWeight: 600 }}>{usuario?.nombre}</div>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-on-dark-muted)', textTransform: 'capitalize' }}>
+                                {usuario?.rol}
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setModalPrefsAbierto(true)}
+                            className="btn btn-ghost btn-xs"
+                            style={{ color: 'var(--color-text-on-dark-muted)', padding: '4px 8px', fontSize: 12 }}
+                            title="Personalización y preferencias"
+                        >
+                            ⚙️
+                        </button>
                     </div>
+
                     <button
                         onClick={handleLogout}
                         className="btn btn-ghost btn-sm"
@@ -135,30 +229,64 @@ export default function Layout() {
             </aside>
 
             {/* CONTENIDO PRINCIPAL */}
-            <main className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
+            <main className={`main-content ${densityClass}`} style={{ display: 'flex', flexDirection: 'column' }}>
                 {/* BARRA SUPERIOR PARA DESKTOP */}
                 <div className="desktop-topbar no-print" style={{
                     display: 'flex',
-                    justifyContent: 'flex-end',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     gap: 16,
                     padding: '8px 24px',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                     background: 'rgba(17, 20, 29, 0.6)'
                 }}>
-                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'capitalize' }}>
-                        📅 {fechaHoyFormato}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <SyncStatusIndicator />
+                        {preferences?.hudMode === 'tactical' && (
+                            <span style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: '#FF9800',
+                                letterSpacing: '0.08em',
+                                background: 'rgba(255, 152, 0, 0.12)',
+                                padding: '2px 8px',
+                                borderRadius: 4,
+                                border: '1px solid rgba(255, 152, 0, 0.3)'
+                            }}>
+                                ⚡ TACTICAL HUD
+                            </span>
+                        )}
                     </div>
-                    <NotificacionesDropdown />
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'capitalize' }}>
+                            📅 {fechaHoyFormato}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setModalPrefsAbierto(true)}
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: 'var(--color-text-on-dark-muted)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                            ⚙️ Preferencias
+                        </button>
+                        <NotificacionesDropdown />
+                    </div>
                 </div>
 
-                <div style={{ flex: 1 }}>
+                <div key={location.pathname} className="page-enter" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <Outlet />
                 </div>
             </main>
 
             {/* ASISTENTE INTELIGENTE CON VOZ "JARVIS" (OMNIPRESENTE) */}
             <JarvisWidget />
+
+            {/* MODAL DE PREFERENCIAS */}
+            <PreferenciasModal
+                isOpen={modalPrefsAbierto}
+                onClose={() => setModalPrefsAbierto(false)}
+            />
 
             {/* BARRA INFERIOR DE ACCESO RÁPIDO PARA CELULARES */}
             <nav className="mobile-bottom-bar no-print">
