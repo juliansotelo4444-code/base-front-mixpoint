@@ -75,6 +75,25 @@ export default function Remitos() {
     const [descuentoPorcentaje, setDescuentoPorcentaje] = useState(0);
     const [items, setItems] = useState([{ producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
 
+    // Formulario de Edición de Remito (Transaccional ACID)
+    const [remitoParaEditar, setRemitoParaEditar] = useState(null);
+    const [editItems, setEditItems] = useState([]);
+    const [editForm, setEditForm] = useState({
+        cliente_id: '',
+        fecha: '',
+        direccion_entrega: '',
+        transportista: '',
+        bultos: 1,
+        peso_kg: '',
+        valor_declarado: '',
+        observaciones: '',
+        descuento_porcentaje: 0,
+        permitir_sin_stock: true,
+        motivo_edicion: ''
+    });
+    const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+    const [errorEdicion, setErrorEdicion] = useState('');
+
     // Formulario Cliente Rápido al Vuelo
     const [nuevoCliente, setNuevoCliente] = useState({
         razon_social: '',
@@ -298,6 +317,99 @@ export default function Remitos() {
         }
     }
 
+    async function abrirEditarRemito(r) {
+        setErrorEdicion('');
+        try {
+            const { data } = await client.get(`/remitos/${r.id}`);
+            setRemitoParaEditar(data);
+            setEditForm({
+                cliente_id: String(data.cliente_id || ''),
+                fecha: data.fecha ? String(data.fecha).slice(0, 10) : getFechaHoyLocal(),
+                direccion_entrega: data.direccion_entrega || '',
+                transportista: data.transportista || '',
+                bultos: data.bultos || 1,
+                peso_kg: data.peso_kg !== null && data.peso_kg !== undefined ? String(data.peso_kg) : '',
+                valor_declarado: data.valor_declarado !== null && data.valor_declarado !== undefined ? String(data.valor_declarado) : '',
+                observaciones: data.observaciones || '',
+                descuento_porcentaje: data.descuento_porcentaje || 0,
+                permitir_sin_stock: true,
+                motivo_edicion: ''
+            });
+            if (data.items && data.items.length) {
+                setEditItems(data.items.map(it => ({
+                    producto_id: String(it.producto_id),
+                    cantidad: it.cantidad,
+                    precio_unitario: it.precio_unitario,
+                    unidad_medida: it.unidad_medida || 'kg'
+                })));
+            } else {
+                setEditItems([{ producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
+            }
+        } catch (err) {
+            alert('Error al cargar datos del remito para editar: ' + (err.response?.data?.error || err.message));
+        }
+    }
+
+    function agregarEditItem() {
+        setEditItems([...editItems, { producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
+    }
+
+    function quitarEditItem(i) {
+        if (editItems.length === 1) return;
+        setEditItems(editItems.filter((_, idx) => idx !== i));
+    }
+
+    function handleSelectProductoEdit(index, prodId, prod) {
+        const nuevos = [...editItems];
+        nuevos[index].producto_id = String(prodId);
+        nuevos[index].unidad_medida = prod?.unidad_medida || 'kg';
+        nuevos[index].precio_unitario = prod ? (prod.precio_mayorista || prod.precio_costo || 0) : '';
+        setEditItems(nuevos);
+    }
+
+    async function guardarEdicion(e) {
+        e.preventDefault();
+        if (!remitoParaEditar) return;
+        setErrorEdicion('');
+        setGuardandoEdicion(true);
+
+        try {
+            const payload = {
+                cliente_id: editForm.cliente_id ? Number(editForm.cliente_id) : remitoParaEditar.cliente_id,
+                fecha: editForm.fecha,
+                direccion_entrega: editForm.direccion_entrega,
+                transportista: editForm.transportista,
+                bultos: Number(editForm.bultos) || 1,
+                peso_kg: editForm.peso_kg !== '' ? Number(editForm.peso_kg) : undefined,
+                valor_declarado: editForm.valor_declarado !== '' ? Number(editForm.valor_declarado) : undefined,
+                observaciones: editForm.observaciones,
+                descuento_porcentaje: Number(editForm.descuento_porcentaje) || 0,
+                permitir_sin_stock: editForm.permitir_sin_stock,
+                motivo_edicion: editForm.motivo_edicion,
+                items: editItems.map(it => ({
+                    producto_id: Number(it.producto_id),
+                    cantidad: Number(it.cantidad) || 0,
+                    precio_unitario: Number(it.precio_unitario) || 0
+                })).filter(it => it.producto_id > 0 && it.cantidad > 0)
+            };
+
+            if (!payload.items.length) {
+                setErrorEdicion('Debe ingresar al menos un producto con cantidad válida.');
+                setGuardandoEdicion(false);
+                return;
+            }
+
+            const { data } = await client.put(`/remitos/${remitoParaEditar.id}`, payload);
+            setRemitoParaEditar(null);
+            await cargar();
+            setRemitoParaImprimir(data);
+        } catch (err) {
+            setErrorEdicion(err.response?.data?.error || err.message || 'Error guardando edición.');
+        } finally {
+            setGuardandoEdicion(false);
+        }
+    }
+
     return (
         <div className="stack gap-lg">
             <div className="spread page-header">
@@ -411,7 +523,26 @@ export default function Remitos() {
                                         <td style={{ fontWeight: 600, cursor: 'pointer' }} onClick={() => verDetalle(r)}>
                                             <div>{r.cliente_nombre}</div>
                                             {r.cliente_telefono && (
-                                                <div className="muted mono" style={{ fontSize: 11 }}>📞 {r.cliente_telefono}</div>
+                                                <div style={{ marginTop: 2 }}>
+                                                    <a
+                                                        href={buildWhatsAppLink(r)}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        style={{
+                                                            fontSize: 11,
+                                                            color: '#059669',
+                                                            textDecoration: 'none',
+                                                            fontWeight: 600,
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: 4
+                                                        }}
+                                                        title="Abrir chat de WhatsApp con el cliente"
+                                                    >
+                                                        💬 {r.cliente_telefono}
+                                                    </a>
+                                                </div>
                                             )}
                                         </td>
                                         <td className="mono">{formatearFecha(r.fecha)}</td>
@@ -456,7 +587,7 @@ export default function Remitos() {
                                         </td>
                                         <td className="text-right">
                                             <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
-                                                {/* Botón WhatsApp de 1 toque (Línea oficial 1167873243, sin saldo) */}
+                                                {/* Botón WhatsApp de 1 toque */}
                                                 <a
                                                     href={buildWhatsAppLink(r)}
                                                     target="_blank"
@@ -467,6 +598,14 @@ export default function Remitos() {
                                                 >
                                                     📲 WhatsApp
                                                 </a>
+                                                <button
+                                                    className="btn btn-secondary btn-sm"
+                                                    onClick={() => abrirEditarRemito(r)}
+                                                    title="Editar remito y rebalancear stock (ACID)"
+                                                    style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
+                                                >
+                                                    ✏️ Editar
+                                                </button>
                                                 <button
                                                     className="btn btn-secondary btn-sm"
                                                     onClick={() => imprimirRemito(r.id)}
@@ -909,6 +1048,17 @@ export default function Remitos() {
                                 >
                                     🏷️ Etiqueta de Despacho
                                 </button>
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => {
+                                        const r = detalle;
+                                        setDetalle(null);
+                                        abrirEditarRemito(r);
+                                    }}
+                                    style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
+                                >
+                                    ✏️ Editar Remito
+                                </button>
                                 <a
                                     href={buildWhatsAppLink(detalle)}
                                     target="_blank"
@@ -1011,6 +1161,231 @@ export default function Remitos() {
                             </button>
                         </div>
                     </div>
+                </Modal>
+            )}
+
+            {/* MODAL EDITAR REMITO (TRANSACCIONAL ACID CON REBALANCEO DE STOCK) */}
+            {remitoParaEditar && (
+                <Modal title={`✏️ Editar Remito #${remitoParaEditar.numero}`} onClose={() => setRemitoParaEditar(null)} width={880}>
+                    <form onSubmit={guardarEdicion} className="stack gap-md">
+                        {errorEdicion && <div className="alert-banner error">{errorEdicion}</div>}
+
+                        <div className="alert-banner info" style={{ fontSize: 13, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF' }}>
+                            ℹ️ <strong>Lógica Transaccional ACID:</strong> Al guardar, el backend revierte automáticamente el stock anterior en lotes y cuenta corriente, valida la nueva mercadería y descuenta las cantidades actualizadas de manera atómica con registro en auditoría.
+                        </div>
+
+                        <div className="form-grid">
+                            <div className="field">
+                                <label>Cliente destinatario *</label>
+                                <select
+                                    value={editForm.cliente_id}
+                                    onChange={e => {
+                                        const cId = e.target.value;
+                                        const c = clientes.find(x => x.id === Number(cId));
+                                        setEditForm({
+                                            ...editForm,
+                                            cliente_id: cId,
+                                            direccion_entrega: c?.direccion || editForm.direccion_entrega
+                                        });
+                                    }}
+                                    required
+                                >
+                                    <option value="">Seleccionar cliente…</option>
+                                    {clientes.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.razon_social} {c.telefono ? `(${c.telefono})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="field">
+                                <label>Fecha de emisión *</label>
+                                <input
+                                    type="date"
+                                    value={editForm.fecha}
+                                    onChange={e => setEditForm({ ...editForm, fecha: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label>Dirección de entrega</label>
+                                <input
+                                    placeholder="Ej: Av. Rivadavia 1234, Morón"
+                                    value={editForm.direccion_entrega}
+                                    onChange={e => setEditForm({ ...editForm, direccion_entrega: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label>Transporte / Chofer</label>
+                                <input
+                                    placeholder="Ej: Logística Mix / Flete Propio"
+                                    value={editForm.transportista}
+                                    onChange={e => setEditForm({ ...editForm, transportista: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label>Bultos</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={editForm.bultos}
+                                    onChange={e => setEditForm({ ...editForm, bultos: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label>Peso estimado (kg)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="Calculado según ítems"
+                                    value={editForm.peso_kg}
+                                    onChange={e => setEditForm({ ...editForm, peso_kg: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label>Descuento comercial (%)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.5"
+                                    value={editForm.descuento_porcentaje}
+                                    onChange={e => setEditForm({ ...editForm, descuento_porcentaje: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label>Motivo de edición (para Auditoría) *</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Corrección de cantidad a pedido del cliente"
+                                    value={editForm.motivo_edicion}
+                                    onChange={e => setEditForm({ ...editForm, motivo_edicion: e.target.value })}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* LISTA DE ÍTEMS EDITABLES */}
+                        <div className="stack gap-xs">
+                            <div className="spread">
+                                <label style={{ fontWeight: 700 }}>
+                                    Mercadería del Remito (Edición de cantidades y precios)
+                                </label>
+                                <button type="button" className="btn btn-secondary btn-sm" onClick={agregarEditItem}>
+                                    <IconPlus /> Agregar producto
+                                </button>
+                            </div>
+
+                            <div className="stack gap-sm">
+                                {editItems.map((it, i) => {
+                                    const prod = productos.find(p => p.id === Number(it.producto_id));
+
+                                    return (
+                                        <div key={i} className="item-row-card" style={{ background: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 8, padding: '10px 12px' }}>
+                                            <div className="item-row-header" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <ProductPicker
+                                                        productos={productos}
+                                                        value={it.producto_id}
+                                                        onChange={(id, p) => handleSelectProductoEdit(i, id, p)}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm"
+                                                    onClick={() => quitarEditItem(i)}
+                                                    disabled={editItems.length === 1}
+                                                    style={{ color: 'var(--color-danger)' }}
+                                                    title="Quitar producto"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr', gap: 10, marginTop: 8 }}>
+                                                <div>
+                                                    <label className="text-xs muted">Cantidad ({prod?.unidad_medida || 'kg'})</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder="Cantidad"
+                                                        value={it.cantidad}
+                                                        onChange={e => {
+                                                            const copy = [...editItems];
+                                                            copy[i].cantidad = e.target.value;
+                                                            setEditItems(copy);
+                                                        }}
+                                                        style={{ width: '100%', padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs muted">Precio Unitario ($)</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder="P. Unitario ($)"
+                                                        value={it.precio_unitario}
+                                                        onChange={e => {
+                                                            const copy = [...editItems];
+                                                            copy[i].precio_unitario = e.target.value;
+                                                            setEditItems(copy);
+                                                        }}
+                                                        style={{ width: '100%', padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs muted">Subtotal</label>
+                                                    <div className="mono" style={{ padding: '7px 0', fontWeight: 600 }}>
+                                                        {fmtMoney((Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Observaciones */}
+                        <div className="field">
+                            <label>Observaciones / Instrucciones de entrega</label>
+                            <textarea
+                                rows={2}
+                                value={editForm.observaciones}
+                                onChange={e => setEditForm({ ...editForm, observaciones: e.target.value })}
+                            />
+                        </div>
+
+                        {/* RESUMEN Y BOTONES */}
+                        <div className="spread" style={{ padding: '12px 0', borderTop: '2px solid var(--color-border)' }}>
+                            <div className="row gap-md" style={{ alignItems: 'center' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={editForm.permitir_sin_stock}
+                                        onChange={e => setEditForm({ ...editForm, permitir_sin_stock: e.target.checked })}
+                                    />
+                                    Permitir emitir sin stock físico suficiente
+                                </label>
+                            </div>
+                            <div className="row gap-sm">
+                                <button type="button" className="btn btn-ghost" onClick={() => setRemitoParaEditar(null)}>
+                                    Cancelar
+                                </button>
+                                <button type="submit" className="btn btn-primary" disabled={guardandoEdicion}>
+                                    {guardandoEdicion ? 'Guardando cambios (ACID)...' : '💾 Guardar Cambios y Actualizar Stock'}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </Modal>
             )}
 

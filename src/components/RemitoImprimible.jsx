@@ -564,6 +564,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                                 <p><strong>Señor(es) / Razón Social:</strong> {remito.cliente_nombre || 'Consumidor Final'}</p>
                                                 <p><strong>CUIT / DNI:</strong> {remito.cliente_cuit || '—'}</p>
                                                 <p><strong>Condición IVA:</strong> {remito.cliente_condicion_iva || 'Consumidor Final'}</p>
+                                                <p><strong>Teléfono / WhatsApp:</strong> {remito.cliente_telefono || '—'}</p>
                                             </div>
                                             <div className="remito-info-col">
                                                 <p><strong>Dirección de Entrega:</strong> {remito.direccion_entrega || remito.cliente_direccion || 'Retira en depósito'}</p>
@@ -589,6 +590,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                         </div>
                                         <div style={{ fontSize: 11 }}>
                                             <span><strong>Cliente:</strong> {remito.cliente_nombre}</span>
+                                            {remito.cliente_telefono && <span style={{ marginLeft: 10 }}><strong>Tel:</strong> {remito.cliente_telefono}</span>}
                                             <span style={{ marginLeft: 12 }}><strong>Fecha:</strong> {fechaFormateada}</span>
                                         </div>
                                         <div style={{ fontWeight: 700, fontSize: 11, color: '#1a382b', background: '#eaf3ee', padding: '2px 8px', borderRadius: 4 }}>

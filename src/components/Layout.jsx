@@ -16,6 +16,7 @@ import PreferenciasModal from './PreferenciasModal';
 const NAV_ITEMS = [
     { to: '/', label: 'Panel', icon: IconDashboard, end: true },
     { to: '/remitos', label: 'Remitos', icon: IconRemito },
+    { to: '/deposito-kanban', label: 'Depósito (Kanban)', icon: IconRecepcion },
     { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
     { to: '/catalogo-flyers', label: 'Catálogo y Flyers', icon: IconFlyer },
     { to: '/recepciones', label: 'Recepción de mercadería', icon: IconRecepcion },
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
     { to: '/sincronizacion-sheets', label: 'Google Sheets', icon: IconSync },
     { to: '/proveedores', label: 'Proveedores', icon: IconProveedores },
     { to: '/gastos', label: 'Gastos', icon: IconGastos },
+    { to: '/auditoria', label: 'Historial / Auditoría', icon: IconReporte },
     { to: '/usuarios', label: 'Usuarios', icon: IconUsuarios, adminOnly: true },
 ];
 
