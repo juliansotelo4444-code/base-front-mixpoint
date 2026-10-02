@@ -342,7 +342,7 @@ function getPrintCss() {
     `;
 }
 
-export default function RemitoImprimible({ remito, onClose }) {
+export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) {
     if (!remito) return null;
 
     const printableRef = useRef(null);
@@ -467,6 +467,15 @@ export default function RemitoImprimible({ remito, onClose }) {
                     <button className="btn btn-secondary" onClick={handleDownloadHtml} style={{ padding: '10px 18px', fontSize: 13.5 }}>
                         📥 Descargar Comprobante (.html)
                     </button>
+                    {onAbrirEtiquetas && (
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => onAbrirEtiquetas(remito)}
+                            style={{ padding: '10px 18px', fontSize: 13.5, borderColor: '#C9A227', color: '#A2801A', fontWeight: 600 }}
+                        >
+                            🏷️ Etiquetas de Despacho
+                        </button>
+                    )}
                     {onClose && (
                         <button className="btn btn-ghost" onClick={onClose} style={{ padding: '10px 16px' }}>
                             ✕ Volver al sistema

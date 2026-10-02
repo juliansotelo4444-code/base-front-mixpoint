@@ -5,6 +5,7 @@ import ProductPicker from '../components/ProductPicker';
 import RemitoImprimible from '../components/RemitoImprimible';
 import HojaDeRutaModal from '../components/HojaDeRutaModal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
+import EtiquetaDespachoModal from '../components/EtiquetaDespachoModal';
 import { IconPlus, IconBuscar } from '../components/Icons';
 import { getFechaHoyLocal, formatearFecha } from '../utils/fechas';
 
@@ -56,6 +57,8 @@ export default function Remitos() {
     const [detalle, setDetalle] = useState(null);
     const [remitoParaImprimir, setRemitoParaImprimir] = useState(null);
     const [hojaDeRutaOpen, setHojaDeRutaOpen] = useState(false);
+    const [etiquetaModalRemito, setEtiquetaModalRemito] = useState(null);
+    const [remitoRecienCreado, setRemitoRecienCreado] = useState(null);
     const [seleccionados, setSeleccionados] = useState([]);
     const [error, setError] = useState('');
     const [cambiandoEstadoId, setCambiandoEstadoId] = useState(null);
@@ -65,6 +68,8 @@ export default function Remitos() {
     const [fecha, setFecha] = useState(getFechaHoyLocal());
     const [direccion, setDireccion] = useState('');
     const [transportista, setTransportista] = useState('');
+    const [bultosForm, setBultosForm] = useState(1);
+    const [pesoKgForm, setPesoKgForm] = useState('');
     const [observaciones, setObservaciones] = useState('');
     const [permitirSinStock, setPermitirSinStock] = useState(true);
     const [descuentoPorcentaje, setDescuentoPorcentaje] = useState(0);
@@ -124,6 +129,8 @@ export default function Remitos() {
         setFecha(getFechaHoyLocal());
         setDireccion('');
         setTransportista('');
+        setBultosForm(1);
+        setPesoKgForm('');
         setObservaciones('');
         setPermitirSinStock(true);
         setDescuentoPorcentaje(0);
@@ -209,6 +216,8 @@ export default function Remitos() {
                 fecha,
                 direccion_entrega: direccion,
                 transportista,
+                bultos: Number(bultosForm) || 1,
+                peso_kg: pesoKgForm ? Number(pesoKgForm) : undefined,
                 observaciones,
                 permitir_sin_stock: permitirSinStock,
                 descuento_porcentaje: Number(descuentoPorcentaje) || 0,
@@ -221,7 +230,9 @@ export default function Remitos() {
 
             setModalOpen(false);
             cargar();
-            imprimirRemito(data.id);
+            // Cargar datos completos para ofrecer inmediatamente Remito A4 o Etiquetas de Despacho
+            const { data: remitoCompleto } = await client.get(`/remitos/${data.id}`);
+            setRemitoRecienCreado(remitoCompleto);
         } catch (err) {
             setError(err.response?.data?.error || 'Error al crear el remito.');
         }
@@ -262,6 +273,15 @@ export default function Remitos() {
         setRemitoParaImprimir(data);
     }
 
+    async function abrirEtiquetas(r) {
+        try {
+            const { data } = await client.get(`/remitos/${r.id}`);
+            setEtiquetaModalRemito(data);
+        } catch (e) {
+            setEtiquetaModalRemito(r);
+        }
+    }
+
     async function cambiarEstado(id, nuevoEstado) {
         setCambiandoEstadoId(id);
         try {
@@ -289,13 +309,24 @@ export default function Remitos() {
                 </div>
                 <div className="row gap-sm">
                     {seleccionados.length > 0 && (
-                        <button
-                            className="btn btn-secondary"
-                            onClick={() => setHojaDeRutaOpen(true)}
-                            style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', fontWeight: 600 }}
-                        >
-                            🚚 Hoja de Ruta ({seleccionados.length})
-                        </button>
+                        <>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => setHojaDeRutaOpen(true)}
+                                style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', fontWeight: 600 }}
+                            >
+                                🚚 Hoja de Ruta ({seleccionados.length})
+                            </button>
+                            {seleccionados.length === 1 && (
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => abrirEtiquetas({ id: seleccionados[0] })}
+                                    style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600 }}
+                                >
+                                    🏷️ Etiqueta de Despacho
+                                </button>
+                            )}
+                        </>
                     )}
                     <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14 }}>
                         <IconPlus /> Generar nuevo remito
@@ -444,6 +475,14 @@ export default function Remitos() {
                                                     🖨️ Remito QR
                                                 </button>
                                                 <button
+                                                    className="btn btn-secondary btn-sm"
+                                                    onClick={() => abrirEtiquetas(r)}
+                                                    title="Generar etiquetas de despacho con transporte, bultos y peso"
+                                                    style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600 }}
+                                                >
+                                                    🏷️ Etiqueta
+                                                </button>
+                                                <button
                                                     className="btn btn-ghost btn-sm"
                                                     onClick={() => verDetalle(r)}
                                                 >
@@ -515,11 +554,31 @@ export default function Remitos() {
                                 />
                             </div>
                             <div className="field">
-                                <label>Transportista / Chofer</label>
+                                <label>Transportista / Chofer / Expreso</label>
                                 <input
-                                    placeholder="Ej: Flete propio / Juan Pérez"
+                                    placeholder="Ej: Flete propio / Vía Cargo"
                                     value={transportista}
                                     onChange={e => setTransportista(e.target.value)}
+                                />
+                            </div>
+                            <div className="field">
+                                <label>Bultos estimados</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    placeholder="1"
+                                    value={bultosForm}
+                                    onChange={e => setBultosForm(e.target.value)}
+                                />
+                            </div>
+                            <div className="field">
+                                <label>Peso estimado en kg (opcional)</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    placeholder="Automático según ítems"
+                                    value={pesoKgForm}
+                                    onChange={e => setPesoKgForm(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -839,6 +898,17 @@ export default function Remitos() {
                                 >
                                     🖨️ Imprimir Remito QR
                                 </button>
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => {
+                                        const r = detalle;
+                                        setDetalle(null);
+                                        abrirEtiquetas(r);
+                                    }}
+                                    style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600 }}
+                                >
+                                    🏷️ Etiqueta de Despacho
+                                </button>
                                 <a
                                     href={buildWhatsAppLink(detalle)}
                                     target="_blank"
@@ -867,11 +937,104 @@ export default function Remitos() {
                 </Modal>
             )}
 
+            {/* MODAL DE CONFIRMACIÓN POST-CREACIÓN DE REMITO */}
+            {remitoRecienCreado && (
+                <Modal title="🎉 Remito Emitido con Éxito" onClose={() => setRemitoRecienCreado(null)} width={540}>
+                    <div className="stack gap-md" style={{ textAlign: 'center', padding: '10px 4px' }}>
+                        <div style={{ fontSize: 44 }}>📦</div>
+                        <h3 style={{ fontSize: 19, margin: 0, color: 'var(--color-primary-dark)' }}>
+                            Remito #{remitoRecienCreado.numero} Emitido
+                        </h3>
+                        <p className="text-sm muted" style={{ margin: 0 }}>
+                            Cliente: <strong>{remitoRecienCreado.cliente_nombre}</strong> · Total: <strong>{fmtMoney(remitoRecienCreado.total)}</strong>
+                        </p>
+
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: 12,
+                            marginTop: 12
+                        }}>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{
+                                    padding: '16px 12px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    borderRadius: 8,
+                                    border: '1.5px solid var(--color-border-strong)'
+                                }}
+                                onClick={() => {
+                                    const r = remitoRecienCreado;
+                                    setRemitoRecienCreado(null);
+                                    imprimirRemito(r.id);
+                                }}
+                            >
+                                <span style={{ fontSize: 26 }}>🖨️</span>
+                                <span style={{ fontWeight: 700, fontSize: 13.5 }}>Imprimir Remito A4</span>
+                                <span className="text-xs muted">Comprobante comercial con QR</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                style={{
+                                    padding: '16px 12px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    borderRadius: 8
+                                }}
+                                onClick={() => {
+                                    const r = remitoRecienCreado;
+                                    setRemitoRecienCreado(null);
+                                    abrirEtiquetas(r);
+                                }}
+                            >
+                                <span style={{ fontSize: 26 }}>🏷️</span>
+                                <span style={{ fontWeight: 700, fontSize: 13.5 }}>Etiquetas de Despacho</span>
+                                <span className="text-xs" style={{ opacity: 0.9 }}>Bultos, transporte y peso</span>
+                            </button>
+                        </div>
+
+                        <div style={{ marginTop: 10 }}>
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => setRemitoRecienCreado(null)}
+                            >
+                                Continuar en el listado
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
             {/* VISTA IMPRIMIBLE DE REMITO (A4 / PDF) CON QR Y ALIAS MIXPOINT2026 */}
             {remitoParaImprimir && (
                 <RemitoImprimible
                     remito={remitoParaImprimir}
                     onClose={() => setRemitoParaImprimir(null)}
+                    onAbrirEtiquetas={(r) => {
+                        setRemitoParaImprimir(null);
+                        abrirEtiquetas(r);
+                    }}
+                />
+            )}
+
+            {/* MODAL ETIQUETAS DE DESPACHO PARA TRANSPORTE Y BULTOS */}
+            {etiquetaModalRemito && (
+                <EtiquetaDespachoModal
+                    remito={etiquetaModalRemito}
+                    onClose={() => setEtiquetaModalRemito(null)}
+                    onUpdated={(actualizado) => {
+                        setEtiquetaModalRemito(actualizado);
+                        cargar();
+                    }}
                 />
             )}
 
