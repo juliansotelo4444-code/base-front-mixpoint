@@ -350,6 +350,57 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     const pages = chunkItems(remito.items || []);
     const fechaFormateada = formatearFecha(remito.fecha || new Date());
 
+    const [paginaActiva, setPaginaActiva] = useState('todas'); // 'todas' | 0 | 1...
+    const [zoomScale, setZoomScale] = useState(0.85);
+    const [modoAjuste, setModoAjuste] = useState('auto'); // 'auto' | '100' | 'manual'
+
+    useEffect(() => {
+        const calcularAuto = () => {
+            if (typeof window === 'undefined') return;
+            if (window.innerWidth <= 768) {
+                setZoomScale(1);
+            } else {
+                const scaleH = (window.innerHeight - 150) / 1120;
+                const scaleW = (window.innerWidth - 80) / 820;
+                const opt = Math.min(1, Math.max(0.55, Math.min(scaleH, scaleW)));
+                setZoomScale(Number(opt.toFixed(2)));
+            }
+        };
+
+        if (modoAjuste === 'auto') {
+            calcularAuto();
+            window.addEventListener('resize', calcularAuto);
+            return () => window.removeEventListener('resize', calcularAuto);
+        }
+    }, [modoAjuste]);
+
+    const handleAjustarPantalla = () => {
+        setModoAjuste('auto');
+        if (window.innerWidth <= 768) {
+            setZoomScale(1);
+        } else {
+            const scaleH = (window.innerHeight - 150) / 1120;
+            const scaleW = (window.innerWidth - 80) / 820;
+            const opt = Math.min(1, Math.max(0.55, Math.min(scaleH, scaleW)));
+            setZoomScale(Number(opt.toFixed(2)));
+        }
+    };
+
+    const handleZoomReal = () => {
+        setModoAjuste('100');
+        setZoomScale(1);
+    };
+
+    const handleZoomIn = () => {
+        setModoAjuste('manual');
+        setZoomScale(prev => Math.min(1.5, Number((prev + 0.1).toFixed(2))));
+    };
+
+    const handleZoomOut = () => {
+        setModoAjuste('manual');
+        setZoomScale(prev => Math.max(0.45, Number((prev - 0.1).toFixed(2))));
+    };
+
     useEffect(() => {
         const qrTexto = `MIX POINT MAYORISTA\nAlias: mixpoint2026\nRemito: ${remito.numero || ''}\nTotal: ${fmtMoney(remito.total)}\nWhatsApp: 1167873243`;
         QRCode.toDataURL(qrTexto, {
@@ -456,45 +507,156 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
         URL.revokeObjectURL(url);
     };
 
+    const totalPages = pages.length;
+
     return (
         <div className="remito-print-overlay">
-            {/* BARRA DE ACCIONES SUPERIOR */}
+            {/* BARRA DE NAVEGACIÓN Y ACCIONES SUPERIOR (STICKY) */}
             <div className="remito-print-actions no-print">
-                <div className="row gap-sm" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <button className="btn btn-primary" onClick={handlePrint} style={{ padding: '10px 20px', fontSize: 14 }}>
-                        🖨️ Imprimir / Guardar en PDF
-                    </button>
-                    <button className="btn btn-secondary" onClick={handleDownloadHtml} style={{ padding: '10px 18px', fontSize: 13.5 }}>
-                        📥 Descargar Comprobante (.html)
-                    </button>
-                    {onAbrirEtiquetas && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 1100, flexWrap: 'wrap', gap: 10 }}>
+                    {/* DATOS DEL REMITO */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <span className="mono" style={{ fontWeight: 800, fontSize: 16, color: 'var(--color-primary-dark)' }}>
+                            {remito.numero || 'REMITO'}
+                        </span>
+                        <span className="badge badge-primary" style={{ fontSize: 12 }}>
+                            {remito.cliente_nombre || 'Consumidor Final'}
+                        </span>
+                        <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>
+                            {fmtMoney(remito.total)}
+                        </span>
+                        <span className="text-xs muted">
+                            ({remito.items?.length || 0} ítems en {totalPages} {totalPages === 1 ? 'hoja' : 'hojas'})
+                        </span>
+                    </div>
+
+                    {/* SELECTOR DE PÁGINAS Y ZOOM */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        {totalPages > 1 && (
+                            <div className="row gap-xs" style={{ background: 'var(--color-bg)', padding: '3px 6px', borderRadius: 6, border: '1px solid var(--color-border)' }}>
+                                <button
+                                    type="button"
+                                    className={`btn btn-xs ${paginaActiva === 'todas' ? 'btn-primary' : 'btn-ghost'}`}
+                                    onClick={() => setPaginaActiva('todas')}
+                                    style={{ padding: '3px 8px', fontSize: 11 }}
+                                >
+                                    Ver todas ({totalPages})
+                                </button>
+                                {pages.map((_, pIdx) => (
+                                    <button
+                                        key={pIdx}
+                                        type="button"
+                                        className={`btn btn-xs ${paginaActiva === pIdx ? 'btn-primary' : 'btn-ghost'}`}
+                                        onClick={() => setPaginaActiva(pIdx)}
+                                        style={{ padding: '3px 8px', fontSize: 11 }}
+                                    >
+                                        Hoja {pIdx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="row gap-xs" style={{ background: 'var(--color-bg)', padding: '3px 6px', borderRadius: 6, border: '1px solid var(--color-border)' }}>
+                            <button
+                                type="button"
+                                className={`btn btn-xs ${modoAjuste === 'auto' ? 'btn-secondary' : 'btn-ghost'}`}
+                                onClick={handleAjustarPantalla}
+                                title="Ajustar altura de página a la pantalla"
+                                style={{ padding: '3px 8px', fontSize: 11 }}
+                            >
+                                📐 Pantalla
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn btn-xs ${modoAjuste === '100' ? 'btn-secondary' : 'btn-ghost'}`}
+                                onClick={handleZoomReal}
+                                title="Tamaño 100% real"
+                                style={{ padding: '3px 8px', fontSize: 11 }}
+                            >
+                                100%
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                onClick={handleZoomOut}
+                                title="Reducir zoom"
+                                style={{ padding: '3px 6px', fontSize: 12 }}
+                            >
+                                🔍-
+                            </button>
+                            <span className="mono text-xs" style={{ minWidth: 32, textAlign: 'center', fontSize: 10 }}>
+                                {Math.round(zoomScale * 100)}%
+                            </span>
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                onClick={handleZoomIn}
+                                title="Aumentar zoom"
+                                style={{ padding: '3px 6px', fontSize: 12 }}
+                            >
+                                🔍+
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* BOTONES DE ACCIÓN */}
+                    <div className="row gap-xs" style={{ flexWrap: 'wrap' }}>
                         <button
-                            className="btn btn-secondary"
-                            onClick={() => onAbrirEtiquetas(remito)}
-                            style={{ padding: '10px 18px', fontSize: 13.5, borderColor: '#C9A227', color: '#A2801A', fontWeight: 600 }}
+                            className="btn btn-primary btn-sm"
+                            onClick={handlePrint}
+                            style={{ padding: '6px 14px', fontSize: 12.5 }}
                         >
-                            🏷️ Etiquetas de Despacho
+                            🖨️ Imprimir / PDF
                         </button>
-                    )}
-                    {onClose && (
-                        <button className="btn btn-ghost" onClick={onClose} style={{ padding: '10px 16px' }}>
-                            ✕ Volver al sistema
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={handleDownloadHtml}
+                            style={{ padding: '6px 12px', fontSize: 12 }}
+                        >
+                            📥 Descargar
                         </button>
-                    )}
-                </div>
-                <div style={{ marginTop: 10, textAlign: 'center' }}>
-                    <span className="badge badge-primary" style={{ fontSize: 12, padding: '4px 10px' }}>
-                        📄 Documento paginado en {pages.length} {pages.length === 1 ? 'hoja A4' : 'hojas A4'}
-                    </span>
-                    <p className="text-sm muted" style={{ marginTop: 6 }}>
-                        Al pulsar <strong>"🖨️ Imprimir / Guardar en PDF"</strong>, seleccioná <strong>"Guardar como PDF"</strong> en la impresora para descargarlo directamente en tu equipo.
-                    </p>
+                        {onAbrirEtiquetas && (
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => onAbrirEtiquetas(remito)}
+                                style={{ padding: '6px 12px', fontSize: 12, borderColor: '#C9A227', color: '#A2801A' }}
+                            >
+                                🏷️ Etiquetas
+                            </button>
+                        )}
+                        {onClose && (
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={onClose}
+                                style={{ padding: '6px 12px', fontSize: 12 }}
+                            >
+                                ✕ Cerrar
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* CONTENEDOR DE PÁGINAS A4 */}
-            <div ref={printableRef} id="remito-printable-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+            {/* CONTENEDOR DE PÁGINAS A4 ESCALADO */}
+            <div
+                ref={printableRef}
+                id="remito-printable-content"
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    width: '100%',
+                    transform: `scale(${zoomScale})`,
+                    transformOrigin: 'top center',
+                    transition: 'transform 0.15s ease',
+                    marginBottom: zoomScale < 1 ? `-${Math.round((1 - zoomScale) * 1150 * (paginaActiva === 'todas' ? pages.length : 1) * 0.96)}px` : '20px'
+                }}
+            >
                 {pages.map((pageItems, pageIdx) => {
+                    if (paginaActiva !== 'todas' && paginaActiva !== pageIdx) {
+                        return null;
+                    }
+
                     const isFirstPage = pageIdx === 0;
                     const isLastPage = pageIdx === pages.length - 1;
                     const pageNumber = pageIdx + 1;

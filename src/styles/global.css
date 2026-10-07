@@ -321,25 +321,28 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
 .remito-print-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(18, 20, 24, 0.75);
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(8px);
     z-index: 9999;
     overflow-y: auto;
-    padding: 30px 15px;
+    padding: 0 0 60px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 .remito-print-actions {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
     background: var(--color-surface);
-    padding: 14px 24px;
-    border-radius: var(--radius-md);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    margin-bottom: 20px;
+    border-bottom: 1px solid var(--color-border);
+    padding: 10px 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    margin-bottom: 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    max-width: 820px;
     width: 100%;
 }
 
@@ -1293,6 +1296,11 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
         margin: 0 !important;
         overflow: visible !important;
         width: 100% !important;
+    }
+
+    #remito-printable-content {
+        transform: none !important;
+        margin-bottom: 0 !important;
     }
 
     .remito-page-a4 {
