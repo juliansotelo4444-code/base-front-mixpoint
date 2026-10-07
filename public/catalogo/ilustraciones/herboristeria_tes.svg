@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad_Herboristería" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF3C7" />
+      <stop offset="100%" stop-color="#FDE68A" />
+    </linearGradient>
+    <radialGradient id="glow_Herboristería" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#B45309" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#B45309" stop-opacity="0" />
+    </radialGradient>
+    <filter id="shadow_Herboristería" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Fondo Premium con bordes suaves -->
+  <rect width="400" height="300" fill="url(#grad_Herboristería)" rx="12" />
+  <circle cx="200" cy="130" r="110" fill="url(#glow_Herboristería)" />
+
+  <!-- Marco decorativo exterior e interior -->
+  <rect x="12" y="12" width="376" height="276" rx="8" fill="none" stroke="#B45309" stroke-opacity="0.3" stroke-width="1.2" />
+  <rect x="18" y="18" width="364" height="264" rx="6" fill="none" stroke="#B45309" stroke-opacity="0.15" stroke-width="1" stroke-dasharray="3 3" />
+
+  <!-- Badge Superior de Categoría -->
+  <rect x="110" y="24" width="180" height="24" rx="12" fill="#FFFFFF" fill-opacity="0.95" filter="url(#shadow_Herboristería)" />
+  <text x="200" y="40" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" font-weight="800" fill="#B45309" text-anchor="middle" letter-spacing="1.5">
+    HERBORISTERÍA
+  </text>
+
+  <!-- Círculo Central Ilustrativo -->
+  <circle cx="200" cy="126" r="56" fill="#FFFFFF" filter="url(#shadow_Herboristería)" stroke="#B45309" stroke-width="2.5" stroke-opacity="0.4" />
+  <text x="200" y="146" font-family="'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif" font-size="52" text-anchor="middle">
+    🍵
+  </text>
+
+  <!-- Título y Subtítulo del Producto -->
+  <text x="200" y="214" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16.5" font-weight="800" fill="#1A382B" text-anchor="middle" letter-spacing="0.2">
+    Tés del Mundo
+  </text>
+  <text x="200" y="235" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#555555" text-anchor="middle">
+    Hebras puras aromáticas seleccionadas
+  </text>
+
+  <!-- Sello de Calidad Mix Point -->
+  <line x1="140" y1="248" x2="260" y2="248" stroke="#B45309" stroke-width="1.2" stroke-opacity="0.35" />
+  <text x="200" y="263" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="800" fill="#B45309" text-anchor="middle" letter-spacing="1.8">
+    DISTRIBUIDORA MIX POINT · CALIDAD SELECCIÓN
+  </text>
+</svg>

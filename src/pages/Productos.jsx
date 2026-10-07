@@ -3,6 +3,7 @@ import client from '../api/client';
 import Modal from '../components/Modal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconPlus, IconBuscar, IconEditar } from '../components/Icons';
+import { obtenerImagenProducto } from '../utils/imagenProducto';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
@@ -230,6 +231,7 @@ export default function Productos() {
                     <table className="data-table">
                         <thead>
                             <tr>
+                                <th style={{ width: 44, textAlign: 'center' }}>Foto</th>
                                 <th>Código</th>
                                 <th>Producto / Descripción</th>
                                 <th>Categoría</th>
@@ -251,6 +253,16 @@ export default function Productos() {
 
                                 return (
                                     <tr key={p.id}>
+                                        <td style={{ textAlign: 'center', padding: '6px 4px' }}>
+                                            <img
+                                                src={obtenerImagenProducto(p)}
+                                                alt={p.nombre}
+                                                style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 4, border: '1px solid #e2e8f0', background: '#f8fafc', padding: 1 }}
+                                                onError={e => {
+                                                    e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
+                                                }}
+                                            />
+                                        </td>
                                         <td className="mono text-sm" style={{ color: 'var(--color-text-muted)' }}>
                                             {p.codigo || `MP-${p.id}`}
                                         </td>

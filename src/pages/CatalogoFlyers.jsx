@@ -3,6 +3,7 @@ import client from '../api/client';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconBuscar, IconFlyer } from '../components/Icons';
 import catalogoOficialData from '../data/catalogo_completo.json';
+import { obtenerImagenProducto } from '../utils/imagenProducto';
 
 const fmtMoney = (n) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
@@ -89,7 +90,7 @@ export default function CatalogoFlyers() {
                     const localMatch = catalogoOficialData.productos.find(x => x.nombre.toLowerCase() === p.nombre.toLowerCase());
                     return {
                         ...p,
-                        imagen: p.imagen || localMatch?.imagen,
+                        imagen: obtenerImagenProducto(p) || localMatch?.imagen,
                         escalas: localMatch?.escalas || {
                             x1kg: p.precio_venta,
                             x5kg: p.precio_5kg,
@@ -369,7 +370,7 @@ export default function CatalogoFlyers() {
                                             background: '#FFFFFF'
                                         }}
                                     >
-                                        {/* FOTO DEL PRODUCTO EXTRAÍDA DEL PDF */}
+                                        {/* FOTO DEL PRODUCTO EXTRAÍDA DEL PDF O ILUSTRACIÓN */}
                                         <div style={{
                                             height: 180,
                                             background: '#F8F9FA',
@@ -380,30 +381,15 @@ export default function CatalogoFlyers() {
                                             overflow: 'hidden',
                                             borderBottom: '1px solid var(--color-border)'
                                         }}>
-                                            {p.imagen ? (
-                                                <img
-                                                    src={p.imagen}
-                                                    alt={p.nombre}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 8 }}
-                                                    loading="lazy"
-                                                    onError={e => {
-                                                        e.target.style.display = 'none';
-                                                        e.target.nextSibling.style.display = 'flex';
-                                                    }}
-                                                />
-                                            ) : null}
-                                            <div
-                                                style={{
-                                                    display: p.imagen ? 'none' : 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#94a3b8'
+                                            <img
+                                                src={obtenerImagenProducto(p)}
+                                                alt={p.nombre}
+                                                style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 8 }}
+                                                loading="lazy"
+                                                onError={e => {
+                                                    e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
                                                 }}
-                                            >
-                                                <span style={{ fontSize: 38 }}>🌰</span>
-                                                <span style={{ fontSize: 11, marginTop: 4, fontWeight: 600 }}>Mix Point Selección</span>
-                                            </div>
+                                            />
 
                                             {/* BADGES SUPERPUESTOS */}
                                             <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4 }}>
@@ -524,15 +510,14 @@ export default function CatalogoFlyers() {
                                             return (
                                                 <tr key={p.id}>
                                                     <td style={{ textAlign: 'center', padding: '6px' }}>
-                                                        {p.imagen ? (
-                                                            <img
-                                                                src={p.imagen}
-                                                                alt={p.nombre}
-                                                                style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 4, border: '1px solid #e2e8f0' }}
-                                                            />
-                                                        ) : (
-                                                            <span style={{ fontSize: 20 }}>🌰</span>
-                                                        )}
+                                                        <img
+                                                            src={obtenerImagenProducto(p)}
+                                                            alt={p.nombre}
+                                                            style={{ width: 42, height: 42, objectFit: 'contain', borderRadius: 4, border: '1px solid #e2e8f0', background: '#f8fafc' }}
+                                                            onError={e => {
+                                                                e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
+                                                            }}
+                                                        />
                                                     </td>
                                                     <td className="mono text-xs">{p.codigo || `MP-${p.id}`}</td>
                                                     <td>
@@ -760,10 +745,13 @@ export default function CatalogoFlyers() {
                                             checked={productosSeleccionados.includes(p.id)}
                                             onChange={() => toggleSeleccionFlyer(p.id)}
                                         />
-                                        {p.imagen && (
-                                            <img src={p.imagen} alt="" style={{ width: 22, height: 22, objectFit: 'contain', borderRadius: 3 }} />
-                                        )}
-                                        <span style={{ flex: 1 }}>{p.nombre}</span>
+                                        <img
+                                            src={obtenerImagenProducto(p)}
+                                            alt=""
+                                            style={{ width: 26, height: 26, objectFit: 'contain', borderRadius: 4, background: '#fff', border: '1px solid #e2e8f0', padding: 1 }}
+                                            onError={e => { e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg'; }}
+                                        />
+                                        <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{p.nombre}</span>
                                         <strong className="mono" style={{ fontSize: 12 }}>{fmtMoney(p.precio_venta)}</strong>
                                     </label>
                                 ))}
@@ -856,13 +844,14 @@ export default function CatalogoFlyers() {
                                         alignItems: 'center'
                                     }}
                                 >
-                                    {p.imagen && (
-                                        <img
-                                            src={p.imagen}
-                                            alt={p.nombre}
-                                            style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 4, background: '#fff', padding: 2, flexShrink: 0 }}
-                                        />
-                                    )}
+                                    <img
+                                        src={obtenerImagenProducto(p)}
+                                        alt={p.nombre}
+                                        style={{ width: 50, height: 50, objectFit: 'contain', borderRadius: 6, background: '#fff', padding: 2, flexShrink: 0, border: '1px solid #C9A227' }}
+                                        onError={e => {
+                                            e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
+                                        }}
+                                    />
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ fontWeight: 700, fontSize: 14, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {p.nombre}
