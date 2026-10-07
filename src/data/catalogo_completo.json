@@ -469,7 +469,7 @@
       "escalas": {
         "x1kg": 36500
       },
-      "imagen": "/catalogo/ilustraciones/castanas_de_para.svg",
+      "imagen": "/catalogo/productos/castanas_de_para_20.svg",
       "unidad_medida": "kg"
     },
     {
@@ -1910,7 +1910,7 @@
       "escalas": {
         "x1kg": 26500
       },
-      "imagen": "/catalogo/ilustraciones/pimienta_negra_granos.svg",
+      "imagen": "/catalogo/productos/pimienta_negra_en_granos_96.svg",
       "unidad_medida": "kg"
     },
     {
@@ -1928,7 +1928,7 @@
       "escalas": {
         "x1kg": 3620
       },
-      "imagen": "/catalogo/ilustraciones/goma_xantica.svg",
+      "imagen": "/catalogo/productos/goma_xantica_40cc_procal_97.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3227,7 +3227,7 @@
         "x1kg": 26045,
         "x5kg": 21704
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/gingko_biloba_x_1kg_166.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3246,7 +3246,7 @@
         "x1kg": 5861,
         "x5kg": 4884
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/sem_x_1kg_167.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3265,7 +3265,7 @@
         "x1kg": 43352,
         "x5kg": 36127
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/graviola_x_1kg_168.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3284,7 +3284,7 @@
         "x1kg": 34454,
         "x5kg": 28712
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_raices.svg",
+      "imagen": "/catalogo/productos/sandalo_169.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3303,7 +3303,7 @@
         "x1kg": 71218,
         "x5kg": 59348
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_raices.svg",
+      "imagen": "/catalogo/productos/valeriana_170.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3322,7 +3322,7 @@
         "x1kg": 52410,
         "x5kg": 43675
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/hammamelis_171.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3341,7 +3341,7 @@
         "x1kg": 39960,
         "x5kg": 33300
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/moringa_x_1kg_172.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3360,7 +3360,7 @@
         "x1kg": 63202,
         "x5kg": 52668
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_raices.svg",
+      "imagen": "/catalogo/productos/cascara_sagrada_x_1kg_173.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3379,7 +3379,7 @@
         "x1kg": 27000,
         "x5kg": 22500
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_flores.svg",
+      "imagen": "/catalogo/productos/manzanilla_174.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3398,7 +3398,7 @@
         "x1kg": 106560,
         "x5kg": 88800
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/siempre_viva_175.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3417,7 +3417,7 @@
         "x1kg": 29837,
         "x5kg": 24864
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/cedron_176.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3436,7 +3436,7 @@
         "x1kg": 6026,
         "x5kg": 5022
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tinturas.svg",
+      "imagen": "/catalogo/productos/higuera_tinta_60_cc_177.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3455,7 +3455,7 @@
         "x1kg": 42166,
         "x5kg": 35138
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_flores.svg",
+      "imagen": "/catalogo/productos/rosa_mosqueta_x_1kg_178.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3474,7 +3474,7 @@
         "x1kg": 12815,
         "x5kg": 10679
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/castanas_de_la_india_x_1kg_179.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3493,7 +3493,7 @@
         "x1kg": 68020,
         "x5kg": 56683
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_flores.svg",
+      "imagen": "/catalogo/productos/petalo_de_rosas_180.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3512,7 +3512,7 @@
         "x1kg": 86598,
         "x5kg": 72165
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_flores.svg",
+      "imagen": "/catalogo/productos/flor_de_tilo_181.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3531,7 +3531,7 @@
         "x1kg": 19536,
         "x5kg": 16280
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/laurel_182.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3550,7 +3550,7 @@
         "x1kg": 9588,
         "x5kg": 7990
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/malva_183.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3569,7 +3569,7 @@
         "x1kg": 23024,
         "x5kg": 19187
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/melisa_184.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3588,7 +3588,7 @@
         "x1kg": 13741,
         "x5kg": 11451
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/menta_185.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3607,7 +3607,7 @@
         "x1kg": 16284,
         "x5kg": 13570
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/salvia_186.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3626,7 +3626,7 @@
         "x1kg": 29268,
         "x5kg": 24390
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/peperina_187.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3645,7 +3645,7 @@
         "x1kg": 10680,
         "x5kg": 8900
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tes.svg",
+      "imagen": "/catalogo/productos/te_rojo_188.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3664,7 +3664,7 @@
         "x1kg": 11940,
         "x5kg": 9950
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_raices.svg",
+      "imagen": "/catalogo/productos/pesuna_de_vaca_189.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3683,7 +3683,7 @@
         "x1kg": 12974,
         "x5kg": 10812
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/ajenjo_190.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3702,7 +3702,7 @@
         "x1kg": 10200,
         "x5kg": 8500
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/lapacho_191.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3721,7 +3721,7 @@
         "x1kg": 8466,
         "x5kg": 7055
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_raices.svg",
+      "imagen": "/catalogo/productos/muna_muna_192.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3740,7 +3740,7 @@
         "x1kg": 15902,
         "x5kg": 13252
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/poleo_193.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3759,7 +3759,7 @@
         "x1kg": 10657,
         "x5kg": 8881
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/pasionaria_194.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3778,7 +3778,7 @@
         "x1kg": 9840,
         "x5kg": 8200
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tes.svg",
+      "imagen": "/catalogo/productos/te_verde_195.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3797,7 +3797,7 @@
         "x1kg": 2292,
         "x5kg": 1910
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/rompe_piedra_50grs_196.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3816,7 +3816,7 @@
         "x1kg": 7961,
         "x5kg": 6634
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/alcachofa_197.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3835,7 +3835,7 @@
         "x1kg": 6026,
         "x5kg": 5022
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tinturas.svg",
+      "imagen": "/catalogo/productos/llanten_tinta_60_cc_198.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3854,7 +3854,7 @@
         "x1kg": 7548,
         "x5kg": 6290
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/ortiga_199.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3873,7 +3873,7 @@
         "x1kg": 4723,
         "x5kg": 3936
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tinturas.svg",
+      "imagen": "/catalogo/productos/romero_titura_50cc_200.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3892,7 +3892,7 @@
         "x1kg": 9132,
         "x5kg": 7610
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tes.svg",
+      "imagen": "/catalogo/productos/te_negro_201.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3911,7 +3911,7 @@
         "x1kg": 14690,
         "x5kg": 12242
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/marcela_202.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3930,7 +3930,7 @@
         "x1kg": 6026,
         "x5kg": 5022
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tinturas.svg",
+      "imagen": "/catalogo/productos/rompe_piedra_tintura_60cc_203.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3949,7 +3949,7 @@
         "x1kg": 15860,
         "x5kg": 13217
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/amargon_204.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3968,7 +3968,7 @@
         "x1kg": 11890,
         "x5kg": 9908
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/ambay_205.svg",
       "unidad_medida": "kg"
     },
     {
@@ -3987,7 +3987,7 @@
         "x1kg": 7038,
         "x5kg": 5865
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/carqueja_206.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4006,7 +4006,7 @@
         "x1kg": 6026,
         "x5kg": 5022
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tinturas.svg",
+      "imagen": "/catalogo/productos/chanar_titntura_60cc_207.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4025,7 +4025,7 @@
         "x1kg": 6528,
         "x5kg": 5440
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/espina_colorada_208.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4044,7 +4044,7 @@
         "x1kg": 11911,
         "x5kg": 9926
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/eucalipto_209.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4063,7 +4063,7 @@
         "x1kg": 3982,
         "x5kg": 3318
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_raices.svg",
+      "imagen": "/catalogo/productos/palo_amarillo_210.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4082,7 +4082,7 @@
         "x1kg": 30000,
         "x5kg": 25000
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/hierbabuena_211.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4101,7 +4101,7 @@
         "x1kg": 7200,
         "x5kg": 6000
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/burrito_212.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4120,7 +4120,7 @@
         "x1kg": 4380,
         "x5kg": 3650
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/cola_de_caballo_213.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4139,7 +4139,7 @@
         "x1kg": 21013,
         "x5kg": 17511
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_flores.svg",
+      "imagen": "/catalogo/productos/calendula_214.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4158,7 +4158,7 @@
         "x1kg": 2292,
         "x5kg": 1910
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/doradilla_40grs_215.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4177,7 +4177,7 @@
         "x1kg": 74592,
         "x5kg": 62160
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/cardo_mariano_216.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4196,7 +4196,7 @@
         "x1kg": 13260,
         "x5kg": 11050
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/salvia_blanca_217.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4215,7 +4215,7 @@
         "x1kg": 760,
         "x5kg": 633
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/yerba_de_pollo_25grs_218.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4234,7 +4234,7 @@
         "x1kg": 15984,
         "x5kg": 13320
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/boldo_219.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4253,7 +4253,7 @@
         "x1kg": 17442,
         "x5kg": 14535
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/cola_de_quirquincho_220.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4272,7 +4272,7 @@
         "x1kg": 4716,
         "x5kg": 3930
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_tinturas.svg",
+      "imagen": "/catalogo/productos/diente_de_leon_tintutara_60cc_221.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4291,7 +4291,7 @@
         "x1kg": 25200,
         "x5kg": 21000
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/estigma_de_maiz_222.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4310,7 +4310,7 @@
         "x1kg": 20893,
         "x5kg": 17411
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/hisopo_223.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4329,7 +4329,7 @@
         "x1kg": 86610,
         "x5kg": 72175
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_flores.svg",
+      "imagen": "/catalogo/productos/tilo_224.svg",
       "unidad_medida": "kg"
     },
     {
@@ -4348,7 +4348,7 @@
         "x1kg": 27362,
         "x5kg": 22802
       },
-      "imagen": "/catalogo/ilustraciones/herboristeria_hojas.svg",
+      "imagen": "/catalogo/productos/mirra_225.svg",
       "unidad_medida": "kg"
     }
   ]
