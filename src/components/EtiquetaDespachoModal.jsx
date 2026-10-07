@@ -335,7 +335,7 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 12 }}>
+                    <div className="etiqueta-form-grid">
                         <div>
                             <label className="text-xs muted" style={{ fontWeight: 700 }}>Transporte / Chofer / Expreso</label>
                             <input
@@ -382,8 +382,8 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
                         </div>
                     </div>
 
-                    <div className="spread" style={{ marginTop: 10, alignItems: 'center' }}>
-                        <div style={{ flex: 1, marginRight: 16 }}>
+                    <div className="spread" style={{ marginTop: 10, alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                        <div style={{ flex: '1 1 240px', minWidth: 200 }}>
                             <input
                                 value={notasDespacho}
                                 onChange={e => setNotasDespacho(e.target.value)}
@@ -391,7 +391,7 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
                                 style={{ width: '100%', padding: '5px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 12 }}
                             />
                         </div>
-                        <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                        <div className="row gap-xs" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
                             <span className="text-xs muted">Formato:</span>
                             <button
                                 type="button"
@@ -416,20 +416,21 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
                     maxHeight: '56vh',
                     overflowY: 'auto',
                     background: '#525659',
-                    padding: '20px',
+                    padding: '16px',
                     borderRadius: 8,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: 20
                 }}>
-                    <div ref={printableRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, width: '100%' }}>
+                    <div ref={printableRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, width: '100%', maxWidth: '100%' }}>
                         {listaBultos.map(b => (
                             <div
                                 key={b}
                                 className="etiqueta-container"
                                 style={{
                                     width: formato === 'termica' ? '380px' : '400px',
+                                    maxWidth: '100%',
                                     height: formato === 'termica' ? '540px' : '530px',
                                     boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
                                     background: '#FFFFFF',
@@ -440,7 +441,7 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'space-between',
-                                    boxSizing: borderBox => borderBox
+                                    boxSizing: 'border-box'
                                 }}
                             >
                                 {/* ENCABEZADO REMITENTE Y NÚMERO DE BULTO */}

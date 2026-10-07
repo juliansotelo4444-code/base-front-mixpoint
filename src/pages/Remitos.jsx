@@ -474,7 +474,8 @@ export default function Remitos() {
                     </select>
                 </div>
 
-                <div className="table-wrap">
+                {/* VISTA TABLA PARA ESCRITORIO */}
+                <div className="desktop-only-table table-wrap">
                     <table className="data-table">
                         <thead>
                             <tr>
@@ -490,13 +491,13 @@ export default function Remitos() {
                                         title="Seleccionar todos"
                                     />
                                 </th>
-                                <th>Número</th>
-                                <th>Cliente</th>
-                                <th>Fecha</th>
-                                <th>Estado Tracker</th>
-                                <th>Validación Pago</th>
-                                <th className="text-right">Total</th>
-                                <th className="text-right">Acciones Rápidas</th>
+                                <th style={{ minWidth: 85, whiteSpace: 'nowrap' }}>Número</th>
+                                <th style={{ minWidth: 150 }}>Cliente</th>
+                                <th style={{ minWidth: 90, whiteSpace: 'nowrap' }}>Fecha</th>
+                                <th style={{ minWidth: 140, whiteSpace: 'nowrap' }}>Estado Tracker</th>
+                                <th style={{ minWidth: 130, whiteSpace: 'nowrap' }}>Validación Pago</th>
+                                <th className="text-right" style={{ minWidth: 100, whiteSpace: 'nowrap' }}>Total</th>
+                                <th className="text-right" style={{ minWidth: 260, whiteSpace: 'nowrap' }}>Acciones Rápidas</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -517,7 +518,7 @@ export default function Remitos() {
                                                 style={{ cursor: 'pointer', width: 16, height: 16 }}
                                             />
                                         </td>
-                                        <td className="mono" style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--color-primary-dark)' }} onClick={() => verDetalle(r)}>
+                                        <td className="mono" style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--color-primary-dark)', whiteSpace: 'nowrap' }} onClick={() => verDetalle(r)}>
                                             {r.numero}
                                         </td>
                                         <td style={{ fontWeight: 600, cursor: 'pointer' }} onClick={() => verDetalle(r)}>
@@ -545,8 +546,8 @@ export default function Remitos() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="mono">{formatearFecha(r.fecha)}</td>
-                                        <td>
+                                        <td className="mono" style={{ whiteSpace: 'nowrap' }}>{formatearFecha(r.fecha)}</td>
+                                        <td style={{ whiteSpace: 'nowrap' }}>
                                             <div className="row gap-xs">
                                                 <select
                                                     value={r.estado}
@@ -566,7 +567,7 @@ export default function Remitos() {
                                                 </select>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td style={{ whiteSpace: 'nowrap' }}>
                                             {r.pago_validado ? (
                                                 <span className="badge badge-pago-validado" title="Pago conciliado en banco">
                                                     ✓ Pago Validado
@@ -577,7 +578,7 @@ export default function Remitos() {
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="text-right mono" style={{ fontWeight: 600 }}>
+                                        <td className="text-right mono" style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
                                             {fmtMoney(r.total)}
                                             {Number(r.descuento_porcentaje) > 0 && (
                                                 <div className="text-xs" style={{ color: '#B23A3A' }}>
@@ -585,24 +586,24 @@ export default function Remitos() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="text-right">
-                                            <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
+                                        <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
+                                            <div className="row gap-xs" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
                                                 {/* Botón WhatsApp de 1 toque */}
                                                 <a
                                                     href={buildWhatsAppLink(r)}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="btn btn-secondary btn-sm"
-                                                    style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5' }}
+                                                    style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5', padding: '5px 8px', fontSize: 12 }}
                                                     title="Enviar estado y datos de pago por WhatsApp (1167873243)"
                                                 >
-                                                    📲 WhatsApp
+                                                    📲 WA
                                                 </a>
                                                 <button
                                                     className="btn btn-secondary btn-sm"
                                                     onClick={() => abrirEditarRemito(r)}
                                                     title="Editar remito y rebalancear stock (ACID)"
-                                                    style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
+                                                    style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
                                                 >
                                                     ✏️ Editar
                                                 </button>
@@ -610,22 +611,25 @@ export default function Remitos() {
                                                     className="btn btn-secondary btn-sm"
                                                     onClick={() => imprimirRemito(r.id)}
                                                     title="Imprimir remito con QR mixpoint2026"
+                                                    style={{ padding: '5px 8px', fontSize: 12 }}
                                                 >
-                                                    🖨️ Remito QR
+                                                    🖨️ QR
                                                 </button>
                                                 <button
                                                     className="btn btn-secondary btn-sm"
                                                     onClick={() => abrirEtiquetas(r)}
                                                     title="Generar etiquetas de despacho con transporte, bultos y peso"
-                                                    style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600 }}
+                                                    style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
                                                 >
                                                     🏷️ Etiqueta
                                                 </button>
                                                 <button
                                                     className="btn btn-ghost btn-sm"
                                                     onClick={() => verDetalle(r)}
+                                                    style={{ padding: '5px 8px', fontSize: 12 }}
+                                                    title="Ver detalle del remito"
                                                 >
-                                                    Ver
+                                                    👁️
                                                 </button>
                                             </div>
                                         </td>
@@ -634,13 +638,117 @@ export default function Remitos() {
                             })}
                         </tbody>
                     </table>
-                    {!loading && remitosFiltrados.length === 0 && (
-                        <div className="empty-state">
-                            <div className="icon">🧾</div>
-                            <p>No hay remitos registrados que coincidan.</p>
-                        </div>
-                    )}
                 </div>
+
+                {/* VISTA DE CARDS OPTIMIZADA PARA CELULARES */}
+                <div className="mobile-only-cards">
+                    {remitosFiltrados.map(r => {
+                        const estadoInfo = ESTADOS[r.estado] || { label: r.estado, badgeClass: 'badge-neutral', icon: '⚪' };
+                        const isCambiando = cambiandoEstadoId === r.id;
+                        const estaSel = seleccionados.includes(r.id);
+
+                        return (
+                            <div key={`mob-${r.id}`} className="remito-mobile-card" style={{ borderLeft: `4px solid ${r.pago_validado ? '#10B981' : '#F59E0B'}` }}>
+                                <div className="remito-mobile-header">
+                                    <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={estaSel}
+                                            onChange={(e) => {
+                                                if (e.target.checked) setSeleccionados([...seleccionados, r.id]);
+                                                else setSeleccionados(seleccionados.filter(id => id !== r.id));
+                                            }}
+                                            style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
+                                        />
+                                        <strong className="mono" style={{ fontSize: 15, color: 'var(--color-primary-dark)', cursor: 'pointer' }} onClick={() => verDetalle(r)}>
+                                            {r.numero}
+                                        </strong>
+                                    </div>
+                                    <span className="mono muted text-xs">
+                                        📅 {formatearFecha(r.fecha)}
+                                    </span>
+                                </div>
+
+                                <div className="remito-mobile-body" onClick={() => verDetalle(r)} style={{ cursor: 'pointer' }}>
+                                    <div style={{ fontWeight: 700, fontSize: 14 }}>
+                                        {r.cliente_nombre}
+                                    </div>
+                                    {r.cliente_telefono && (
+                                        <div className="text-xs" style={{ color: '#059669', fontWeight: 600 }}>
+                                            💬 {r.cliente_telefono}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="spread" style={{ alignItems: 'center', marginTop: 2 }}>
+                                    <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                                        <select
+                                            value={r.estado}
+                                            disabled={isCambiando}
+                                            onChange={(e) => cambiarEstado(r.id, e.target.value)}
+                                            className={`badge ${estadoInfo.badgeClass}`}
+                                            style={{ border: 'none', cursor: 'pointer', padding: '4px 8px', fontWeight: 600, fontSize: 11 }}
+                                        >
+                                            <option value="pendiente">🟡 Pendiente</option>
+                                            <option value="en_preparacion">🔵 En Prep.</option>
+                                            <option value="esperando_pago">🟣 Esp. Pago</option>
+                                            <option value="en_camino">🟠 En Camino</option>
+                                            <option value="entregado">🟢 Entregado</option>
+                                            <option value="facturado">🔷 Facturado</option>
+                                            <option value="cancelado">🔴 Cancelado</option>
+                                        </select>
+                                        <span className={`badge ${r.pago_validado ? 'badge-pago-validado' : 'badge-pago-pendiente'}`} style={{ fontSize: 10 }}>
+                                            {r.pago_validado ? '✓ Pago OK' : '⏳ Pago Pend.'}
+                                        </span>
+                                    </div>
+
+                                    <div className="text-right mono" style={{ fontWeight: 800, fontSize: 15, color: 'var(--color-text)' }}>
+                                        {fmtMoney(r.total)}
+                                    </div>
+                                </div>
+
+                                <div className="remito-mobile-actions">
+                                    <a
+                                        href={buildWhatsAppLink(r)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="btn btn-secondary btn-sm"
+                                        style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5' }}
+                                    >
+                                        📲 WhatsApp
+                                    </a>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => abrirEditarRemito(r)}
+                                        style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
+                                    >
+                                        ✏️ Editar
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => imprimirRemito(r.id)}
+                                    >
+                                        🖨️ Remito QR
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => abrirEtiquetas(r)}
+                                        style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600 }}
+                                    >
+                                        🏷️ Etiqueta
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {!loading && remitosFiltrados.length === 0 && (
+                    <div className="empty-state">
+                        <div className="icon">🧾</div>
+                        <p>No hay remitos registrados que coincidan.</p>
+                    </div>
+                )}
             </div>
 
             {/* MODAL NUEVO REMITO */}
@@ -739,9 +847,9 @@ export default function Remitos() {
                                     const excedeStock = prod && Number(it.cantidad) > Number(prod.stock_actual);
 
                                     return (
-                                        <div key={i} className="item-row-card" style={{ background: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 8, padding: '10px 12px' }}>
-                                            <div className="item-row-header" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                                <div style={{ flex: 1 }}>
+                                        <div key={i} className="item-row-card">
+                                            <div className="item-row-header">
+                                                <div className="item-row-product">
                                                     <ProductPicker
                                                         productos={productos}
                                                         value={it.producto_id}
@@ -750,7 +858,7 @@ export default function Remitos() {
                                                 </div>
                                                 <button
                                                     type="button"
-                                                    className="btn btn-ghost btn-sm"
+                                                    className="btn btn-ghost btn-sm item-row-delete"
                                                     onClick={() => quitarItem(i)}
                                                     disabled={items.length === 1}
                                                     style={{ color: 'var(--color-danger)' }}
@@ -759,8 +867,8 @@ export default function Remitos() {
                                                     ✕
                                                 </button>
                                             </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr', gap: 10, marginTop: 8 }}>
-                                                <div>
+                                            <div className="item-row-details">
+                                                <div className="item-col-cant">
                                                     <label className="text-xs muted">Cantidad ({prod?.unidad_medida || 'kg'})</label>
                                                     <input
                                                         type="number"
@@ -776,7 +884,7 @@ export default function Remitos() {
                                                         }}
                                                     />
                                                 </div>
-                                                <div>
+                                                <div className="item-col-precio">
                                                     <label className="text-xs muted">Precio Unitario ($)</label>
                                                     <input
                                                         type="number"
@@ -787,9 +895,9 @@ export default function Remitos() {
                                                         style={{ width: '100%', padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
                                                     />
                                                 </div>
-                                                <div style={{ textAlign: 'right' }}>
-                                                    <label className="text-xs muted">Subtotal</label>
-                                                    <div className="mono" style={{ fontWeight: 600, fontSize: 15, paddingTop: 6 }}>
+                                                <div className="item-col-subtotal">
+                                                    <label className="text-xs muted" style={{ display: 'block', fontWeight: 400 }}>Subtotal</label>
+                                                    <div className="mono" style={{ fontWeight: 700, fontSize: 14, paddingTop: 4, color: 'var(--color-primary-dark)' }}>
                                                         {fmtMoney((Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0))}
                                                     </div>
                                                 </div>
@@ -1288,9 +1396,9 @@ export default function Remitos() {
                                     const prod = productos.find(p => p.id === Number(it.producto_id));
 
                                     return (
-                                        <div key={i} className="item-row-card" style={{ background: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: 8, padding: '10px 12px' }}>
-                                            <div className="item-row-header" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                                <div style={{ flex: 1 }}>
+                                        <div key={i} className="item-row-card">
+                                            <div className="item-row-header">
+                                                <div className="item-row-product">
                                                     <ProductPicker
                                                         productos={productos}
                                                         value={it.producto_id}
@@ -1299,7 +1407,7 @@ export default function Remitos() {
                                                 </div>
                                                 <button
                                                     type="button"
-                                                    className="btn btn-ghost btn-sm"
+                                                    className="btn btn-ghost btn-sm item-row-delete"
                                                     onClick={() => quitarEditItem(i)}
                                                     disabled={editItems.length === 1}
                                                     style={{ color: 'var(--color-danger)' }}
@@ -1308,8 +1416,8 @@ export default function Remitos() {
                                                     ✕
                                                 </button>
                                             </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr', gap: 10, marginTop: 8 }}>
-                                                <div>
+                                            <div className="item-row-details">
+                                                <div className="item-col-cant">
                                                     <label className="text-xs muted">Cantidad ({prod?.unidad_medida || 'kg'})</label>
                                                     <input
                                                         type="number"
@@ -1325,7 +1433,7 @@ export default function Remitos() {
                                                         required
                                                     />
                                                 </div>
-                                                <div>
+                                                <div className="item-col-precio">
                                                     <label className="text-xs muted">Precio Unitario ($)</label>
                                                     <input
                                                         type="number"
@@ -1341,9 +1449,9 @@ export default function Remitos() {
                                                         required
                                                     />
                                                 </div>
-                                                <div>
-                                                    <label className="text-xs muted">Subtotal</label>
-                                                    <div className="mono" style={{ padding: '7px 0', fontWeight: 600 }}>
+                                                <div className="item-col-subtotal">
+                                                    <label className="text-xs muted" style={{ display: 'block', fontWeight: 400 }}>Subtotal</label>
+                                                    <div className="mono" style={{ fontWeight: 700, fontSize: 14, paddingTop: 4, color: 'var(--color-primary-dark)' }}>
                                                         {fmtMoney((Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0))}
                                                     </div>
                                                 </div>

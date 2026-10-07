@@ -204,7 +204,7 @@ export default function Dashboard() {
                                 STATUS: OPTIMAL
                             </span>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, margin: '14px 0' }}>
                             <div>
                                 <div className="mono" style={{ fontSize: 10, color: '#94A3B8' }}>PEDIDOS HOY</div>
                                 <div className="mono" style={{ fontSize: 20, color: '#F8FAFC', fontWeight: 700 }}>{resumen.pedidos_hoy || 0}</div>

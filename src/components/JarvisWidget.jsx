@@ -145,12 +145,7 @@ export default function JarvisWidget() {
     return (
         <>
             {/* BOTÓN FLOTANTE TRIGGER */}
-            <div className="jarvis-fab-wrapper no-print" style={{
-                position: 'fixed',
-                bottom: 24,
-                right: 24,
-                zIndex: 9990
-            }}>
+            <div className="jarvis-fab-wrapper no-print">
                 <button
                     type="button"
                     onClick={() => setAbierto(!abierto)}
@@ -177,24 +172,7 @@ export default function JarvisWidget() {
 
             {/* MODAL / PANEL CONVERSACIONAL */}
             {abierto && (
-                <div className="jarvis-modal no-print" style={{
-                    position: 'fixed',
-                    bottom: 88,
-                    right: 24,
-                    width: 380,
-                    maxWidth: 'calc(100vw - 32px)',
-                    height: 520,
-                    maxHeight: 'calc(100vh - 110px)',
-                    background: '#131722',
-                    border: '1px solid rgba(201, 162, 39, 0.3)',
-                    borderRadius: 16,
-                    boxShadow: '0 20px 48px rgba(0, 0, 0, 0.6), 0 0 20px rgba(201, 162, 39, 0.15)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    zIndex: 9995,
-                    overflow: 'hidden',
-                    animation: 'fadeInUp 0.2s ease-out'
-                }}>
+                <div className="jarvis-modal no-print">
                     {/* Header */}
                     <div style={{
                         padding: '14px 16px',

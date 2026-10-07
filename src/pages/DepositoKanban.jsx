@@ -32,6 +32,7 @@ export default function DepositoKanban() {
     const [notificacion, setNotificacion] = useState(null); // { tipo: 'info' | 'error' | 'success', texto: '' }
     const [arrastrandoId, setArrastrandoId] = useState(null);
     const [filtroTexto, setFiltroTexto] = useState('');
+    const [tabColumnaMobile, setTabColumnaMobile] = useState('todas');
 
     // Modales
     const [hojaDeRutaOpen, setHojaDeRutaOpen] = useState(false);
@@ -294,7 +295,35 @@ export default function DepositoKanban() {
                 </div>
             </div>
 
-            {/* TABLERO KANBAN DE 3 COLUMNAS */}
+            {/* SELECTOR DE COLUMNAS PARA CELULARES */}
+            <div className="mobile-only-cards" style={{ marginBottom: 14 }}>
+                <div className="row gap-xs" style={{ overflowX: 'auto', paddingBottom: 4 }}>
+                    <button
+                        type="button"
+                        onClick={() => setTabColumnaMobile('todas')}
+                        className={`btn btn-sm ${tabColumnaMobile === 'todas' ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ whiteSpace: 'nowrap' }}
+                    >
+                        Todas
+                    </button>
+                    {configColumnas.map(col => {
+                        const count = (columnas[col.key] || []).length;
+                        return (
+                            <button
+                                key={col.key}
+                                type="button"
+                                onClick={() => setTabColumnaMobile(col.key)}
+                                className={`btn btn-sm ${tabColumnaMobile === col.key ? 'btn-primary' : 'btn-secondary'}`}
+                                style={{ whiteSpace: 'nowrap' }}
+                            >
+                                {col.titulo} ({count})
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* TABLERO KANBAN */}
             {cargando ? (
                 <div style={{ textAlign: 'center', padding: 60, color: '#6B7280' }}>
                     <div style={{ fontSize: 32, marginBottom: 10 }}>📦</div>
@@ -303,11 +332,11 @@ export default function DepositoKanban() {
             ) : (
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gridTemplateColumns: tabColumnaMobile !== 'todas' ? '1fr' : 'repeat(auto-fit, minmax(310px, 1fr))',
                     gap: 16,
                     alignItems: 'start'
                 }}>
-                    {configColumnas.map((col) => {
+                    {configColumnas.filter(col => tabColumnaMobile === 'todas' || col.key === tabColumnaMobile).map((col) => {
                         const lista = filtrarLista(columnas[col.key] || []);
 
                         return (
@@ -337,10 +366,10 @@ export default function DepositoKanban() {
                                     borderBottom: `2px solid ${col.bordeColor}`
                                 }}>
                                     <div>
-                                        <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>
+                                        <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-text, #111827)' }}>
                                             {col.titulo}
                                         </div>
-                                        <div style={{ fontSize: 11, color: '#6B7280' }}>
+                                        <div style={{ fontSize: 11, color: 'var(--color-text-muted, #6B7280)' }}>
                                             {col.subtitulo}
                                         </div>
                                     </div>
@@ -386,14 +415,15 @@ export default function DepositoKanban() {
                                                     onDragStart={(e) => handleDragStart(e, pedido.id)}
                                                     onDragEnd={handleDragEnd}
                                                     style={{
-                                                        background: '#ffffff',
+                                                        background: 'var(--color-surface, #ffffff)',
+                                                        color: 'var(--color-text, #111827)',
                                                         borderRadius: 12,
                                                         padding: 14,
                                                         border: estaSeleccionado
                                                             ? '2px solid #2563EB'
                                                             : esMio
                                                             ? '2px solid #3B82F6'
-                                                            : '1px solid #E5E7EB',
+                                                            : '1px solid var(--color-border, #E5E7EB)',
                                                         boxShadow: arrastrandoId === pedido.id
                                                             ? '0 12px 28px rgba(0,0,0,0.18)'
                                                             : '0 2px 6px rgba(0,0,0,0.05)',
@@ -410,18 +440,18 @@ export default function DepositoKanban() {
                                                                 onChange={() => toggleSeleccion(pedido.id)}
                                                                 style={{ cursor: 'pointer', transform: 'scale(1.15)' }}
                                                             />
-                                                            <strong style={{ fontSize: 14, color: '#1F2937' }}>
+                                                            <strong style={{ fontSize: 14, color: 'var(--color-text, #1F2937)' }}>
                                                                 {pedido.numero}
                                                             </strong>
                                                         </div>
-                                                        <span style={{ fontSize: 11.5, color: '#6B7280' }}>
+                                                        <span style={{ fontSize: 11.5, color: 'var(--color-text-muted, #6B7280)' }}>
                                                             📅 {formatearFecha(pedido.fecha)}
                                                         </span>
                                                     </div>
 
                                                     {/* CLIENTE Y TELÉFONO WHATSAPP */}
                                                     <div style={{ marginBottom: 8 }}>
-                                                        <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>
+                                                        <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--color-text, #111827)' }}>
                                                             {pedido.cliente_nombre}
                                                         </div>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
@@ -560,15 +590,11 @@ export default function DepositoKanban() {
             <AnimatePresence>
                 {seleccionados.length > 0 && (
                     <motion.div
+                        className="kanban-batch-bar"
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 50 }}
                         style={{
-                            position: 'fixed',
-                            bottom: 24,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            zIndex: 999,
                             background: 'rgba(17, 24, 39, 0.95)',
                             backdropFilter: 'blur(12px)',
                             border: '1px solid rgba(255, 255, 255, 0.2)',

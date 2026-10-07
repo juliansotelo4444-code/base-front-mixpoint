@@ -216,7 +216,7 @@ export default function AuditLogTimeline() {
                                         style={{
                                             padding: 16,
                                             borderLeft: `4px solid ${config.border}`,
-                                            background: '#ffffff',
+                                            background: 'var(--color-surface, #ffffff)',
                                             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                                             transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                                             cursor: 'pointer'
@@ -241,15 +241,15 @@ export default function AuditLogTimeline() {
                                                     <span>{log.accion.replace(/_/g, ' ')}</span>
                                                 </span>
 
-                                                <span style={{ fontSize: 13, fontWeight: 600, color: '#1F2937' }}>
+                                                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text, #1F2937)' }}>
                                                     {log.entidad?.toUpperCase()} {log.entidad_id ? `#${log.entidad_id}` : ''}
                                                 </span>
                                             </div>
 
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#6B7280' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--color-text-muted, #6B7280)' }}>
                                                 <span>🕒 {fechaTexto}</span>
                                                 {log.ip_origen && (
-                                                    <span style={{ background: '#F3F4F6', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace' }}>
+                                                    <span style={{ background: 'var(--color-surface-sunken)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace' }}>
                                                         {log.ip_origen}
                                                     </span>
                                                 )}
@@ -275,7 +275,7 @@ export default function AuditLogTimeline() {
                                                 </div>
                                                 <span><strong>{log.usuario_nombre || 'Sistema / API'}</strong></span>
                                                 {log.usuario_rol && (
-                                                    <span style={{ fontSize: 11, color: '#6B7280', background: '#F3F4F6', padding: '1px 6px', borderRadius: 4 }}>
+                                                    <span style={{ fontSize: 11, color: 'var(--color-text-muted)', background: 'var(--color-surface-sunken)', padding: '1px 6px', borderRadius: 4 }}>
                                                         {log.usuario_rol}
                                                     </span>
                                                 )}
@@ -288,7 +288,7 @@ export default function AuditLogTimeline() {
 
                                         {/* DETALLE EXPANDIDO / DIFF */}
                                         {estaExpandido && (
-                                            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #E5E7EB', fontSize: 12.5 }} onClick={(e) => e.stopPropagation()}>
+                                            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--color-border)', fontSize: 12.5 }} onClick={(e) => e.stopPropagation()}>
                                                 {log.detalles?.motivo && (
                                                     <div style={{ marginBottom: 10, background: '#FEF3C7', color: '#92400E', padding: '6px 12px', borderRadius: 6 }}>
                                                         <strong>Motivo / Nota:</strong> {log.detalles.motivo}
@@ -297,23 +297,23 @@ export default function AuditLogTimeline() {
 
                                                 {/* Comparativa antes / despues si existe */}
                                                 {log.detalles?.antes && log.detalles?.despues ? (
-                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 10 }}>
-                                                        <div style={{ background: '#FEE2E2', padding: 10, borderRadius: 6 }}>
-                                                            <div style={{ fontWeight: 700, color: '#991B1B', marginBottom: 6 }}>🔴 Estado Anterior:</div>
-                                                            <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                                                    <div className="audit-diff-grid">
+                                                        <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: 10, borderRadius: 6 }}>
+                                                            <div style={{ fontWeight: 700, color: '#EF4444', marginBottom: 6 }}>🔴 Estado Anterior:</div>
+                                                            <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap', fontFamily: 'monospace', color: 'var(--color-text)' }}>
                                                                 {JSON.stringify(log.detalles.antes, null, 2)}
                                                             </pre>
                                                         </div>
-                                                        <div style={{ background: '#DCFCE7', padding: 10, borderRadius: 6 }}>
-                                                            <div style={{ fontWeight: 700, color: '#166534', marginBottom: 6 }}>🟢 Estado Nuevo:</div>
-                                                            <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                                                        <div style={{ background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: 10, borderRadius: 6 }}>
+                                                            <div style={{ fontWeight: 700, color: '#22C55E', marginBottom: 6 }}>🟢 Estado Nuevo:</div>
+                                                            <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap', fontFamily: 'monospace', color: 'var(--color-text)' }}>
                                                                 {JSON.stringify(log.detalles.despues, null, 2)}
                                                             </pre>
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div style={{ background: '#F9FAFB', padding: 10, borderRadius: 6, marginBottom: 8 }}>
-                                                        <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                                                    <div style={{ background: 'var(--color-surface-sunken)', border: '1px solid var(--color-border)', padding: 10, borderRadius: 6, marginBottom: 8 }}>
+                                                        <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap', fontFamily: 'monospace', color: 'var(--color-text)' }}>
                                                             {JSON.stringify(log.detalles, null, 2)}
                                                         </pre>
                                                     </div>
