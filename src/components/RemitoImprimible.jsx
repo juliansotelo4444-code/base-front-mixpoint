@@ -344,13 +344,8 @@ function getPrintCss() {
 }
 
 export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) {
-    if (!remito) return null;
-
     const printableRef = useRef(null);
     const [qrDataUrl, setQrDataUrl] = useState('');
-    const pages = chunkItems(remito.items || []);
-    const fechaFormateada = formatearFecha(remito.fecha || new Date());
-
     const [paginaActiva, setPaginaActiva] = useState('todas'); // 'todas' | 0 | 1...
     const [zoomScale, setZoomScale] = useState(0.85);
     const [modoAjuste, setModoAjuste] = useState('auto'); // 'auto' | '100' | 'manual'
@@ -421,6 +416,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     };
 
     useEffect(() => {
+        if (!remito) return;
         const qrTexto = `MIX POINT MAYORISTA\nAlias: mixpoint2026\nRemito: ${remito.numero || ''}\nTotal: ${fmtMoney(remito.total)}\nWhatsApp: 1167873243`;
         QRCode.toDataURL(qrTexto, {
             margin: 1,
@@ -428,6 +424,11 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
             color: { dark: '#11141D', light: '#FFFFFF' }
         }).then(url => setQrDataUrl(url)).catch(() => {});
     }, [remito]);
+
+    if (!remito) return null;
+
+    const pages = chunkItems(remito.items || []);
+    const fechaFormateada = formatearFecha(remito.fecha || new Date());
 
     const handlePrint = () => {
         const root = printableRef.current;

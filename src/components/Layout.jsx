@@ -5,7 +5,8 @@ import { usePreferences } from '../context/PreferencesContext';
 import {
     IconDashboard, IconRemito, IconCarrito, IconRecepcion, IconProducto,
     IconClientes, IconProveedores, IconGastos, IconUsuarios, IconLogout,
-    IconMenu, IconClose, IconMix, IconSync, IconBanco, IconReporte, IconFlyer
+    IconMenu, IconClose, IconMix, IconSync, IconBanco, IconReporte, IconFlyer,
+    IconManual
 } from './Icons';
 import NotificacionesDropdown from './NotificacionesDropdown';
 import JarvisWidget from './JarvisWidget';
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
     { to: '/proveedores', label: 'Proveedores', icon: IconProveedores },
     { to: '/gastos', label: 'Gastos', icon: IconGastos },
     { to: '/auditoria', label: 'Historial / Auditoría', icon: IconReporte },
+    { to: '/manual', label: 'Manual de Uso', icon: IconManual },
     { to: '/usuarios', label: 'Usuarios', icon: IconUsuarios, adminOnly: true },
 ];
 

@@ -37,10 +37,8 @@ function BarcodeSVG({ value }) {
 }
 
 export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
-    if (!remito) return null;
-
     // Calcular peso estimado a partir de los ítems si no viene en el remito
-    const pesoSugerido = (remito.items || []).reduce((acc, it) => {
+    const pesoSugerido = (remito?.items || []).reduce((acc, it) => {
         const cant = Number(it.cantidad) || 0;
         const unidad = (it.unidad_medida || '').toLowerCase();
         if (unidad.includes('kg')) return acc + cant;
@@ -48,11 +46,11 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
         return acc + (cant * 0.5); // 500g estimado por unidad
     }, 0);
 
-    const [transportista, setTransportista] = useState(remito.transportista || 'Flete Propio');
-    const [bultos, setBultos] = useState(remito.bultos || 1);
-    const [pesoKg, setPesoKg] = useState(remito.peso_kg > 0 ? remito.peso_kg : Math.round(pesoSugerido * 10) / 10);
-    const [valorDeclarado, setValorDeclarado] = useState(remito.valor_declarado > 0 ? remito.valor_declarado : (remito.total || 0));
-    const [notasDespacho, setNotasDespacho] = useState(remito.datos_despacho?.notas || '');
+    const [transportista, setTransportista] = useState(remito?.transportista || 'Flete Propio');
+    const [bultos, setBultos] = useState(remito?.bultos || 1);
+    const [pesoKg, setPesoKg] = useState(remito?.peso_kg > 0 ? remito.peso_kg : Math.round(pesoSugerido * 10) / 10);
+    const [valorDeclarado, setValorDeclarado] = useState(remito?.valor_declarado > 0 ? remito.valor_declarado : (remito?.total || 0));
+    const [notasDespacho, setNotasDespacho] = useState(remito?.datos_despacho?.notas || '');
     const [formato, setFormato] = useState('termica'); // 'termica' (100x150 mm) | 'a4'
 
     const [guardando, setGuardando] = useState(false);
@@ -65,13 +63,14 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
 
     // Generar códigos QR para cada bulto
     useEffect(() => {
+        if (!remito) return;
         const qrs = {};
         const promesas = listaBultos.map(async (b) => {
             const qrText = [
                 `MIX POINT DESPACHO`,
-                `Remito: ${remito.numero}`,
+                `Remito: ${remito.numero || ''}`,
                 `Bulto: ${b}/${cantBultosNum}`,
-                `Cliente: ${remito.cliente_nombre}`,
+                `Cliente: ${remito.cliente_nombre || ''}`,
                 `Destino: ${remito.direccion_entrega || remito.cliente_direccion || 'Depósito'}`,
                 `Transporte: ${transportista}`,
                 `Valor: $${valorDeclarado}`,
@@ -92,7 +91,9 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
         });
 
         Promise.all(promesas).then(() => setQrCodes(qrs));
-    }, [remito, transportista, bultos, pesoKg, valorDeclarado]);
+    }, [remito, transportista, bultos, pesoKg, valorDeclarado, cantBultosNum]);
+
+    if (!remito) return null;
 
     async function guardarDatosDespacho() {
         setGuardando(true);
