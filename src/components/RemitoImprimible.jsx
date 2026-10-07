@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
 import { formatearFecha } from '../utils/fechas';
 
@@ -358,11 +359,12 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
         const calcularAuto = () => {
             if (typeof window === 'undefined') return;
             if (window.innerWidth <= 768) {
-                setZoomScale(1);
+                const scaleW = (window.innerWidth - 32) / 794;
+                setZoomScale(Number(Math.min(1, Math.max(0.35, scaleW)).toFixed(2)));
             } else {
-                const scaleH = (window.innerHeight - 150) / 1120;
+                const scaleH = (window.innerHeight - 140) / 1120;
                 const scaleW = (window.innerWidth - 80) / 820;
-                const opt = Math.min(1, Math.max(0.55, Math.min(scaleH, scaleW)));
+                const opt = Math.min(1, Math.max(0.5, Math.min(scaleH, scaleW)));
                 setZoomScale(Number(opt.toFixed(2)));
             }
         };
@@ -377,11 +379,12 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     const handleAjustarPantalla = () => {
         setModoAjuste('auto');
         if (window.innerWidth <= 768) {
-            setZoomScale(1);
+            const scaleW = (window.innerWidth - 32) / 794;
+            setZoomScale(Number(Math.min(1, Math.max(0.35, scaleW)).toFixed(2)));
         } else {
-            const scaleH = (window.innerHeight - 150) / 1120;
+            const scaleH = (window.innerHeight - 140) / 1120;
             const scaleW = (window.innerWidth - 80) / 820;
-            const opt = Math.min(1, Math.max(0.55, Math.min(scaleH, scaleW)));
+            const opt = Math.min(1, Math.max(0.5, Math.min(scaleH, scaleW)));
             setZoomScale(Number(opt.toFixed(2)));
         }
     };
@@ -398,7 +401,23 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
 
     const handleZoomOut = () => {
         setModoAjuste('manual');
-        setZoomScale(prev => Math.max(0.45, Number((prev - 0.1).toFixed(2))));
+        setZoomScale(prev => Math.max(0.4, Number((prev - 0.1).toFixed(2))));
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && onClose) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    const handleOverlayClick = (e) => {
+        if (e.target.classList.contains('remito-print-overlay') && onClose) {
+            onClose();
+        }
     };
 
     useEffect(() => {
@@ -411,10 +430,20 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     }, [remito]);
 
     const handlePrint = () => {
-        const content = printableRef.current;
-        if (!content) {
+        const root = printableRef.current;
+        if (!root) {
             window.print();
             return;
+        }
+
+        const pageNodes = root.querySelectorAll('.remito-page-a4');
+        let sheetsHtml = '';
+        if (pageNodes && pageNodes.length > 0) {
+            pageNodes.forEach(node => {
+                sheetsHtml += node.outerHTML;
+            });
+        } else {
+            sheetsHtml = root.innerHTML;
         }
 
         let frame = document.getElementById('remito-hidden-iframe');
@@ -444,7 +473,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                 </style>
             </head>
             <body>
-                ${content.innerHTML}
+                ${sheetsHtml}
             </body>
             </html>
         `);
@@ -461,8 +490,18 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     };
 
     const handleDownloadHtml = () => {
-        const content = printableRef.current;
-        if (!content) return;
+        const root = printableRef.current;
+        if (!root) return;
+
+        const pageNodes = root.querySelectorAll('.remito-page-a4');
+        let sheetsHtml = '';
+        if (pageNodes && pageNodes.length > 0) {
+            pageNodes.forEach(node => {
+                sheetsHtml += node.outerHTML;
+            });
+        } else {
+            sheetsHtml = root.innerHTML;
+        }
 
         const html = `<!DOCTYPE html>
 <html lang="es">
@@ -487,7 +526,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     </style>
 </head>
 <body>
-    ${content.innerHTML}
+    ${sheetsHtml}
     <script>
         window.onload = function() {
             setTimeout(function() { window.print(); }, 400);
@@ -508,9 +547,16 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     };
 
     const totalPages = pages.length;
+    const baseWidthPx = 794;
+    const baseHeightPx = 1120;
+    const scaledWidthPx = Math.round(baseWidthPx * zoomScale);
+    const scaledHeightPx = Math.round(baseHeightPx * zoomScale);
 
-    return (
-        <div className="remito-print-overlay">
+    if (typeof document === 'undefined') return null;
+
+    const modalContent = (
+        <div className="remito-print-overlay" onClick={handleOverlayClick}>
+            <style>{getPrintCss()}</style>
             {/* BARRA DE NAVEGACIÓN Y ACCIONES SUPERIOR (STICKY) */}
             <div className="remito-print-actions no-print">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 1100, flexWrap: 'wrap', gap: 10 }}>
@@ -561,7 +607,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                 type="button"
                                 className={`btn btn-xs ${modoAjuste === 'auto' ? 'btn-secondary' : 'btn-ghost'}`}
                                 onClick={handleAjustarPantalla}
-                                title="Ajustar altura de página a la pantalla"
+                                title="Ajustar a la pantalla"
                                 style={{ padding: '3px 8px', fontSize: 11 }}
                             >
                                 📐 Pantalla
@@ -646,10 +692,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                     flexDirection: 'column',
                     alignItems: 'center',
                     width: '100%',
-                    transform: `scale(${zoomScale})`,
-                    transformOrigin: 'top center',
-                    transition: 'transform 0.15s ease',
-                    marginBottom: zoomScale < 1 ? `-${Math.round((1 - zoomScale) * 1150 * (paginaActiva === 'todas' ? pages.length : 1) * 0.96)}px` : '20px'
+                    paddingBottom: 40
                 }}
             >
                 {pages.map((pageItems, pageIdx) => {
@@ -663,11 +706,45 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                     const totalPages = pages.length;
 
                     return (
-                        <div className="remito-page-a4" key={pageIdx}>
-                            {/* Insignia visual en pantalla */}
-                            <div className="page-screen-badge no-print">
-                                HOJA {pageNumber} DE {totalPages}
-                            </div>
+                        <div
+                            key={pageIdx}
+                            className="remito-page-outer-container"
+                            style={{
+                                width: `${scaledWidthPx}px`,
+                                height: `${scaledHeightPx}px`,
+                                margin: '0 auto 28px auto',
+                                position: 'relative',
+                                flexShrink: 0
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: `${baseWidthPx}px`,
+                                    height: `${baseHeightPx}px`,
+                                    minHeight: `${baseHeightPx}px`,
+                                    maxHeight: `${baseHeightPx}px`,
+                                    transform: `scale(${zoomScale})`,
+                                    transformOrigin: 'top left',
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0
+                                }}
+                            >
+                                <div
+                                    className="remito-page-a4"
+                                    style={{
+                                        width: `${baseWidthPx}px`,
+                                        height: `${baseHeightPx}px`,
+                                        minHeight: `${baseHeightPx}px`,
+                                        maxHeight: `${baseHeightPx}px`,
+                                        margin: 0,
+                                        boxShadow: 'none'
+                                    }}
+                                >
+                                    {/* Insignia visual en pantalla */}
+                                    <div className="page-screen-badge no-print">
+                                        HOJA {pageNumber} DE {totalPages}
+                                    </div>
 
                             {/* CONTENIDO SUPERIOR */}
                             <div>
@@ -863,9 +940,13 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                 )}
                             </div>
                         </div>
+                    </div>
+                </div>
                     );
                 })}
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 }

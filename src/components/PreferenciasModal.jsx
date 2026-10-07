@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePreferences } from '../context/PreferencesContext';
 import { IconClose } from './Icons';
 
@@ -20,6 +21,7 @@ export default function PreferenciasModal({ isOpen, onClose }) {
     const [guardadoMsg, setGuardadoMsg] = useState(false);
 
     if (!isOpen) return null;
+    if (typeof document === 'undefined') return null;
 
     const density = preferences.tableDensity || 'comfortable';
     const metrics = preferences.dashboardMetrics || {};
@@ -50,7 +52,7 @@ export default function PreferenciasModal({ isOpen, onClose }) {
         setTimeout(() => setGuardadoMsg(false), 2000);
     }
 
-    return (
+    return createPortal(
         <div
             style={{
                 position: 'fixed',
@@ -293,6 +295,7 @@ export default function PreferenciasModal({ isOpen, onClose }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
