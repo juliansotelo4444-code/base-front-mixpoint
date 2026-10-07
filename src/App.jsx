@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PreferencesProvider } from './context/PreferencesContext';
 import Layout from './components/Layout';
-import SkeletonLoader from './components/SkeletonLoader';
+import { SkeletonTable } from './components/SkeletonLoader';
 
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -39,7 +39,7 @@ function RutaAdmin({ children }) {
 
 function PageSuspense({ children }) {
     return (
-        <Suspense fallback={<div className="p-8"><SkeletonLoader rows={8} /></div>}>
+        <Suspense fallback={<div className="p-8"><SkeletonTable rows={8} /></div>}>
             {children}
         </Suspense>
     );
