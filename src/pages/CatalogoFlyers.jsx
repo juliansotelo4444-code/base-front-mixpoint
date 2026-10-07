@@ -248,6 +248,86 @@ export default function CatalogoFlyers() {
             {/* TAB 1: CATÁLOGO DIGITAL INTERACTIVO */}
             {tabActiva === 'catalogo' && (
                 <div className="stack gap-md">
+                    {/* BANNER PORTADA OFICIAL DESTACADA */}
+                    {!q && !categoriaFiltro && (
+                        <div
+                            className="card"
+                            style={{
+                                background: 'linear-gradient(135deg, #11141D 0%, #1A2130 100%)',
+                                border: '2px solid #C9A227',
+                                borderRadius: 14,
+                                padding: '16px 22px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 20,
+                                flexWrap: 'wrap',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.25)'
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                                <img
+                                    src="/catalogo/portada.jpg"
+                                    alt="Portada Catálogo Mix Point"
+                                    style={{
+                                        width: 76,
+                                        height: 104,
+                                        objectFit: 'cover',
+                                        borderRadius: 8,
+                                        border: '1.5px solid #C9A227',
+                                        boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+                                        cursor: 'pointer',
+                                        flexShrink: 0
+                                    }}
+                                    onClick={() => {
+                                        setPaginaActual(1);
+                                        setTabActiva('revista');
+                                    }}
+                                    title="Clic para ver revista completa"
+                                />
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                        <span className="badge" style={{ background: '#C9A227', color: '#11141D', fontWeight: 800, fontSize: 10.5 }}>
+                                            EDICIÓN MAYORISTA OFICIAL
+                                        </span>
+                                        <span style={{ color: '#E2DCC9', fontSize: 12 }}>
+                                            Revista Digital · 21 Páginas
+                                        </span>
+                                    </div>
+                                    <h2 style={{ fontSize: 19, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px', letterSpacing: '0.02em' }}>
+                                        Catálogo Distribuidora Mayorista Mix-Point
+                                    </h2>
+                                    <p style={{ fontSize: 12.5, color: '#A9A79B', margin: 0, lineHeight: 1.35 }}>
+                                        Frutos secos, mixes, cereales, semillas, harinas y herboristería con trazabilidad FEFO y escala por bulto.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="row gap-xs">
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    style={{ padding: '8px 16px', fontWeight: 700 }}
+                                    onClick={() => {
+                                        setPaginaActual(1);
+                                        setTabActiva('revista');
+                                    }}
+                                >
+                                    📖 Ver Revista Completa
+                                </button>
+                                <a
+                                    href="/catalogo/portada.jpg"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ padding: '8px 14px' }}
+                                >
+                                    👁️ Portada HD
+                                </a>
+                            </div>
+                        </div>
+                    )}
+
                     {/* BARRA DE FILTROS SUPERIOR */}
                     <div className="card" style={{ padding: '14px 18px', background: '#FFFFFF' }}>
                         <div className="spread" style={{ flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
@@ -614,7 +694,7 @@ export default function CatalogoFlyers() {
                                 🔍 {zoomRevista === 100 ? 'Ampliar (140%)' : 'Normal (100%)'}
                             </button>
                             <a
-                                href="/catalogo/pagina_1.jpg"
+                                href={`/catalogo/pagina_${paginaActual}.jpg`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="btn btn-secondary btn-sm"
