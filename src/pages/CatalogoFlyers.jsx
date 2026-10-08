@@ -68,6 +68,7 @@ export default function CatalogoFlyers() {
     // Estado del Visor de Revista Digital PDF
     const [paginaActual, setPaginaActual] = useState(1);
     const [zoomRevista, setZoomRevista] = useState(100);
+    const [modoRevista, setModoRevista] = useState('dinamica'); // 'dinamica' | 'original'
 
     // Estado del Creador de Flyers
     const [flyerTitulo, setFlyerTitulo] = useState('¡OFERTAS MAYORISTAS DE LA SEMANA!');
@@ -85,18 +86,22 @@ export default function CatalogoFlyers() {
             client.get('/productos/categorias').catch(() => ({ data: [] }))
         ]).then(([pRes, cRes]) => {
             if (pRes.data && pRes.data.length > 0) {
-                // Combinar datos de DB asegurando que se preserven las fotos del catálogo si existen
+                // Combinar datos de DB asegurando que se preserven las páginas y fotos del catálogo si existen
                 const combinados = pRes.data.map(p => {
-                    const localMatch = catalogoOficialData.productos.find(x => x.nombre.toLowerCase() === p.nombre.toLowerCase());
+                    const localMatch = catalogoOficialData.productos.find(x => 
+                        x.nombre.toLowerCase().trim() === p.nombre.toLowerCase().trim() ||
+                        (p.codigo && x.codigo && x.codigo.toLowerCase() === p.codigo.toLowerCase())
+                    );
                     return {
                         ...p,
+                        pagina: localMatch?.pagina || p.pagina || 3,
                         imagen: obtenerImagenProducto(p) || localMatch?.imagen,
-                        escalas: localMatch?.escalas || {
-                            x1kg: p.precio_venta,
-                            x5kg: p.precio_5kg,
-                            x10kg: p.precio_10kg,
-                            x25kg: p.precio_25kg,
-                            x30kg: p.precio_30kg
+                        escalas: {
+                            x1kg: p.precio_venta || localMatch?.escalas?.x1kg || 0,
+                            x5kg: p.precio_5kg || localMatch?.escalas?.x5kg || 0,
+                            x10kg: p.precio_10kg || localMatch?.escalas?.x10kg || 0,
+                            x25kg: p.precio_25kg || localMatch?.escalas?.x25kg || 0,
+                            x30kg: p.precio_30kg || localMatch?.escalas?.x30kg || 0
                         }
                     };
                 });
@@ -649,7 +654,7 @@ export default function CatalogoFlyers() {
                 <div className="card card-pad stack gap-md" style={{ background: '#FFFFFF' }}>
                     {/* BARRA DE CONTROL DEL VISOR DE REVISTA */}
                     <div className="spread" style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 14, flexWrap: 'wrap', gap: 12 }}>
-                        <div className="row gap-sm" style={{ alignItems: 'center' }}>
+                        <div className="row gap-sm" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
                                 type="button"
                                 className="btn btn-secondary btn-sm"
@@ -684,24 +689,68 @@ export default function CatalogoFlyers() {
                             </select>
                         </div>
 
-                        {/* ACCIONES Y BOTÓN DE DESCARGA */}
-                        <div className="row gap-sm">
+                        {/* SELECTOR DE MODO: VISTA DINÁMICA BD VS ESCANEO ORIGINAL Y BOTONES */}
+                        <div className="row gap-sm" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                            <div style={{ background: '#f1f5f9', padding: 3, borderRadius: 8, display: 'inline-flex', gap: 3 }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setModoRevista('dinamica')}
+                                    style={{
+                                        border: 'none',
+                                        background: modoRevista === 'dinamica' ? '#784A1C' : 'transparent',
+                                        color: modoRevista === 'dinamica' ? '#ffffff' : '#475569',
+                                        fontWeight: modoRevista === 'dinamica' ? 700 : 500,
+                                        padding: '5px 12px',
+                                        borderRadius: 6,
+                                        fontSize: 12,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 5
+                                    }}
+                                    title="Muestra los precios actualizados y fotos de la Base de Datos"
+                                >
+                                    ✨ En Vivo (Precios BD)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setModoRevista('original')}
+                                    style={{
+                                        border: 'none',
+                                        background: modoRevista === 'original' ? '#784A1C' : 'transparent',
+                                        color: modoRevista === 'original' ? '#ffffff' : '#475569',
+                                        fontWeight: modoRevista === 'original' ? 700 : 500,
+                                        padding: '5px 12px',
+                                        borderRadius: 6,
+                                        fontSize: 12,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 5
+                                    }}
+                                    title="Muestra las imágenes escaneadas originales del archivo PDF"
+                                >
+                                    🖼️ Escaneo Original
+                                </button>
+                            </div>
+
                             <button
                                 type="button"
                                 className="btn btn-ghost btn-sm"
-                                onClick={() => setZoomRevista(z => (z === 100 ? 140 : 100))}
+                                onClick={() => setZoomRevista(z => (z === 100 ? 130 : 100))}
                             >
-                                🔍 {zoomRevista === 100 ? 'Ampliar (140%)' : 'Normal (100%)'}
+                                🔍 {zoomRevista === 100 ? 'Ampliar' : 'Normal'}
                             </button>
-                            <a
-                                href={`/catalogo/pagina_${paginaActual}.jpg`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="btn btn-secondary btn-sm"
-                                title="Abrir imagen completa"
+
+                            <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                onClick={() => window.print()}
+                                title="Descargar o imprimir el catálogo completo en PDF con precios actualizados de la Base de Datos"
+                                style={{ background: '#784A1C', borderColor: '#784A1C', fontWeight: 700 }}
                             >
-                                👁️ Abrir Pantalla Completa
-                            </a>
+                                📥 Imprimir / Guardar PDF
+                            </button>
                         </div>
                     </div>
 
@@ -725,26 +774,248 @@ export default function CatalogoFlyers() {
                         style={{
                             display: 'flex',
                             justifyContent: 'center',
-                            alignItems: 'center',
+                            alignItems: 'flex-start',
                             background: '#334155',
-                            padding: 24,
+                            padding: '24px 12px',
                             borderRadius: 12,
                             overflow: 'auto',
-                            minHeight: 640
+                            minHeight: 680
                         }}
                     >
-                        <div style={{ width: `${zoomRevista}%`, maxWidth: zoomRevista === 100 ? 800 : 1100, transition: 'width 0.2s ease' }}>
-                            <img
-                                src={`/catalogo/pagina_${paginaActual}.jpg`}
-                                alt={`Página ${paginaActual} del Catálogo Mix Point`}
-                                style={{
-                                    width: '100%',
-                                    height: 'auto',
-                                    borderRadius: 8,
-                                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                                    display: 'block'
-                                }}
-                            />
+                        <div style={{ width: `${zoomRevista}%`, maxWidth: zoomRevista === 100 ? 820 : 1100, transition: 'width 0.2s ease' }}>
+                            {modoRevista === 'dinamica' ? (
+                                /* RENDERIZADO DINÁMICO CONECTADO A BASE DE DATOS */
+                                <div
+                                    id="catalogo-a4-page"
+                                    style={{
+                                        background: '#FFFFFF',
+                                        borderRadius: 8,
+                                        boxShadow: '0 12px 35px rgba(0,0,0,0.5)',
+                                        minHeight: 1120,
+                                        padding: '28px 24px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        color: '#1a1a1a',
+                                        fontFamily: 'system-ui, -apple-system, sans-serif'
+                                    }}
+                                >
+                                    {/* CONTENIDO SEGÚN LA PÁGINA */}
+                                    {paginaActual === 1 ? (
+                                        /* PORTADA DINÁMICA MIX POINT */
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center', padding: '40px 20px', background: 'radial-gradient(circle at center, #FDFBF7 0%, #F5EFEB 100%)', borderRadius: 8, border: '3px solid #784A1C' }}>
+                                            <div style={{ width: 110, height: 110, borderRadius: '50%', background: '#784A1C', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, marginBottom: 20, boxShadow: '0 8px 20px rgba(120,74,28,0.3)' }}>
+                                                🌰
+                                            </div>
+                                            <h1 style={{ fontSize: 44, fontWeight: 900, color: '#784A1C', margin: '0 0 8px 0', letterSpacing: '1px' }}>
+                                                MIX POINT
+                                            </h1>
+                                            <div style={{ fontSize: 20, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: 24 }}>
+                                                Distribuidora Mayorista de Frutos Secos & Alimentos Naturales
+                                            </div>
+                                            <div style={{ width: 80, height: 4, background: '#784A1C', borderRadius: 2, marginBottom: 24 }} />
+                                            <p style={{ fontSize: 16, color: '#4b5563', maxWidth: 520, lineHeight: 1.6, margin: '0 0 32px 0' }}>
+                                                Lista oficial de precios por mayor, escalas por bulto cerrado y catálogo integral de productos de primera selección para dietéticas, comercios y distribuidores.
+                                            </p>
+
+                                            <div style={{ background: '#FFFFFF', padding: '16px 28px', borderRadius: 12, border: '1px solid #E5E7EB', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, textAlign: 'left', maxWidth: 540, width: '100%' }}>
+                                                <div>
+                                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>WhatsApp Pedidos</div>
+                                                    <div style={{ fontSize: 16, fontWeight: 800, color: '#047857' }}>📲 {WHATSAPP_OFICIAL}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>Alias de Pago</div>
+                                                    <div style={{ fontSize: 16, fontWeight: 800, color: '#B45309' }}>💳 {ALIAS_PAGO}</div>
+                                                </div>
+                                                <div style={{ gridColumn: 'span 2' }}>
+                                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>Depósito Central</div>
+                                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>📍 San Isidro 2135, Ituzaingó, Prov. Buenos Aires</div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ marginTop: 40, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FEF3C7', color: '#92400E', padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: '1px solid #FCD34D' }}>
+                                                <span>🔄 Precios actualizados en vivo con el sistema de stock</span>
+                                            </div>
+                                        </div>
+                                    ) : paginaActual === 2 ? (
+                                        /* ÍNDICE DE CATEGORÍAS */
+                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                            <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '12px 20px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                                                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                                    Índice General de Categorías
+                                                </h2>
+                                                <span style={{ fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: 12 }}>
+                                                    {productos.length} Productos
+                                                </span>
+                                            </div>
+
+                                            <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>
+                                                Seleccioná cualquiera de las siguientes secciones para consultar los productos y escalas vigentes:
+                                            </p>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, flex: 1 }}>
+                                                {CATEGORIAS_CON_ICONO.filter(c => c.pagina).map(c => {
+                                                    const prodsInCat = productos.filter(p => (p.categoria || p.categoria_nombre || '').toLowerCase() === c.nombre.toLowerCase());
+                                                    return (
+                                                        <div
+                                                            key={c.nombre}
+                                                            onClick={() => setPaginaActual(c.pagina)}
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'space-between',
+                                                                padding: '12px 16px',
+                                                                background: '#F9FAFB',
+                                                                border: '1.5px solid #E5E7EB',
+                                                                borderRadius: 8,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.15s ease'
+                                                            }}
+                                                        >
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                <span style={{ fontSize: 24 }}>{c.icono}</span>
+                                                                <div>
+                                                                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1F2937' }}>{c.nombre}</div>
+                                                                    <div style={{ fontSize: 11, color: '#6B7280' }}>{prodsInCat.length || c.total} artículos disponibles</div>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ background: '#784A1C', color: '#FFFFFF', fontWeight: 800, fontSize: 12, padding: '4px 10px', borderRadius: 6 }}>
+                                                                Pág {c.pagina} →
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* PÁGINAS 3 A 21: GRILLA 3 COLUMNAS IDÉNTICA AL CATÁLOGO PDF CON PRECIOS VIVOS */
+                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                            {/* ENCABEZADO DE PÁGINA (BANNER MARRÓN) */}
+                                            <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '10px 18px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <span style={{ fontSize: 20 }}>🌰</span>
+                                                    <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                        {PAGINAS_REVISTA.find(p => p.num === paginaActual)?.categoria || 'Catálogo Mayorista'}
+                                                    </h2>
+                                                </div>
+                                                <div style={{ fontSize: 11, fontWeight: 600, color: '#FDE68A' }}>
+                                                    MIX POINT MAYORISTA · PÁGINA {paginaActual}
+                                                </div>
+                                            </div>
+
+                                            {/* GRILLA DE 3 COLUMNAS DE PRODUCTOS */}
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, flex: 1, alignContent: 'start' }}>
+                                                {(() => {
+                                                    const prodsDePagina = productos.filter(p => p.pagina === paginaActual);
+                                                    if (prodsDePagina.length === 0) {
+                                                        return (
+                                                            <div style={{ gridColumn: 'span 3', padding: 40, textAlign: 'center', color: '#6B7280' }}>
+                                                                No se encontraron productos registrados en esta página en la Base de Datos.
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return prodsDePagina.map(p => {
+                                                        const pBase = Number(p.precio_venta || 0);
+                                                        const p5k = Number(p.precio_5kg || 0);
+                                                        const p10k = Number(p.precio_10kg || 0);
+                                                        const p25k = Number(p.precio_25kg || 0);
+                                                        const p30k = Number(p.precio_30kg || 0);
+
+                                                        return (
+                                                            <div
+                                                                key={p.id || p.nombre}
+                                                                style={{
+                                                                    border: '1.5px solid #E5E7EB',
+                                                                    borderRadius: 6,
+                                                                    padding: 8,
+                                                                    background: '#FFFFFF',
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    justifyContent: 'space-between',
+                                                                    height: 195,
+                                                                    boxSizing: 'border-box'
+                                                                }}
+                                                            >
+                                                                {/* FOTO DEL PRODUCTO */}
+                                                                <div style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAFA', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+                                                                    <img
+                                                                        src={obtenerImagenProducto(p)}
+                                                                        alt={p.nombre}
+                                                                        style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                                                                        loading="lazy"
+                                                                        onError={e => {
+                                                                            e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
+                                                                        }}
+                                                                    />
+                                                                </div>
+
+                                                                {/* NOMBRE DEL PRODUCTO */}
+                                                                <div style={{ fontSize: 11, fontWeight: 700, color: '#1F2937', lineHeight: 1.25, height: 28, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                                                                    {p.nombre}
+                                                                </div>
+
+                                                                {/* TABLA DE ESCALAS Y PRECIOS DE BASE DE DATOS */}
+                                                                <div style={{ marginTop: 'auto', borderTop: '1px solid #F3F4F6', paddingTop: 4 }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                                                        <span style={{ fontSize: 9.5, color: '#6B7280', fontWeight: 600 }}>x 1 kg:</span>
+                                                                        <span style={{ fontSize: 12, fontWeight: 800, color: '#784A1C' }}>
+                                                                            {pBase > 0 ? fmtMoney(pBase) : 'Consultar'}
+                                                                        </span>
+                                                                    </div>
+                                                                    {p5k > 0 && (
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9.5 }}>
+                                                                            <span style={{ color: '#6B7280' }}>x 5 kg:</span>
+                                                                            <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p5k)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {p10k > 0 && (
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9.5 }}>
+                                                                            <span style={{ color: '#6B7280' }}>x 10 kg:</span>
+                                                                            <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p10k)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {p25k > 0 && (
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9.5 }}>
+                                                                            <span style={{ color: '#6B7280' }}>x 25 kg:</span>
+                                                                            <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p25k)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {p30k > 0 && (
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9.5 }}>
+                                                                            <span style={{ color: '#6B7280' }}>x 30 kg:</span>
+                                                                            <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p30k)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    });
+                                                })()}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* PIE DE PÁGINA A4 */}
+                                    <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 10, marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: '#9CA3AF' }}>
+                                        <span>📲 WhatsApp Pedidos: <strong>{WHATSAPP_OFICIAL}</strong></span>
+                                        <span>💳 Alias de Pago: <strong>{ALIAS_PAGO}</strong></span>
+                                        <span style={{ fontWeight: 700, color: '#784A1C' }}>Página {paginaActual} de 21</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                /* ESCANEO ORIGINAL DEL ARCHIVO PDF */
+                                <img
+                                    src={`/catalogo/pagina_${paginaActual}.jpg`}
+                                    alt={`Página ${paginaActual} del Catálogo Mix Point`}
+                                    style={{
+                                        width: '100%',
+                                        height: 'auto',
+                                        borderRadius: 8,
+                                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                                        display: 'block'
+                                    }}
+                                />
+                            )}
                         </div>
                     </div>
 
@@ -976,6 +1247,166 @@ export default function CatalogoFlyers() {
                     </div>
                 </div>
             )}
+
+            {/* CONTENEDOR EXCLUSIVO PARA IMPRESIÓN / GUARDAR PDF DE TODAS LAS PÁGINAS (NO VISIBLE EN PANTALLA) */}
+            <div className="catalogo-print-container" style={{ display: 'none' }}>
+                {PAGINAS_REVISTA.map(pag => (
+                    <div key={`print-pag-${pag.num}`} className="catalogo-page-a4">
+                        {pag.num === 1 ? (
+                            /* PORTADA IMPRESA */
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', padding: '60px 20px', border: '3.5px solid #784A1C', borderRadius: 10, boxSizing: 'border-box' }}>
+                                <div style={{ width: 120, height: 120, borderRadius: '50%', background: '#784A1C', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60, marginBottom: 24 }}>
+                                    🌰
+                                </div>
+                                <h1 style={{ fontSize: 46, fontWeight: 900, color: '#784A1C', margin: '0 0 10px 0', letterSpacing: '1.5px' }}>
+                                    MIX POINT
+                                </h1>
+                                <div style={{ fontSize: 22, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: 26 }}>
+                                    Distribuidora Mayorista de Alimentos Naturales
+                                </div>
+                                <div style={{ width: 100, height: 5, background: '#784A1C', borderRadius: 3, marginBottom: 30 }} />
+                                <p style={{ fontSize: 16, color: '#4B5563', maxWidth: 540, lineHeight: 1.6, margin: '0 0 40px 0' }}>
+                                    Catálogo oficial y lista mayorista de precios con escalas por bulto cerrado. Venta directa a dietéticas y comercios de todo el país.
+                                </p>
+                                <div style={{ border: '1.5px solid #D1D5DB', borderRadius: 10, padding: '20px 30px', width: '80%', maxWidth: 500, textAlign: 'left', background: '#F9FAFB' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                                        <div>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>WhatsApp Oficial</div>
+                                            <div style={{ fontSize: 16, fontWeight: 800, color: '#047857' }}>📲 {WHATSAPP_OFICIAL}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Alias Transferencia</div>
+                                            <div style={{ fontSize: 16, fontWeight: 800, color: '#B45309' }}>💳 {ALIAS_PAGO}</div>
+                                        </div>
+                                        <div style={{ gridColumn: 'span 2' }}>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Depósito & Envíos</div>
+                                            <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>📍 San Isidro 2135, Ituzaingó, Prov. Buenos Aires</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: 'auto', fontSize: 12, color: '#9CA3AF' }}>
+                                    Documento actualizado automáticamente desde el sistema central de gestión
+                                </div>
+                            </div>
+                        ) : pag.num === 2 ? (
+                            /* ÍNDICE IMPRESO */
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                                <div>
+                                    <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '12px 20px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, textTransform: 'uppercase' }}>
+                                            Índice de Categorías
+                                        </h2>
+                                        <span style={{ fontSize: 12, fontWeight: 700 }}>
+                                            {productos.length} Productos
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+                                        {CATEGORIAS_CON_ICONO.filter(c => c.pagina).map(c => (
+                                            <div key={c.nombre} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', border: '1.5px solid #E5E7EB', borderRadius: 8, background: '#F9FAFB' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <span style={{ fontSize: 22 }}>{c.icono}</span>
+                                                    <span style={{ fontSize: 14, fontWeight: 700, color: '#1F2937' }}>{c.nombre}</span>
+                                                </div>
+                                                <div style={{ background: '#784A1C', color: '#FFFFFF', fontWeight: 800, fontSize: 12, padding: '3px 8px', borderRadius: 4 }}>
+                                                    Pág {c.pagina}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9CA3AF' }}>
+                                    <span>📲 WA: {WHATSAPP_OFICIAL}</span>
+                                    <span>💳 Alias: {ALIAS_PAGO}</span>
+                                    <span>Página 2 de 21</span>
+                                </div>
+                            </div>
+                        ) : (
+                            /* PÁGINAS DE PRODUCTOS IMPRESAS (3 A 21) */
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                                <div>
+                                    <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '10px 18px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <span style={{ fontSize: 20 }}>🌰</span>
+                                            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, textTransform: 'uppercase' }}>
+                                                {pag.categoria}
+                                            </h2>
+                                        </div>
+                                        <div style={{ fontSize: 11, fontWeight: 700, color: '#FDE68A' }}>
+                                            MIX POINT · PÁGINA {pag.num}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                                        {productos.filter(p => p.pagina === pag.num).map(p => {
+                                            const pBase = Number(p.precio_venta || 0);
+                                            const p5k = Number(p.precio_5kg || 0);
+                                            const p10k = Number(p.precio_10kg || 0);
+                                            const p25k = Number(p.precio_25kg || 0);
+                                            const p30k = Number(p.precio_30kg || 0);
+
+                                            return (
+                                                <div key={p.id || p.nombre} style={{ border: '1px solid #D1D5DB', borderRadius: 6, padding: 6, background: '#FFFFFF', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: 185, boxSizing: 'border-box' }}>
+                                                    <div style={{ height: 75, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAFA', borderRadius: 4, overflow: 'hidden', marginBottom: 4 }}>
+                                                        <img
+                                                            src={obtenerImagenProducto(p)}
+                                                            alt={p.nombre}
+                                                            style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                                                            onError={e => {
+                                                                e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#111827', lineHeight: 1.25, height: 26, overflow: 'hidden' }}>
+                                                        {p.nombre}
+                                                    </div>
+                                                    <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 3, marginTop: 'auto' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                                            <span style={{ fontSize: 9, color: '#6B7280', fontWeight: 600 }}>x 1 kg:</span>
+                                                            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#784A1C' }}>
+                                                                {pBase > 0 ? fmtMoney(pBase) : 'Consultar'}
+                                                            </span>
+                                                        </div>
+                                                        {p5k > 0 && (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9 }}>
+                                                                <span style={{ color: '#6B7280' }}>x 5 kg:</span>
+                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p5k)}</span>
+                                                            </div>
+                                                        )}
+                                                        {p10k > 0 && (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9 }}>
+                                                                <span style={{ color: '#6B7280' }}>x 10 kg:</span>
+                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p10k)}</span>
+                                                            </div>
+                                                        )}
+                                                        {p25k > 0 && (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9 }}>
+                                                                <span style={{ color: '#6B7280' }}>x 25 kg:</span>
+                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p25k)}</span>
+                                                            </div>
+                                                        )}
+                                                        {p30k > 0 && (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9 }}>
+                                                                <span style={{ color: '#6B7280' }}>x 30 kg:</span>
+                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p30k)}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#9CA3AF' }}>
+                                    <span>📲 WA: {WHATSAPP_OFICIAL}</span>
+                                    <span>💳 Alias: {ALIAS_PAGO}</span>
+                                    <span style={{ fontWeight: 700, color: '#784A1C' }}>Página {pag.num} de 21</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

@@ -411,9 +411,13 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
 .badge-status-facturado { background: #CFFAFE; color: #0E7490; border: 1px solid #A5F3FC; }
 .badge-status-cancelado, .badge-status-anulado { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
 
-/* Badge de conciliación / validación bancaria */
+/* Badge de conciliación / validación bancaria y estados de pago */
 .badge-pago-validado { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; font-weight: 600; }
-.badge-pago-pendiente { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+.badge-pago-pendiente { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; font-weight: 600; }
+.badge-pago-parcial { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-weight: 600; }
+.badge-pago-revision { background: #F5F3FF; color: #6D28D9; border: 1px solid #DDD6FE; font-weight: 600; }
+.badge-pago-cta { background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1; font-weight: 600; }
+.badge-pago-bonificado { background: #F0FDFA; color: #0D9488; border: 1px solid #99F6E4; font-weight: 600; }
 
 /* Visual Stepper / Pipeline tracker */
 .pipeline-stepper {
@@ -1522,6 +1526,37 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
     }
 
     .remito-page-a4:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+
+    /* PÁGINAS A4 DEL CATÁLOGO ACTUALIZADO EN VIVO */
+    .catalogo-print-container {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .catalogo-page-a4 {
+        box-shadow: none !important;
+        margin: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        min-height: 297mm !important;
+        max-height: 297mm !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        box-sizing: border-box !important;
+        padding: 10mm 12mm 8mm 12mm !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        overflow: hidden !important;
+        background: #ffffff !important;
+    }
+
+    .catalogo-page-a4:last-child {
         page-break-after: avoid !important;
         break-after: avoid !important;
     }
