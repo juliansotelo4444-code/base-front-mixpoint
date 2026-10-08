@@ -26,11 +26,16 @@ export default function JarvisWidget() {
     const [usuariosOnline, setUsuariosOnline] = useState([]);
     const [consultaPendienteParaMi, setConsultaPendienteParaMi] = useState(null);
     const [respuestaMiTexto, setRespuestaMiTexto] = useState('');
+    const [pasosAbiertos, setPasosAbiertos] = useState({});
 
     const recognitionRef = useRef(null);
     const scrollRef = useRef(null);
     const waveIntervalRef = useRef(null);
     const navigate = useNavigate();
+
+    const togglePasos = (idx) => {
+        setPasosAbiertos(prev => ({ ...prev, [idx]: !prev[idx] }));
+    };
 
     // Manejar eventos de Socket.io en tiempo real
     const handleEventoSocket = (evento, payload) => {
@@ -49,13 +54,29 @@ export default function JarvisWidget() {
                 ...prev,
                 {
                     remitente: 'jarvis',
-                    texto: `⚡ [Respuesta en Red recibida de ${payload.destinatario_nombre}]: "${payload.respuesta}"`
+                    texto: `⚡ [Respuesta en Red recibida de ${payload.destinatario_nombre}]: "${payload.respuesta}"`,
+                    fuente: 'red_local'
                 }
             ]);
             hablarTexto(`${payload.destinatario_nombre} ha respondido: ${payload.respuesta}`);
             if (consultaPendienteParaMi && consultaPendienteParaMi.id === payload.id) {
                 setConsultaPendienteParaMi(null);
             }
+        } else if (evento === 'jarvis:alerta_proactiva') {
+            const qCount = payload.quiebres_stock?.length || 0;
+            const cCount = payload.clientes_inactivos?.length || 0;
+            const aviso = `🛡️ [Alerta Sentry 24/7]: ${qCount > 0 ? `${qCount} producto(s) en quiebre crítico. ` : ''}${cCount > 0 ? `${cCount} cliente(s) inactivo(s) >20d.` : ''}`;
+            setAlertasBanner(aviso);
+            setMensajes(prev => [
+                ...prev,
+                {
+                    remitente: 'jarvis',
+                    texto: `${aviso}\nHe detectado anomalías operativas de forma proactiva en segundo plano.`,
+                    datos: payload,
+                    fuente: 'sentry_autonomo',
+                    accion_sugerida: qCount > 0 ? 'Ver Proveedores' : 'Ver Clientes'
+                }
+            ]);
         }
     };
 
@@ -77,11 +98,18 @@ export default function JarvisWidget() {
                 ...prev,
                 {
                     remitente: 'jarvis',
-                    texto: `⚡ [Respuesta en Red recibida de ${data.destinatario_nombre}]: "${data.respuesta}"`
+                    texto: `⚡ [Respuesta en Red recibida de ${data.destinatario_nombre}]: "${data.respuesta}"`,
+                    fuente: 'red_local'
                 }
             ]);
             hablarTexto(`${data.destinatario_nombre} respondió: ${data.respuesta}`);
             setConsultaPendienteParaMi(null);
+        });
+        socket.on('jarvis:alerta_proactiva', (data) => {
+            const qCount = data.quiebres_stock?.length || 0;
+            const cCount = data.clientes_inactivos?.length || 0;
+            const aviso = `🛡️ [Alerta Sentry 24/7]: ${qCount > 0 ? `${qCount} quiebres de stock. ` : ''}${cCount > 0 ? `${cCount} clientes inactivos.` : ''}`;
+            setAlertasBanner(aviso);
         });
 
         // Cargar lista inicial de online
@@ -217,6 +245,8 @@ export default function JarvisWidget() {
                 remitente: 'jarvis',
                 texto: respuestaJarvis,
                 datos: data.datos,
+                razonamiento_pasos: data.razonamiento_pasos,
+                fuente: data.fuente,
                 accion_sugerida: data.accion_sugerida
             }]);
 
@@ -258,6 +288,9 @@ export default function JarvisWidget() {
     const otrosOnline = usuariosOnline.filter(u => u.id !== usuario?.id);
 
     const sugerenciasRapidas = [
+        'Dólar blue hoy y costo de insumos',
+        '¿Cómo está el clima para el reparto de hoy?',
+        'Analizá el negocio y dame un plan estratégico',
         '¿Quién está conectado en la red?',
         otrosOnline.length > 0 ? `Preguntale a ${otrosOnline[0].nombre} cómo viene el despacho` : 'Generar remito automático para el pedido MP-1001',
         '¿Qué productos tienen predicción de quiebre de stock?',
@@ -431,7 +464,7 @@ export default function JarvisWidget() {
                                             border: '1px solid rgba(245, 158, 11, 0.4)',
                                             fontWeight: 800
                                         }}>
-                                            MCP NETWORK
+                                            MCP • WEB • RED
                                         </span>
                                     </div>
                                     <div style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
@@ -617,7 +650,7 @@ export default function JarvisWidget() {
                             alignItems: 'center',
                             justifyContent: 'space-between'
                         }}>
-                            <span>⚠️ Auditoría MCP: {alertasBanner}</span>
+                            <span>⚠️ {alertasBanner}</span>
                             <button
                                 onClick={() => enviarMensaje('Monitorear alertas críticas del sistema')}
                                 style={{ background: 'none', border: 'none', color: '#fff', textDecoration: 'underline', cursor: 'pointer', fontSize: 11 }}
@@ -647,8 +680,52 @@ export default function JarvisWidget() {
                                         alignItems: esUsuario ? 'flex-end' : 'flex-start'
                                     }}
                                 >
+                                    {/* BADGE DE ORIGEN / FUENTE EN MENSAJES DE JARVIS */}
+                                    {!esUsuario && msg.fuente && (
+                                        <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{
+                                                fontSize: 9.5,
+                                                padding: '2px 7px',
+                                                borderRadius: 4,
+                                                fontWeight: 800,
+                                                letterSpacing: 0.3,
+                                                background: msg.fuente.includes('dolar')
+                                                    ? 'rgba(245, 158, 11, 0.2)'
+                                                    : (msg.fuente.includes('clima')
+                                                        ? 'rgba(6, 182, 212, 0.2)'
+                                                        : (msg.fuente.includes('sentry')
+                                                            ? 'rgba(239, 68, 68, 0.2)'
+                                                            : (msg.fuente.includes('red')
+                                                                ? 'rgba(16, 185, 129, 0.2)'
+                                                                : 'rgba(147, 51, 234, 0.2)'))),
+                                                color: msg.fuente.includes('dolar')
+                                                    ? '#fbbf24'
+                                                    : (msg.fuente.includes('clima')
+                                                        ? '#38bdf8'
+                                                        : (msg.fuente.includes('sentry')
+                                                            ? '#f87171'
+                                                            : (msg.fuente.includes('red')
+                                                                ? '#34d399'
+                                                                : '#c084fc'))),
+                                                border: `1px solid ${msg.fuente.includes('dolar') ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255, 255, 255, 0.15)'}`
+                                            }}>
+                                                {msg.fuente === 'web_dolar' && '🌐 DÓLAR EN VIVO'}
+                                                {msg.fuente === 'web_clima' && '🌦️ SATELITAL EN VIVO'}
+                                                {msg.fuente === 'web_busqueda' && '🌐 BÚSQUEDA WEB'}
+                                                {msg.fuente === 'mcp_estrategico' && '📊 ESTRATEGIA HOLÍSTICA'}
+                                                {msg.fuente === 'sentry_autonomo' && '🛡️ SENTRY 24/7'}
+                                                {msg.fuente === 'red_local' && '⚡ RED DE TERMINALES'}
+                                                {msg.fuente === 'mcp_db' && '🔒 VALIDACIÓN MCP'}
+                                                {msg.fuente === 'mcp_stock_predictivo' && '📈 PREDICCIÓN RUNWAY'}
+                                                {msg.fuente === 'mcp_alertas' && '⚠️ AUDITORÍA MCP'}
+                                                {msg.fuente === 'mcp_cuentas_corrientes' && '💳 RIESGO CREDITICIO'}
+                                                {msg.fuente === 'mcp_produccion' && '🏭 SIMULACIÓN LOTE'}
+                                            </span>
+                                        </div>
+                                    )}
+
                                     <div style={{
-                                        maxWidth: '85%',
+                                        maxWidth: '88%',
                                         padding: '10px 14px',
                                         borderRadius: 14,
                                         borderBottomRightRadius: esUsuario ? 2 : 14,
@@ -661,6 +738,65 @@ export default function JarvisWidget() {
                                         whiteSpace: 'pre-wrap'
                                     }}>
                                         {msg.texto}
+
+                                        {/* DESGLOSE ANALÍTICO CHAIN-OF-THOUGHT (CoT) */}
+                                        {!esUsuario && msg.razonamiento_pasos && msg.razonamiento_pasos.length > 0 && (
+                                            <div style={{ marginTop: 10, borderTop: '1px dashed rgba(245, 158, 11, 0.3)', paddingTop: 8 }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => togglePasos(index)}
+                                                    style={{
+                                                        background: 'rgba(245, 158, 11, 0.1)',
+                                                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                        color: '#f59e0b',
+                                                        borderRadius: 6,
+                                                        padding: '3px 8px',
+                                                        fontSize: 10.5,
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6
+                                                    }}
+                                                >
+                                                    <span>🧠</span>
+                                                    <span>{pasosAbiertos[index] ? 'Ocultar Razonamiento Analítico (CoT)' : 'Ver Razonamiento Chain-of-Thought (3 pasos)'}</span>
+                                                    <span style={{ fontSize: 9 }}>{pasosAbiertos[index] ? '▲' : '▼'}</span>
+                                                </button>
+
+                                                {pasosAbiertos[index] && (
+                                                    <div style={{
+                                                        marginTop: 8,
+                                                        padding: '10px 12px',
+                                                        borderRadius: 8,
+                                                        background: 'rgba(10, 15, 26, 0.85)',
+                                                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: 8
+                                                    }}>
+                                                        {msg.razonamiento_pasos.map((p, pIdx) => (
+                                                            <div key={pIdx} style={{ fontSize: 11.5 }}>
+                                                                <div style={{
+                                                                    fontWeight: 800,
+                                                                    color: '#f59e0b',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 6,
+                                                                    marginBottom: 3
+                                                                }}>
+                                                                    <span>{p.icono}</span>
+                                                                    <span>Paso {p.paso}: {p.fase}</span>
+                                                                </div>
+                                                                <div style={{ color: '#cbd5e1', lineHeight: 1.4, paddingLeft: 18 }}>
+                                                                    {p.detalle}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {msg.accion_sugerida && (
