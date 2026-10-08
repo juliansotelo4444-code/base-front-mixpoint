@@ -15,7 +15,12 @@ const DEFAULT_PREFERENCES = {
         graficos: true,
         alertas: true
     },
-    hudMode: 'classic' // 'classic' | 'tactical'
+    hudMode: 'classic', // legacy compatibility
+    theme: 'clasico', // 'clasico' | 'dark' | 'verde_natural' | 'marino' | 'terracota' | 'tactical'
+    accentColor: 'gold', // 'gold' | 'orange' | 'emerald' | 'blue' | 'purple' | 'ruby'
+    fontSize: 'md', // 'sm' | 'md' | 'lg'
+    sidebarStyle: 'default', // 'default' | 'contrast' | 'minimal'
+    fontFamily: 'editorial' // 'editorial' | 'modern' | 'mono'
 };
 
 export function PreferencesProvider({ children }) {
@@ -37,6 +42,29 @@ export function PreferencesProvider({ children }) {
     });
 
     const [isSaving, setIsSaving] = useState(false);
+
+    // Aplicar atributos CSS globales en document.documentElement cada vez que cambien las preferencias
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        const root = document.documentElement;
+        
+        // Resolver tema activo (soporte hacia atrás con hudMode === 'tactical')
+        const activeTheme = preferences.hudMode === 'tactical' ? 'tactical' : (preferences.theme || 'clasico');
+        root.setAttribute('data-theme', activeTheme);
+        root.setAttribute('data-accent', preferences.accentColor || 'gold');
+        root.setAttribute('data-font-size', preferences.fontSize || 'md');
+        root.setAttribute('data-font-family', preferences.fontFamily || 'editorial');
+        root.setAttribute('data-sidebar-style', preferences.sidebarStyle || 'default');
+        root.setAttribute('data-density', preferences.tableDensity || 'comfortable');
+    }, [
+        preferences.theme,
+        preferences.hudMode,
+        preferences.accentColor,
+        preferences.fontSize,
+        preferences.fontFamily,
+        preferences.sidebarStyle,
+        preferences.tableDensity
+    ]);
 
     // Cargar preferencias del backend cuando el usuario se autentica
     useEffect(() => {

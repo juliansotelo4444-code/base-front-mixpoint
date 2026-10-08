@@ -117,52 +117,220 @@ export default function PreferenciasModal({ isOpen, onClose }) {
                 {/* Body */}
                 <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
                     
-                    {/* Modo Visual */}
+                    {/* 1. Modo / Tema Visual Completo */}
                     <div>
-                        <div style={{ fontWeight: 600, fontSize: 13.5, color: '#F6EDCD', marginBottom: 6 }}>
-                            1. Modo de Visualización del Panel
+                        <div style={{ fontWeight: 600, fontSize: 13.5, color: '#F6EDCD', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>🎨</span> 1. Tema Visual y Ambiente
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                            <button
-                                type="button"
-                                onClick={() => handleHudModeChange('classic')}
-                                style={{
-                                    padding: '12px 14px',
-                                    borderRadius: 8,
-                                    border: `2px solid ${hudMode === 'classic' ? '#C9A227' : 'rgba(255, 255, 255, 0.1)'}`,
-                                    backgroundColor: hudMode === 'classic' ? 'rgba(201, 162, 39, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                                    color: '#F5F1E3',
-                                    cursor: 'pointer',
-                                    textAlign: 'left'
-                                }}
-                            >
-                                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>🏛️ Clásico Corporativo</div>
-                                <div style={{ fontSize: 11, color: '#A9A79B' }}>Navy profundo y fondo crema con tipografía serif y acentos dorados.</div>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => handleHudModeChange('tactical')}
-                                style={{
-                                    padding: '12px 14px',
-                                    borderRadius: 8,
-                                    border: `2px solid ${hudMode === 'tactical' ? '#FF9800' : 'rgba(255, 255, 255, 0.1)'}`,
-                                    backgroundColor: hudMode === 'tactical' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                                    color: '#F5F1E3',
-                                    cursor: 'pointer',
-                                    textAlign: 'left'
-                                }}
-                            >
-                                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: '#FF9800' }}>⚡ Operaciones Tácticas HUD</div>
-                                <div style={{ fontSize: 11, color: '#A9A79B' }}>Centro de mando oscuro con radar industrial y gradientes ámbar/verde.</div>
-                            </button>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+                            {[
+                                {
+                                    key: 'clasico',
+                                    name: 'Dorado Mix Point',
+                                    badge: '🏛️ Clásico',
+                                    bg: '#11141D',
+                                    accent: '#C9A227',
+                                    desc: 'Navy profundo y acentos dorados clásicos'
+                                },
+                                {
+                                    key: 'dark',
+                                    name: 'Modo Noche OLED',
+                                    badge: '🌙 Dark',
+                                    bg: '#0D1117',
+                                    accent: '#58A6FF',
+                                    desc: 'Fondo negro suave para no cansar la vista'
+                                },
+                                {
+                                    key: 'verde_natural',
+                                    name: 'Botánico / Dietética',
+                                    badge: '🌿 Natural',
+                                    bg: '#0E2519',
+                                    accent: '#2D7A4F',
+                                    desc: 'Verde orgánico y fresco para frutos secos'
+                                },
+                                {
+                                    key: 'marino',
+                                    name: 'Azul Ejecutivo',
+                                    badge: '💼 Corporativo',
+                                    bg: '#0F1D36',
+                                    accent: '#1D58D8',
+                                    desc: 'Azul sobrio para finanzas y balance'
+                                },
+                                {
+                                    key: 'terracota',
+                                    name: 'Terracota Rústico',
+                                    badge: '🌰 Tostado',
+                                    bg: '#261713',
+                                    accent: '#B84724',
+                                    desc: 'Tonos cálidos y artesanales de frutos'
+                                },
+                                {
+                                    key: 'tactical',
+                                    name: 'Operaciones HUD',
+                                    badge: '⚡ Táctico',
+                                    bg: '#0A0D14',
+                                    accent: '#FF9800',
+                                    desc: 'Radar ámbar y centro de comando industrial'
+                                }
+                            ].map(theme => {
+                                const isSelected = (preferences.theme === theme.key) || (theme.key === 'tactical' && preferences.hudMode === 'tactical');
+                                return (
+                                    <button
+                                        key={theme.key}
+                                        type="button"
+                                        onClick={() => {
+                                            if (theme.key === 'tactical') {
+                                                updatePreferences({ theme: 'tactical', hudMode: 'tactical' });
+                                            } else {
+                                                updatePreferences({ theme: theme.key, hudMode: 'classic' });
+                                            }
+                                            showSavedFeedback();
+                                        }}
+                                        style={{
+                                            padding: '12px',
+                                            borderRadius: 8,
+                                            border: `2px solid ${isSelected ? theme.accent : 'rgba(255, 255, 255, 0.08)'}`,
+                                            backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)',
+                                            color: '#F5F1E3',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 6,
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, background: theme.bg, border: `1px solid ${theme.accent}`, color: theme.accent, fontWeight: 700 }}>
+                                                {theme.badge}
+                                            </span>
+                                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: theme.accent, boxShadow: isSelected ? `0 0 8px ${theme.accent}` : 'none' }} />
+                                        </div>
+                                        <div style={{ fontWeight: 600, fontSize: 12.5, color: isSelected ? theme.accent : '#F5F1E3' }}>
+                                            {theme.name}
+                                        </div>
+                                        <div style={{ fontSize: 10.5, color: '#A9A79B', lineHeight: 1.3 }}>
+                                            {theme.desc}
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* Densidad de Tablas */}
+                    {/* 2. Color de Acento Personalizado */}
+                    <div>
+                        <div style={{ fontWeight: 600, fontSize: 13.5, color: '#F6EDCD', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>✨</span> 2. Color de Resaltado (Acentos)
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {[
+                                { key: 'gold', name: 'Dorado', color: '#C9A227' },
+                                { key: 'orange', name: 'Naranja', color: '#EA580C' },
+                                { key: 'emerald', name: 'Esmeralda', color: '#059669' },
+                                { key: 'blue', name: 'Azul Zafiro', color: '#2563EB' },
+                                { key: 'purple', name: 'Amatista', color: '#7C3AED' },
+                                { key: 'ruby', name: 'Rubí', color: '#E11D48' }
+                            ].map(acc => {
+                                const isSelected = (preferences.accentColor || 'gold') === acc.key;
+                                return (
+                                    <button
+                                        key={acc.key}
+                                        type="button"
+                                        onClick={() => {
+                                            updatePreferences({ accentColor: acc.key });
+                                            showSavedFeedback();
+                                        }}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '6px 12px',
+                                            borderRadius: 20,
+                                            border: `1.5px solid ${isSelected ? acc.color : 'rgba(255, 255, 255, 0.1)'}`,
+                                            backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                                            color: '#F5F1E3',
+                                            fontSize: 12,
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: acc.color, boxShadow: `0 0 6px ${acc.color}` }} />
+                                        <span>{acc.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* 3. Tipografía y Tamaño de Texto */}
+                    <div>
+                        <div style={{ fontWeight: 600, fontSize: 13.5, color: '#F6EDCD', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>🔤</span> 3. Tipografía y Escala de Lectura
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            {/* Fuente */}
+                            <div>
+                                <label style={{ fontSize: 11, color: '#A9A79B', marginBottom: 4, display: 'block' }}>Familia tipográfica:</label>
+                                <select
+                                    value={preferences.fontFamily || 'editorial'}
+                                    onChange={(e) => {
+                                        updatePreferences({ fontFamily: e.target.value });
+                                        showSavedFeedback();
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '7px 10px',
+                                        borderRadius: 6,
+                                        backgroundColor: '#1C2230',
+                                        color: '#F5F1E3',
+                                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                                        fontSize: 12
+                                    }}
+                                >
+                                    <option value="editorial">Elegante Editorial (Playfair + Poppins)</option>
+                                    <option value="modern">Moderna y Limpia (Inter)</option>
+                                    <option value="mono">Técnica / Compacta (IBM Plex)</option>
+                                </select>
+                            </div>
+
+                            {/* Tamaño */}
+                            <div>
+                                <label style={{ fontSize: 11, color: '#A9A79B', marginBottom: 4, display: 'block' }}>Tamaño de interfaz:</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                                    {[
+                                        { key: 'sm', label: 'Compacto' },
+                                        { key: 'md', label: 'Estándar' },
+                                        { key: 'lg', label: 'Grande' }
+                                    ].map(sz => (
+                                        <button
+                                            key={sz.key}
+                                            type="button"
+                                            onClick={() => {
+                                                updatePreferences({ fontSize: sz.key });
+                                                showSavedFeedback();
+                                            }}
+                                            style={{
+                                                padding: '6px 4px',
+                                                borderRadius: 6,
+                                                border: `1px solid ${(preferences.fontSize || 'md') === sz.key ? '#C9A227' : 'rgba(255, 255, 255, 0.1)'}`,
+                                                backgroundColor: (preferences.fontSize || 'md') === sz.key ? 'rgba(201, 162, 39, 0.15)' : 'rgba(255, 255, 255, 0.02)',
+                                                color: '#F5F1E3',
+                                                fontSize: 11,
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {sz.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 4. Densidad de Tablas y Listados */}
                     <div>
                         <div style={{ fontWeight: 600, fontSize: 13.5, color: '#F6EDCD', marginBottom: 6 }}>
-                            2. Densidad de Tablas y Listados
+                            4. Densidad de Tablas y Listados
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                             {[
@@ -191,10 +359,10 @@ export default function PreferenciasModal({ isOpen, onClose }) {
                         </div>
                     </div>
 
-                    {/* Accesos Rápidos */}
+                    {/* 5. Accesos Rápidos */}
                     <div>
                         <div style={{ fontWeight: 600, fontSize: 13.5, color: '#F6EDCD', marginBottom: 4 }}>
-                            3. Accesos Rápidos Fijados en Menú Lateral
+                            5. Accesos Rápidos Fijados en Menú Lateral
                         </div>
                         <p style={{ fontSize: 11, color: '#A9A79B', marginBottom: 8 }}>
                             Marcá las secciones que querés tener fijadas arriba de todo en la barra lateral:
@@ -233,10 +401,10 @@ export default function PreferenciasModal({ isOpen, onClose }) {
                         </div>
                     </div>
 
-                    {/* Métricas Visibles en Dashboard */}
+                    {/* 6. Métricas Visibles en Dashboard */}
                     <div>
                         <div style={{ fontWeight: 600, fontSize: 13.5, color: '#F6EDCD', marginBottom: 6 }}>
-                            4. Tarjetas Visibles en el Dashboard
+                            6. Tarjetas Visibles en el Dashboard
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                             {[

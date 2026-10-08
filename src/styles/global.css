@@ -49,6 +49,214 @@
     --shadow-pop: 0 8px 24px rgba(34, 30, 23, 0.16);
 }
 
+/* =========================================================
+   VARIACIONES DE TEMAS (data-theme)
+   ========================================================= */
+
+/* 1. MODO OSCURO PURO (Dark OLED) */
+[data-theme="dark"] {
+    --color-bg: #0D1117;
+    --color-surface: #161B22;
+    --color-surface-sunken: #090D13;
+    --color-sidebar: #090D13;
+    --color-sidebar-hover: #1F242C;
+    --color-border: #30363D;
+    --color-border-strong: #484F58;
+
+    --color-text: #E6EDF3;
+    --color-text-muted: #8B949E;
+    --color-text-on-dark: #FFFFFF;
+    --color-text-on-dark-muted: #8B949E;
+
+    --color-primary-tint: rgba(201, 162, 39, 0.2);
+    --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.4);
+    --shadow-pop: 0 12px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* 2. MODO VERDE BOTÁNICO / DIETÉTICA & NATURAL */
+[data-theme="verde_natural"] {
+    --color-bg: #F4F7F4;
+    --color-surface: #FFFFFF;
+    --color-surface-sunken: #E5EDE6;
+    --color-sidebar: #0E2519;
+    --color-sidebar-hover: #153A27;
+    --color-border: #D1E0D4;
+    --color-border-strong: #A8C5AE;
+
+    --color-text: #132418;
+    --color-text-muted: #4B6352;
+    --color-text-on-dark: #EBF7EE;
+    --color-text-on-dark-muted: #95BFA0;
+
+    --color-primary: #2D7A4F;
+    --color-primary-dark: #1E5737;
+    --color-primary-tint: #D6ECD9;
+
+    --color-accent: #E0823D;
+    --color-accent-tint: #FCE9DB;
+    --color-success: #287C4A;
+}
+
+/* 3. MODO AZUL EJECUTIVO / CORPORATIVO */
+[data-theme="marino"] {
+    --color-bg: #F2F5F9;
+    --color-surface: #FFFFFF;
+    --color-surface-sunken: #E1E8F2;
+    --color-sidebar: #0F1D36;
+    --color-sidebar-hover: #1A2E54;
+    --color-border: #CAD6E8;
+    --color-border-strong: #9CB2D6;
+
+    --color-text: #0F172A;
+    --color-text-muted: #475569;
+    --color-text-on-dark: #F8FAFC;
+    --color-text-on-dark-muted: #94A3B8;
+
+    --color-primary: #1D58D8;
+    --color-primary-dark: #1541A3;
+    --color-primary-tint: #DBEAFE;
+
+    --color-accent: #0284C7;
+    --color-accent-tint: #E0F2FE;
+}
+
+/* 4. MODO TERRACOTA CÁLIDO / ARTESANAL */
+[data-theme="terracota"] {
+    --color-bg: #FBF6F0;
+    --color-surface: #FFFFFF;
+    --color-surface-sunken: #F1E5D8;
+    --color-sidebar: #261713;
+    --color-sidebar-hover: #3E241E;
+    --color-border: #E8D7C8;
+    --color-border-strong: #CDB39E;
+
+    --color-text: #2C1810;
+    --color-text-muted: #735344;
+    --color-text-on-dark: #FDEEE4;
+    --color-text-on-dark-muted: #BFA193;
+
+    --color-primary: #B84724;
+    --color-primary-dark: #8F3417;
+    --color-primary-tint: #FADFD6;
+
+    --color-accent: #D97706;
+    --color-accent-tint: #FEF3C7;
+}
+
+/* 5. MODO TÁCTICO HUD (soporte via data-theme="tactical") */
+[data-theme="tactical"] {
+    --color-bg: #0A0D14;
+    --color-surface: #101522;
+    --color-surface-sunken: #07090E;
+    --color-sidebar: #05070B;
+    --color-sidebar-hover: #131A29;
+    --color-border: #1E293B;
+    --color-border-strong: #334155;
+    --color-text: #E2E8F0;
+    --color-text-muted: #94A3B8;
+    --color-text-on-dark: #F8FAFC;
+    --color-text-on-dark-muted: #64748B;
+    --color-primary: #FF9800;
+    --color-primary-dark: #E65100;
+    --color-primary-tint: rgba(255, 152, 0, 0.15);
+    --color-accent: #00E676;
+    --shadow-card: 0 0 12px rgba(255, 152, 0, 0.08);
+}
+
+/* =========================================================
+   PALETAS DE ACENTO (data-accent)
+   ========================================================= */
+[data-accent="gold"] {
+    --color-primary: #C9A227;
+    --color-primary-dark: #A2801A;
+    --color-primary-tint: #F6EDCD;
+}
+[data-accent="orange"] {
+    --color-primary: #EA580C;
+    --color-primary-dark: #C2410C;
+    --color-primary-tint: #FFEDD5;
+}
+[data-accent="emerald"] {
+    --color-primary: #059669;
+    --color-primary-dark: #047857;
+    --color-primary-tint: #D1FAE5;
+}
+[data-accent="blue"] {
+    --color-primary: #2563EB;
+    --color-primary-dark: #1D4ED8;
+    --color-primary-tint: #DBEAFE;
+}
+[data-accent="purple"] {
+    --color-primary: #7C3AED;
+    --color-primary-dark: #6D28D9;
+    --color-primary-tint: #EDE9FE;
+}
+[data-accent="ruby"] {
+    --color-primary: #E11D48;
+    --color-primary-dark: #BE123C;
+    --color-primary-tint: #FFE4E6;
+}
+
+/* =========================================================
+   TAMAÑO DE FUENTE GENERAL (data-font-size)
+   ========================================================= */
+html[data-font-size="sm"] {
+    font-size: 13.5px;
+}
+html[data-font-size="md"] {
+    font-size: 14.5px;
+}
+html[data-font-size="lg"] {
+    font-size: 16px;
+}
+
+/* =========================================================
+   TIPOGRAFÍA (data-font-family)
+   ========================================================= */
+[data-font-family="editorial"] {
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+[data-font-family="modern"] {
+    --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+[data-font-family="mono"] {
+    --font-display: 'IBM Plex Mono', 'Courier New', monospace;
+    --font-body: 'IBM Plex Sans', -apple-system, sans-serif;
+}
+
+/* =========================================================
+   ESTILO DE SIDEBAR (data-sidebar-style)
+   ========================================================= */
+[data-sidebar-style="contrast"] .app-sidebar {
+    background-color: #06080C !important;
+    border-right: 1px solid var(--color-primary) !important;
+}
+[data-sidebar-style="minimal"] .app-sidebar {
+    border-right: 1px solid var(--color-border) !important;
+}
+
+/* Soporte para modo oscuro / temas oscuros en inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea,
+[data-theme="tactical"] input,
+[data-theme="tactical"] select,
+[data-theme="tactical"] textarea {
+    background-color: #121824 !important;
+    color: #F8FAFC !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .table-container,
+[data-theme="tactical"] .card,
+[data-theme="tactical"] .table-container {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+}
+
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
