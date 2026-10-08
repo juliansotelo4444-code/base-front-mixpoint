@@ -23,6 +23,16 @@ export const ESTADOS = {
     anulado: { label: 'Anulado', badgeClass: 'badge-status-cancelado', icon: '🔴' }
 };
 
+// Definición de los estados de validación y cobranza de pago
+export const ESTADOS_PAGO = {
+    pendiente: { label: '⏳ Pago Pendiente', badgeClass: 'badge-pago-pendiente', color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
+    pagado: { label: '✓ Pagado / Validado', badgeClass: 'badge-pago-validado', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
+    parcial: { label: '🌓 Pago Parcial', badgeClass: 'badge-pago-parcial', color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
+    en_revision: { label: '🔍 En Revisión', badgeClass: 'badge-pago-revision', color: '#6D28D9', bg: '#F5F3FF', border: '#DDD6FE' },
+    cuenta_corriente: { label: '📑 A Cuenta Cte.', badgeClass: 'badge-pago-cta', color: '#475569', bg: '#F8FAFC', border: '#CBD5E1' },
+    bonificado: { label: '🎁 Bonificado / 100%', badgeClass: 'badge-pago-bonificado', color: '#0D9488', bg: '#F0FDFA', border: '#99F6E4' }
+};
+
 export const PIPELINE_STEPS = [
     'pendiente',
     'en_preparacion',
@@ -51,6 +61,7 @@ export default function Remitos() {
     const [productos, setProductos] = useState([]);
     const [q, setQ] = useState('');
     const [estadoFiltro, setEstadoFiltro] = useState('');
+    const [estadoPagoFiltro, setEstadoPagoFiltro] = useState('');
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [clienteRapidoOpen, setClienteRapidoOpen] = useState(false);
@@ -109,7 +120,12 @@ export default function Remitos() {
     async function cargar() {
         setLoading(true);
         try {
-            const { data } = await client.get('/remitos', { params: { estado: estadoFiltro || undefined } });
+            const { data } = await client.get('/remitos', {
+                params: {
+                    estado: estadoFiltro || undefined,
+                    estado_pago: estadoPagoFiltro || undefined
+                }
+            });
             setRemitos(data);
         } catch (err) {
             console.error('Error al cargar remitos:', err);
@@ -137,7 +153,7 @@ export default function Remitos() {
 
     useEffect(() => {
         cargar();
-    }, [estadoFiltro]);
+    }, [estadoFiltro, estadoPagoFiltro]);
 
     const remitosFiltrados = q
         ? remitos.filter(r => (r.cliente_nombre && r.cliente_nombre.toLowerCase().includes(q.toLowerCase())) || (r.numero && r.numero.toLowerCase().includes(q.toLowerCase())))
@@ -317,6 +333,22 @@ export default function Remitos() {
         }
     }
 
+    async function cambiarEstadoPago(id, nuevoEstadoPago) {
+        setCambiandoEstadoId(`pago-${id}`);
+        try {
+            await client.put(`/remitos/${id}/estado-pago`, { estado_pago: nuevoEstadoPago });
+            await cargar();
+            if (detalle && detalle.id === id) {
+                const { data } = await client.get(`/remitos/${id}`);
+                setDetalle(data);
+            }
+        } catch (err) {
+            alert(err.response?.data?.error || 'Error al actualizar estado de pago.');
+        } finally {
+            setCambiandoEstadoId(null);
+        }
+    }
+
     async function abrirEditarRemito(r) {
         setErrorEdicion('');
         try {
@@ -463,7 +495,7 @@ export default function Remitos() {
                         onChange={e => setEstadoFiltro(e.target.value)}
                         style={{ padding: '7px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)', fontSize: 13 }}
                     >
-                        <option value="">Todos los 7 estados</option>
+                        <option value="">Todos los estados logísticos</option>
                         <option value="pendiente">🟡 Pendiente</option>
                         <option value="en_preparacion">🔵 En Preparación</option>
                         <option value="esperando_pago">🟣 Esperando Pago</option>
@@ -471,6 +503,20 @@ export default function Remitos() {
                         <option value="entregado">🟢 Entregado</option>
                         <option value="facturado">🔷 Facturado</option>
                         <option value="cancelado">🔴 Cancelado / Anulado</option>
+                    </select>
+
+                    <select
+                        value={estadoPagoFiltro}
+                        onChange={e => setEstadoPagoFiltro(e.target.value)}
+                        style={{ padding: '7px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)', fontSize: 13 }}
+                    >
+                        <option value="">Todos los estados de pago</option>
+                        <option value="pendiente">⏳ Pago Pendiente</option>
+                        <option value="pagado">✓ Pagado / Validado</option>
+                        <option value="parcial">🌓 Pago Parcial</option>
+                        <option value="en_revision">🔍 En Revisión</option>
+                        <option value="cuenta_corriente">📑 A Cuenta Cte.</option>
+                        <option value="bonificado">🎁 Bonificado</option>
                     </select>
                 </div>
 
@@ -568,15 +614,38 @@ export default function Remitos() {
                                             </div>
                                         </td>
                                         <td style={{ whiteSpace: 'nowrap' }}>
-                                            {r.pago_validado ? (
-                                                <span className="badge badge-pago-validado" title="Pago conciliado en banco">
-                                                    ✓ Pago Validado
-                                                </span>
-                                            ) : (
-                                                <span className="badge badge-pago-pendiente" title="Cobro en entrega o transferencia no validada">
-                                                    ⏳ Pago Pendiente
-                                                </span>
-                                            )}
+                                            {(() => {
+                                                const estadoPagoKey = r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente');
+                                                const infoPago = ESTADOS_PAGO[estadoPagoKey] || ESTADOS_PAGO.pendiente;
+                                                const isCambiandoPago = cambiandoEstadoId === `pago-${r.id}`;
+
+                                                return (
+                                                    <select
+                                                        value={estadoPagoKey}
+                                                        disabled={isCambiandoPago}
+                                                        onChange={(e) => cambiarEstadoPago(r.id, e.target.value)}
+                                                        className={`badge ${infoPago.badgeClass}`}
+                                                        style={{
+                                                            border: `1px solid ${infoPago.border}`,
+                                                            background: infoPago.bg,
+                                                            color: infoPago.color,
+                                                            cursor: 'pointer',
+                                                            padding: '4px 8px',
+                                                            fontWeight: 600,
+                                                            appearance: 'none',
+                                                            WebkitAppearance: 'none'
+                                                        }}
+                                                        title="Clic para cambiar el estado de pago del pedido"
+                                                    >
+                                                        <option value="pendiente">⏳ Pago Pendiente</option>
+                                                        <option value="pagado">✓ Pagado / Validado</option>
+                                                        <option value="parcial">🌓 Pago Parcial</option>
+                                                        <option value="en_revision">🔍 En Revisión</option>
+                                                        <option value="cuenta_corriente">📑 A Cuenta Cte.</option>
+                                                        <option value="bonificado">🎁 Bonificado</option>
+                                                    </select>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="text-right mono" style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
                                             {fmtMoney(r.total)}
@@ -697,9 +766,21 @@ export default function Remitos() {
                                             <option value="facturado">🔷 Facturado</option>
                                             <option value="cancelado">🔴 Cancelado</option>
                                         </select>
-                                        <span className={`badge ${r.pago_validado ? 'badge-pago-validado' : 'badge-pago-pendiente'}`} style={{ fontSize: 10 }}>
-                                            {r.pago_validado ? '✓ Pago OK' : '⏳ Pago Pend.'}
-                                        </span>
+                                        <select
+                                            value={r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente')}
+                                            disabled={cambiandoEstadoId === `pago-${r.id}`}
+                                            onChange={(e) => cambiarEstadoPago(r.id, e.target.value)}
+                                            className={`badge ${ESTADOS_PAGO[r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente')]?.badgeClass || 'badge-pago-pendiente'}`}
+                                            style={{ border: 'none', cursor: 'pointer', padding: '4px 6px', fontWeight: 600, fontSize: 10.5 }}
+                                            title="Cambiar estado de pago"
+                                        >
+                                            <option value="pendiente">⏳ Pendiente</option>
+                                            <option value="pagado">✓ Pagado</option>
+                                            <option value="parcial">🌓 Parcial</option>
+                                            <option value="en_revision">🔍 Revisión</option>
+                                            <option value="cuenta_corriente">📑 Cta. Cte.</option>
+                                            <option value="bonificado">🎁 Bonif.</option>
+                                        </select>
                                     </div>
 
                                     <div className="text-right mono" style={{ fontWeight: 800, fontSize: 15, color: 'var(--color-text)' }}>
@@ -1088,15 +1169,38 @@ export default function Remitos() {
                                 </p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <span className={`badge ${ESTADOS[detalle.estado]?.badgeClass || 'badge-neutral'}`} style={{ fontSize: 13, marginBottom: 4 }}>
+                                <span className={`badge ${ESTADOS[detalle.estado]?.badgeClass || 'badge-neutral'}`} style={{ fontSize: 13, marginBottom: 6, display: 'inline-block' }}>
                                     {ESTADOS[detalle.estado]?.label || detalle.estado}
                                 </span>
                                 <div>
-                                    {detalle.pago_validado ? (
-                                        <span className="badge badge-pago-validado">✓ Pago Validado en Banco</span>
-                                    ) : (
-                                        <span className="badge badge-pago-pendiente">⏳ Cobro / Transferencia Pendiente</span>
-                                    )}
+                                    {(() => {
+                                        const pKey = detalle.estado_pago || (detalle.pago_validado ? 'pagado' : 'pendiente');
+                                        const pInfo = ESTADOS_PAGO[pKey] || ESTADOS_PAGO.pendiente;
+                                        return (
+                                            <select
+                                                value={pKey}
+                                                onChange={(e) => cambiarEstadoPago(detalle.id, e.target.value)}
+                                                className={`badge ${pInfo.badgeClass}`}
+                                                style={{
+                                                    border: `1px solid ${pInfo.border}`,
+                                                    background: pInfo.bg,
+                                                    color: pInfo.color,
+                                                    fontSize: 12,
+                                                    cursor: 'pointer',
+                                                    padding: '5px 10px',
+                                                    fontWeight: 700
+                                                }}
+                                                title="Cambiar estado de cobranza/pago"
+                                            >
+                                                <option value="pendiente">⏳ Pago Pendiente</option>
+                                                <option value="pagado">✓ Pagado / Validado</option>
+                                                <option value="parcial">🌓 Pago Parcial</option>
+                                                <option value="en_revision">🔍 En Revisión</option>
+                                                <option value="cuenta_corriente">📑 A Cuenta Corriente</option>
+                                                <option value="bonificado">🎁 Bonificado (100%)</option>
+                                            </select>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
