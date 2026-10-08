@@ -37,6 +37,49 @@ export function AuthProvider({ children }) {
         setUsuario(data.usuario);
     }
 
+    // Refrescar datos del usuario actual (útil si se le cambiaron permisos)
+    async function refrescarUsuario() {
+        try {
+            const { data } = await client.get('/auth/me');
+            if (data?.usuario) {
+                localStorage.setItem('usuario', JSON.stringify(data.usuario));
+                setUsuario(data.usuario);
+            }
+        } catch (err) {
+            console.error('Error al refrescar usuario:', err);
+        }
+    }
+
+    /**
+     * Verifica si el usuario actual tiene acceso a una sección/ruta específica.
+     * Los administradores tienen acceso irrestricto a todo el sistema.
+     * Para otros roles:
+     * - Si tiene permisos configurados (array no vacío): tiene acceso si la ruta está en su lista.
+     * - Si no tiene permisos configurados (array vacío o undefined): se aplican los permisos por defecto de su rol.
+     */
+    function tienePermiso(ruta) {
+        if (!usuario) return false;
+        if (usuario.rol === 'admin') return true;
+
+        const permisos = Array.isArray(usuario.permisos) ? usuario.permisos : [];
+        if (permisos.length > 0) {
+            return permisos.includes(ruta);
+        }
+
+        // Permisos por defecto según su rol si no se han especificado permisos personalizados
+        if (usuario.rol === 'ventas') {
+            return ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/clientes', '/productos', '/manual'].includes(ruta);
+        }
+        if (usuario.rol === 'deposito') {
+            return ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'].includes(ruta);
+        }
+        if (usuario.rol === 'administracion') {
+            return ['/', '/remitos', '/pedidos-web', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/sincronizacion-sheets', '/productos', '/manual'].includes(ruta);
+        }
+
+        return false;
+    }
+
     // Comprobar expiración periódica de la sesión de 1 hora
     useEffect(() => {
         if (!usuario) return;
@@ -56,7 +99,7 @@ export function AuthProvider({ children }) {
     }, [usuario]);
 
     return (
-        <AuthContext.Provider value={{ usuario, login, logout }}>
+        <AuthContext.Provider value={{ usuario, login, logout, tienePermiso, refrescarUsuario }}>
             {children}
         </AuthContext.Provider>
     );

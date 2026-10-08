@@ -6,7 +6,7 @@ import {
     IconDashboard, IconRemito, IconCarrito, IconRecepcion, IconProducto,
     IconClientes, IconProveedores, IconGastos, IconUsuarios, IconLogout,
     IconMenu, IconClose, IconMix, IconSync, IconBanco, IconReporte, IconFlyer,
-    IconManual
+    IconManual, IconCamion
 } from './Icons';
 import NotificacionesDropdown from './NotificacionesDropdown';
 import JarvisWidget from './JarvisWidget';
@@ -17,7 +17,7 @@ import PreferenciasModal from './PreferenciasModal';
 const NAV_ITEMS = [
     { to: '/', label: 'Panel', icon: IconDashboard, end: true },
     { to: '/remitos', label: 'Remitos', icon: IconRemito },
-    { to: '/deposito-kanban', label: 'Depósito (Kanban)', icon: IconRecepcion },
+    { to: '/deposito-kanban', label: 'Preparación & Despacho', icon: IconCamion },
     { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
     { to: '/catalogo-flyers', label: 'Catálogo y Flyers', icon: IconFlyer },
     { to: '/recepciones', label: 'Recepción de mercadería', icon: IconRecepcion },
@@ -35,7 +35,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Layout() {
-    const { usuario, logout } = useAuth();
+    const { usuario, logout, tienePermiso } = useAuth();
     const { preferences } = usePreferences();
     const navigate = useNavigate();
     const location = useLocation();
@@ -62,7 +62,7 @@ export default function Layout() {
     const hudClass = preferences?.hudMode === 'tactical' ? 'tactical-theme' : '';
     const pinnedShortcuts = (preferences?.shortcuts || []).map(path =>
         NAV_ITEMS.find(item => item.to === path)
-    ).filter(Boolean);
+    ).filter(item => Boolean(item) && tienePermiso(item.to));
 
     return (
         <div className={`app-root-layout ${hudClass}`}>
@@ -189,7 +189,10 @@ export default function Layout() {
                         Módulos Generales
                     </div>
 
-                    {NAV_ITEMS.filter(item => !item.adminOnly || usuario?.rol === 'admin').map(({ to, label, icon: Icon, end }) => (
+                    {NAV_ITEMS.filter(item => {
+                        if (item.adminOnly) return usuario?.rol === 'admin';
+                        return tienePermiso(item.to);
+                    }).map(({ to, label, icon: Icon, end }) => (
                         <NavLink
                             key={to}
                             to={to}

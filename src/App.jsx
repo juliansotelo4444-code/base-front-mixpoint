@@ -37,6 +37,36 @@ function RutaAdmin({ children }) {
     return children;
 }
 
+function RutaProtegidaPermiso({ ruta, children }) {
+    const { usuario, tienePermiso } = useAuth();
+    if (!usuario) return <Navigate to="/login" replace />;
+    if (!tienePermiso(ruta)) {
+        return (
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '60vh',
+                textAlign: 'center',
+                padding: 24
+            }}>
+                <div style={{ fontSize: 54, marginBottom: 16 }}>🔒</div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1E293B', marginBottom: 8 }}>
+                    Acceso Restringido
+                </h2>
+                <p style={{ maxWidth: 460, color: '#64748B', fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
+                    Tu usuario no tiene permisos habilitados por el administrador para acceder a este módulo. Si considerás que es un error, solicitale al administrador que habilite esta sección para tu cuenta.
+                </p>
+                <a href="/" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+                    Volver al Inicio
+                </a>
+            </div>
+        );
+    }
+    return children;
+}
+
 function PageSuspense({ children }) {
     return (
         <Suspense fallback={<div className="p-8"><SkeletonTable rows={8} /></div>}>
@@ -54,22 +84,22 @@ export default function App() {
                         <Routes>
                             <Route path="/login" element={<Login />} />
                             <Route path="/" element={<RutaPrivada><Layout /></RutaPrivada>}>
-                                <Route index element={<Dashboard />} />
-                                <Route path="remitos" element={<Remitos />} />
-                                <Route path="deposito-kanban" element={<DepositoKanban />} />
-                                <Route path="auditoria" element={<AuditLogTimeline />} />
-                                <Route path="pedidos-web" element={<PedidosWeb />} />
-                                <Route path="catalogo-flyers" element={<CatalogoFlyers />} />
-                                <Route path="recepciones" element={<Recepciones />} />
-                                <Route path="produccion" element={<Produccion />} />
-                                <Route path="productos" element={<Productos />} />
-                                <Route path="clientes" element={<Clientes />} />
-                                <Route path="proveedores" element={<Proveedores />} />
-                                <Route path="gastos" element={<Gastos />} />
-                                <Route path="sincronizacion-sheets" element={<SincronizacionSheets />} />
-                                <Route path="conciliacion" element={<ConciliacionBancaria />} />
-                                <Route path="reportes-diarios" element={<ReportesDiarios />} />
-                                <Route path="manual" element={<ManualUsuario />} />
+                                <Route index element={<RutaProtegidaPermiso ruta="/"><Dashboard /></RutaProtegidaPermiso>} />
+                                <Route path="remitos" element={<RutaProtegidaPermiso ruta="/remitos"><Remitos /></RutaProtegidaPermiso>} />
+                                <Route path="deposito-kanban" element={<RutaProtegidaPermiso ruta="/deposito-kanban"><DepositoKanban /></RutaProtegidaPermiso>} />
+                                <Route path="auditoria" element={<RutaProtegidaPermiso ruta="/auditoria"><AuditLogTimeline /></RutaProtegidaPermiso>} />
+                                <Route path="pedidos-web" element={<RutaProtegidaPermiso ruta="/pedidos-web"><PedidosWeb /></RutaProtegidaPermiso>} />
+                                <Route path="catalogo-flyers" element={<RutaProtegidaPermiso ruta="/catalogo-flyers"><CatalogoFlyers /></RutaProtegidaPermiso>} />
+                                <Route path="recepciones" element={<RutaProtegidaPermiso ruta="/recepciones"><Recepciones /></RutaProtegidaPermiso>} />
+                                <Route path="produccion" element={<RutaProtegidaPermiso ruta="/produccion"><Produccion /></RutaProtegidaPermiso>} />
+                                <Route path="productos" element={<RutaProtegidaPermiso ruta="/productos"><Productos /></RutaProtegidaPermiso>} />
+                                <Route path="clientes" element={<RutaProtegidaPermiso ruta="/clientes"><Clientes /></RutaProtegidaPermiso>} />
+                                <Route path="proveedores" element={<RutaProtegidaPermiso ruta="/proveedores"><Proveedores /></RutaProtegidaPermiso>} />
+                                <Route path="gastos" element={<RutaProtegidaPermiso ruta="/gastos"><Gastos /></RutaProtegidaPermiso>} />
+                                <Route path="sincronizacion-sheets" element={<RutaProtegidaPermiso ruta="/sincronizacion-sheets"><SincronizacionSheets /></RutaProtegidaPermiso>} />
+                                <Route path="conciliacion" element={<RutaProtegidaPermiso ruta="/conciliacion"><ConciliacionBancaria /></RutaProtegidaPermiso>} />
+                                <Route path="reportes-diarios" element={<RutaProtegidaPermiso ruta="/reportes-diarios"><ReportesDiarios /></RutaProtegidaPermiso>} />
+                                <Route path="manual" element={<RutaProtegidaPermiso ruta="/manual"><ManualUsuario /></RutaProtegidaPermiso>} />
                                 <Route path="usuarios" element={<RutaAdmin><Usuarios /></RutaAdmin>} />
                             </Route>
                             <Route path="*" element={<Navigate to="/" replace />} />

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import useKanbanSocket from '../hooks/useKanbanSocket';
 import HojaDeRutaModal from '../components/HojaDeRutaModal';
 import EtiquetaDespachoModal from '../components/EtiquetaDespachoModal';
+import TrackingDespachoModal from '../components/TrackingDespachoModal';
 import RemitoImprimible from '../components/RemitoImprimible';
 import { formatearFecha } from '../utils/fechas';
 
@@ -37,6 +38,7 @@ export default function DepositoKanban() {
     // Modales
     const [hojaDeRutaOpen, setHojaDeRutaOpen] = useState(false);
     const [etiquetaModalRemito, setEtiquetaModalRemito] = useState(null);
+    const [trackingModalPedido, setTrackingModalPedido] = useState(null);
     const [remitoParaVer, setRemitoParaVer] = useState(null);
 
     // Cargar tablero desde API
@@ -247,7 +249,7 @@ export default function DepositoKanban() {
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: 'var(--color-primary-dark, #1A382B)' }}>
-                            🏭 Depósito Central · Tablero Kanban
+                            🚚 Preparación & Despacho · Tablero Logístico
                         </h1>
                         <span style={{
                             display: 'inline-flex',
@@ -271,7 +273,7 @@ export default function DepositoKanban() {
                         </span>
                     </div>
                     <p style={{ margin: '4px 0 0 0', color: '#6B7280', fontSize: 14 }}>
-                        Control de concurrencia atómica, asignación de operarios y despacho en lote.
+                        Picking, control atómico, despacho en lote y seguimiento de entrega estilo Mercado Envíos.
                     </p>
                 </div>
 
@@ -562,6 +564,26 @@ export default function DepositoKanban() {
                                                             👁️ Ver
                                                         </button>
 
+                                                        {/* Despacho & Tracking estilo Mercado Envíos */}
+                                                        <button
+                                                            className="btn"
+                                                            onClick={() => setTrackingModalPedido(pedido)}
+                                                            style={{
+                                                                fontSize: 11.5,
+                                                                padding: '4px 8px',
+                                                                background: '#FFFBEB',
+                                                                color: '#B45309',
+                                                                border: '1px solid #FDE68A',
+                                                                fontWeight: 700,
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: 4
+                                                            }}
+                                                            title="Seguimiento de envío para el transportista y WhatsApp al cliente"
+                                                        >
+                                                            🚚 Despacho
+                                                        </button>
+
                                                         {/* Generar etiquetas de despacho */}
                                                         <button
                                                             className="btn btn-secondary"
@@ -658,6 +680,17 @@ export default function DepositoKanban() {
                 <EtiquetaDespachoModal
                     remito={etiquetaModalRemito}
                     onClose={() => setEtiquetaModalRemito(null)}
+                />
+            )}
+
+            {trackingModalPedido && (
+                <TrackingDespachoModal
+                    pedido={trackingModalPedido}
+                    onClose={() => setTrackingModalPedido(null)}
+                    onActualizado={() => {
+                        setTrackingModalPedido(null);
+                        cargarTablero();
+                    }}
                 />
             )}
 

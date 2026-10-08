@@ -6,12 +6,76 @@ import {
     IconBuscar, IconCheck, IconAlerta, IconCopy
 } from './Icons';
 
+const PERSONALIDADES_CONFIG = [
+    {
+        id: 'jarvis',
+        nombre: 'J.A.R.V.I.S.',
+        subtitulo: 'Protocolo Stark Mk-IV',
+        avatarEmoji: '⚡',
+        colorPrimario: '#f59e0b',
+        colorGlow: 'rgba(245, 158, 11, 0.5)',
+        bgNucleo: 'radial-gradient(circle, #fbbf24 0%, #d97706 70%, #78350f 100%)',
+        pitch: 0.98,
+        rate: 1.05,
+        saludo: '¡Buen día! Soy J.A.R.V.I.S., conectado por Model Context Protocol (MCP) a la base de datos de Mix Point. Puedo generar remitos automáticos a partir de pedidos sin tocar otros registros, monitorear el inventario y alertarle sobre quiebres de stock.'
+    },
+    {
+        id: 'yoda',
+        nombre: 'Maestro Yoda',
+        subtitulo: 'Sabiduría Jedi del Stock',
+        avatarEmoji: '🧙‍♂️',
+        colorPrimario: '#10b981',
+        colorGlow: 'rgba(16, 185, 129, 0.5)',
+        bgNucleo: 'radial-gradient(circle, #34d399 0%, #059669 70%, #064e3b 100%)',
+        pitch: 0.82,
+        rate: 0.95,
+        saludo: 'Fuerte en la Fuerza el stock está. Mediante el protocolo MCP los pedidos examino. Generar remitos seguros yo puedo, sin perturbar el balance. ¿Tu orden cuál es, joven padawan?'
+    },
+    {
+        id: 'baymax',
+        nombre: 'Baymax',
+        subtitulo: 'Asistente de Salud Operativa',
+        avatarEmoji: '🤍',
+        colorPrimario: '#ef4444',
+        colorGlow: 'rgba(239, 68, 68, 0.45)',
+        bgNucleo: 'radial-gradient(circle, #f87171 0%, #dc2626 70%, #7f1d1d 100%)',
+        pitch: 1.15,
+        rate: 0.92,
+        saludo: 'Hola. Soy Baymax, tu compañero de asistencia y salud del negocio. Estoy escaneando la base de datos por MCP para prevenir cualquier dolor en la entrega de remitos y stock. Del 1 al 10, ¿cómo calificarías el estado de tus pedidos?'
+    },
+    {
+        id: 'wally',
+        nombre: 'WALL-E',
+        subtitulo: 'Recolector de Pedidos',
+        avatarEmoji: '🤖',
+        colorPrimario: '#eab308',
+        colorGlow: 'rgba(234, 179, 8, 0.5)',
+        bgNucleo: 'radial-gradient(circle, #facc15 0%, #ca8a04 70%, #713f12 100%)',
+        pitch: 1.35,
+        rate: 1.1,
+        saludo: '¡Waaall-eee! *Bip bip* 📦 Pedido leído por MCP... ¡Remito compacto listo! *Ta-daaa* 🌿'
+    },
+    {
+        id: 'c3po',
+        nombre: 'C-3PO',
+        subtitulo: 'Protocolo y Relaciones Humanas',
+        avatarEmoji: '✨',
+        colorPrimario: '#facc15',
+        colorGlow: 'rgba(250, 204, 21, 0.5)',
+        bgNucleo: 'radial-gradient(circle, #fef08a 0%, #eab308 70%, #854d0e 100%)',
+        pitch: 1.22,
+        rate: 1.08,
+        saludo: '¡Oh, cielos! Soy C-3PO, relaciones humanas y androide de protocolo. Conectado rigurosamente al Model Context Protocol para garantizar que ninguna orden sufra errores de cálculo. La probabilidad de emitir el remito a la perfección es del 99.8%.'
+    }
+];
+
 export default function JarvisWidget() {
     const [abierto, setAbierto] = useState(false);
+    const [personalidadActiva, setPersonalidadActiva] = useState('jarvis');
     const [mensajes, setMensajes] = useState([
         {
             remitente: 'jarvis',
-            texto: '¡Buen día! Soy J.A.R.V.I.S., su asistente de inteligencia operativa en Mix Point. Todos los subsistemas están en línea. Puede hablarme por voz o consultarme sobre stock en depósito, alertas FEFO, finanzas, armado de mixes o clientes.'
+            texto: PERSONALIDADES_CONFIG[0].saludo
         }
     ]);
     const [inputTexto, setInputTexto] = useState('');
@@ -19,15 +83,49 @@ export default function JarvisWidget() {
     const [hablando, setHablando] = useState(false);
     const [vozHabilitada, setVozHabilitada] = useState(true);
     const [cargando, setCargando] = useState(false);
-    const [modoCompacto, setModoCompacto] = useState(false);
     const [audioFrecuencia, setAudioFrecuencia] = useState([12, 24, 18, 30, 20, 15]);
+    const [alertasBanner, setAlertasBanner] = useState(null);
 
     const recognitionRef = useRef(null);
     const scrollRef = useRef(null);
     const waveIntervalRef = useRef(null);
     const navigate = useNavigate();
 
-    // Simulación de ondas dinámicas cuando Jarvis habla o escucha
+    const configActual = PERSONALIDADES_CONFIG.find(p => p.id === personalidadActiva) || PERSONALIDADES_CONFIG[0];
+
+    // Cargar alertas automáticas periódicas del sistema mediante MCP
+    useEffect(() => {
+        async function consultarAlertas() {
+            try {
+                const { data } = await api.get('/jarvis/alertas-monitoreo');
+                if (data && data.stock_critico && data.stock_critico.length > 0) {
+                    setAlertasBanner(`${data.stock_critico.length} productos con stock crítico`);
+                }
+            } catch (e) {
+                // silencioso
+            }
+        }
+        consultarAlertas();
+        const interval = setInterval(consultarAlertas, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Cambiar de personalidad
+    function cambiarPersonalidad(nuevaId) {
+        setPersonalidadActiva(nuevaId);
+        const pers = PERSONALIDADES_CONFIG.find(p => p.id === nuevaId) || PERSONALIDADES_CONFIG[0];
+        setMensajes(prev => [
+            ...prev,
+            {
+                remitente: 'jarvis',
+                texto: pers.saludo,
+                personalidad: nuevaId
+            }
+        ]);
+        hablarTexto(pers.saludo, pers);
+    }
+
+    // Ondas dinámicas
     useEffect(() => {
         if (hablando || escuchando) {
             waveIntervalRef.current = setInterval(() => {
@@ -49,7 +147,7 @@ export default function JarvisWidget() {
         };
     }, [hablando, escuchando]);
 
-    // Inicializar Speech Recognition
+    // Speech Recognition
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -60,10 +158,7 @@ export default function JarvisWidget() {
 
             recognition.onstart = () => setEscuchando(true);
             recognition.onend = () => setEscuchando(false);
-            recognition.onerror = (e) => {
-                console.warn('Speech recognition error:', e.error);
-                setEscuchando(false);
-            };
+            recognition.onerror = () => setEscuchando(false);
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 if (transcript && transcript.trim()) {
@@ -76,32 +171,32 @@ export default function JarvisWidget() {
         }
     }, []);
 
-    // Auto-scroll al final del chat
+    // Auto-scroll
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [mensajes, cargando]);
 
-    // Síntesis de voz (Text-to-Speech)
-    function hablarTexto(texto) {
+    // Text to Speech ajustado a la personalidad
+    function hablarTexto(texto, persOverride = null) {
         if (!vozHabilitada || !('speechSynthesis' in window)) return;
+        const pers = persOverride || configActual;
         try {
             window.speechSynthesis.cancel();
-            // Limpiar emojis o caracteres raros para pronunciación fluida
             const textoLimpio = texto
+                .replace(/\[.*?\]/g, '')
                 .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
                 .replace(/[*#_~]/g, '');
 
             const utterance = new SpeechSynthesisUtterance(textoLimpio);
             utterance.lang = 'es-AR';
-            utterance.rate = 1.06;
-            utterance.pitch = 0.98; // Tono ligeramente más grave y distinguido
+            utterance.rate = pers.rate || 1.0;
+            utterance.pitch = pers.pitch || 1.0;
 
             const voces = window.speechSynthesis.getVoices();
-            // Buscar voz en español argentina o neutra
             const vozEsp = voces.find(v => v.lang === 'es-AR') ||
-                           voces.find(v => v.lang.startsWith('es') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Castilian')));
+                           voces.find(v => v.lang.startsWith('es'));
             if (vozEsp) utterance.voice = vozEsp;
 
             utterance.onstart = () => setHablando(true);
@@ -110,14 +205,13 @@ export default function JarvisWidget() {
 
             window.speechSynthesis.speak(utterance);
         } catch (err) {
-            console.warn('Error en síntesis de voz:', err);
             setHablando(false);
         }
     }
 
     function toggleEscucha() {
         if (!recognitionRef.current) {
-            alert('El reconocimiento por voz no está disponible en este navegador. Podés tipear tus preguntas.');
+            alert('El reconocimiento por voz no está disponible en este navegador. Podés escribir.');
             return;
         }
         if (escuchando) {
@@ -138,19 +232,23 @@ export default function JarvisWidget() {
         setCargando(true);
 
         try {
-            const data = await api.post('/jarvis/chat', { mensaje: query });
-            const respuestaJarvis = data.respuesta || 'Operación procesada, señor.';
+            const data = await api.post('/jarvis/chat', {
+                mensaje: query,
+                personalidad: personalidadActiva
+            });
+            const respuestaJarvis = data.respuesta || 'Operación procesada con éxito.';
 
             setMensajes(prev => [...prev, {
                 remitente: 'jarvis',
                 texto: respuestaJarvis,
                 datos: data.datos,
-                accion_sugerida: data.accion_sugerida
+                accion_sugerida: data.accion_sugerida,
+                personalidad: personalidadActiva
             }]);
 
             hablarTexto(respuestaJarvis);
         } catch (err) {
-            const errMsg = 'Disculpe, señor. Hubo una interferencia al consultar los datos del servidor.';
+            const errMsg = 'Interferencia al consultar los datos del servidor MCP.';
             setMensajes(prev => [...prev, { remitente: 'jarvis', texto: errMsg }]);
             hablarTexto(errMsg);
         } finally {
@@ -170,62 +268,62 @@ export default function JarvisWidget() {
     }
 
     const sugerenciasRapidas = [
-        'Resumen de ventas de hoy',
-        '¿Cuánto stock tenemos de almendras?',
-        '¿Quiénes son los mejores clientes?',
-        '¿Quién nos debe más dinero?',
-        '¿Hay remitos pendientes en depósito?',
-        '¿Podemos elaborar 50 kg de mix?',
-        'Predicción de quiebre de stock'
+        'Generar remito automático para el pedido MP-1001',
+        'Monitorear alertas críticas del sistema',
+        'Consultar memoria extendida del negocio',
+        '¿Cuánto stock tenemos de almendras y nueces?',
+        '¿Quiénes son nuestros mayores deudores?'
     ];
 
     return (
         <>
-            {/* BOTÓN FLOTANTE TRIGGER CON NÚCLEO REACTIVO */}
+            {/* BOTÓN FLOTANTE TRIGGER CON NÚCLEO DINÁMICO */}
             <div className="jarvis-fab-wrapper no-print">
                 <button
                     type="button"
                     onClick={() => setAbierto(!abierto)}
-                    title="J.A.R.V.I.S. • Asistente Inteligente Mix Point"
+                    title={`${configActual.nombre} • Agente IA MCP`}
                     style={{
-                        width: 58,
-                        height: 58,
+                        width: 60,
+                        height: 60,
                         borderRadius: '50%',
                         background: 'radial-gradient(circle, #1a2234 0%, #0c101a 100%)',
-                        border: '2px solid rgba(245, 158, 11, 0.5)',
+                        border: `2px solid ${configActual.colorPrimario}`,
                         position: 'relative',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 158, 11, 0.35)',
+                        boxShadow: `0 8px 30px rgba(0, 0, 0, 0.6), 0 0 20px ${configActual.colorGlow}`,
                         transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                         transform: abierto ? 'scale(0.92)' : 'scale(1)'
                     }}
                 >
-                    {/* Anillo orbital exterior giratorio */}
+                    {/* Anillo orbital con animación personalizada */}
                     <div style={{
                         position: 'absolute',
                         inset: -5,
                         borderRadius: '50%',
-                        border: '2px dashed rgba(245, 158, 11, 0.4)',
-                        animation: 'jarvisOrbRotate 8s linear infinite',
+                        border: `2px dashed ${configActual.colorPrimario}`,
+                        opacity: 0.6,
+                        animation: 'jarvisOrbRotate 7s linear infinite',
                         pointerEvents: 'none'
                     }} />
 
                     {/* Núcleo central brillante */}
                     <div style={{
-                        width: 32,
-                        height: 32,
+                        width: 36,
+                        height: 36,
                         borderRadius: '50%',
-                        background: 'radial-gradient(circle, #fbbf24 0%, #d97706 70%, #78350f 100%)',
+                        background: configActual.bgNucleo,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#0f131d',
-                        boxShadow: '0 0 16px rgba(245, 158, 11, 0.8), inset 0 0 8px #fff'
+                        fontSize: 18,
+                        boxShadow: `0 0 16px ${configActual.colorGlow}, inset 0 0 8px #fff`
                     }}>
-                        <IconBot style={{ width: 18, height: 18 }} />
+                        {configActual.avatarEmoji}
                     </div>
 
                     {/* Indicador de estado */}
@@ -236,34 +334,87 @@ export default function JarvisWidget() {
                         width: 14,
                         height: 14,
                         borderRadius: '50%',
-                        background: hablando ? '#f59e0b' : (escuchando ? '#ef4444' : '#10b981'),
+                        background: hablando ? configActual.colorPrimario : (escuchando ? '#ef4444' : '#10b981'),
                         border: '2px solid #0f131d',
                         boxShadow: '0 0 8px currentColor'
                     }} />
                 </button>
             </div>
 
-            {/* PANEL PRINCIPAL DE JARVIS */}
+            {/* PANEL PRINCIPAL DEL AGENTE */}
             {abierto && (
-                <div className="jarvis-modal no-print">
-                    {/* CABECERA CON NÚCLEO HOLOGRÁFICO "ARC REACTOR" */}
+                <div className="jarvis-modal no-print" style={{
+                    position: 'fixed',
+                    bottom: 84,
+                    right: 20,
+                    width: 440,
+                    maxWidth: '92vw',
+                    height: 600,
+                    maxHeight: '82vh',
+                    borderRadius: 20,
+                    background: '#0d111a',
+                    border: `1.5px solid ${configActual.colorPrimario}`,
+                    boxShadow: `0 20px 50px rgba(0,0,0,0.8), 0 0 30px ${configActual.colorGlow}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    zIndex: 99999,
+                    overflow: 'hidden'
+                }}>
+                    {/* CABECERA CON REACTOR Y SELECTOR DE PERSONALIDADES */}
                     <div style={{
-                        padding: '16px 18px',
+                        padding: '14px 16px',
                         background: 'linear-gradient(180deg, rgba(26, 34, 52, 0.95) 0%, rgba(15, 19, 29, 0.95) 100%)',
-                        borderBottom: '1px solid rgba(245, 158, 11, 0.25)',
-                        position: 'relative',
-                        overflow: 'hidden'
+                        borderBottom: `1px solid ${configActual.colorPrimario}44`,
+                        position: 'relative'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 2, position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                {/* NÚCLEO REDONDO ANIMADO INTERACTIVO */}
+                        {/* Selector de Personalidades (Pills) */}
+                        <div style={{
+                            display: 'flex',
+                            gap: 6,
+                            overflowX: 'auto',
+                            paddingBottom: 8,
+                            marginBottom: 8,
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+                        }}>
+                            {PERSONALIDADES_CONFIG.map(p => {
+                                const activo = p.id === personalidadActiva;
+                                return (
+                                    <button
+                                        key={p.id}
+                                        type="button"
+                                        onClick={() => cambiarPersonalidad(p.id)}
+                                        style={{
+                                            background: activo ? p.colorPrimario : 'rgba(255, 255, 255, 0.06)',
+                                            color: activo ? '#0f131d' : '#94a3b8',
+                                            border: `1px solid ${activo ? p.colorPrimario : 'rgba(255, 255, 255, 0.1)'}`,
+                                            borderRadius: 20,
+                                            padding: '3px 10px',
+                                            fontSize: 11,
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            whiteSpace: 'nowrap',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <span>{p.avatarEmoji}</span>
+                                        <span>{p.nombre}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                {/* REDONDEL CON ANIMACIÓN CONCÉNTRICA INTEGRADA */}
                                 <div
-                                    className={`jarvis-arc-reactor ${hablando ? 'jarvis-orb-speaking' : ''} ${escuchando ? 'jarvis-orb-listening' : ''}`}
                                     onClick={toggleEscucha}
-                                    title={escuchando ? 'Click para detener escucha' : 'Click para hablar'}
+                                    title={escuchando ? 'Detener escucha' : 'Hablar con el agente'}
                                     style={{
-                                        width: 52,
-                                        height: 52,
+                                        width: 50,
+                                        height: 50,
                                         borderRadius: '50%',
                                         position: 'relative',
                                         display: 'flex',
@@ -272,56 +423,48 @@ export default function JarvisWidget() {
                                         cursor: 'pointer',
                                         background: 'radial-gradient(circle, #1e293b 0%, #0a0e17 100%)',
                                         boxShadow: hablando
-                                            ? '0 0 25px rgba(245, 158, 11, 0.7), inset 0 0 15px rgba(245, 158, 11, 0.5)'
-                                            : (escuchando ? '0 0 30px rgba(239, 68, 68, 0.8), inset 0 0 15px rgba(239, 68, 68, 0.6)' : '0 0 15px rgba(201, 162, 39, 0.3)'),
+                                            ? `0 0 25px ${configActual.colorPrimario}, inset 0 0 15px ${configActual.colorPrimario}`
+                                            : (escuchando ? '0 0 30px #ef4444, inset 0 0 15px #ef4444' : `0 0 15px ${configActual.colorGlow}`),
                                         transition: 'all 0.3s ease'
                                     }}
                                 >
-                                    {/* Anillo exterior orbitante */}
-                                    <div className="jarvis-ring-outer" style={{
+                                    {/* Anillo exterior animado */}
+                                    <div style={{
                                         position: 'absolute',
                                         inset: -3,
                                         borderRadius: '50%',
-                                        border: '2px dashed #C9A227',
+                                        border: `2px dashed ${configActual.colorPrimario}`,
                                         animation: 'jarvisOrbRotate 6s linear infinite'
                                     }} />
 
-                                    {/* Anillo concéntrico interior */}
-                                    <div className="jarvis-ring-inner" style={{
+                                    {/* Anillo concéntrico pulsante */}
+                                    <div style={{
                                         position: 'absolute',
                                         inset: 3,
                                         borderRadius: '50%',
                                         border: '1px solid rgba(255, 255, 255, 0.2)',
-                                        borderTopColor: '#f59e0b',
-                                        borderBottomColor: '#f59e0b',
+                                        borderTopColor: configActual.colorPrimario,
+                                        borderBottomColor: configActual.colorPrimario,
                                         animation: 'jarvisOrbRotateReverse 3s linear infinite'
                                     }} />
 
-                                    {/* Centro del núcleo que pulsa al hablar */}
-                                    <div className="jarvis-core-center" style={{
-                                        width: 26,
-                                        height: 26,
+                                    {/* Centro */}
+                                    <div style={{
+                                        width: 28,
+                                        height: 28,
                                         borderRadius: '50%',
-                                        background: escuchando
-                                            ? 'radial-gradient(circle, #ef4444 0%, #991b1b 100%)'
-                                            : 'radial-gradient(circle, #fde047 0%, #f59e0b 60%, #b45309 100%)',
+                                        background: configActual.bgNucleo,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        boxShadow: '0 0 18px rgba(245, 158, 11, 0.9), inset 0 0 6px #fff',
-                                        animation: hablando ? 'jarvisPulseCore 0.7s infinite alternate' : 'none',
-                                        transition: 'all 0.3s ease'
+                                        fontSize: 14,
+                                        boxShadow: `0 0 18px ${configActual.colorGlow}, inset 0 0 6px #fff`,
+                                        animation: hablando ? 'jarvisPulseCore 0.7s infinite alternate' : 'none'
                                     }}>
                                         {escuchando ? (
                                             <IconMicrofono style={{ width: 14, height: 14, color: '#fff' }} />
                                         ) : (
-                                            <div style={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: '50%',
-                                                background: '#fff',
-                                                boxShadow: '0 0 6px #fff'
-                                            }} />
+                                            configActual.avatarEmoji
                                         )}
                                     </div>
                                 </div>
@@ -330,23 +473,22 @@ export default function JarvisWidget() {
                                     <div style={{
                                         fontWeight: 800,
                                         fontSize: 15,
-                                        letterSpacing: '0.04em',
                                         color: '#fff',
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 8
                                     }}>
-                                        <span>J.A.R.V.I.S.</span>
+                                        <span>{configActual.nombre}</span>
                                         <span style={{
                                             fontSize: 9.5,
                                             padding: '2px 6px',
                                             borderRadius: 4,
-                                            background: 'rgba(245, 158, 11, 0.2)',
-                                            color: '#f59e0b',
-                                            border: '1px solid rgba(245, 158, 11, 0.4)',
-                                            letterSpacing: '0.08em'
+                                            background: `${configActual.colorPrimario}22`,
+                                            color: configActual.colorPrimario,
+                                            border: `1px solid ${configActual.colorPrimario}55`,
+                                            fontWeight: 800
                                         }}>
-                                            AI MK-III
+                                            MCP AGENT
                                         </span>
                                     </div>
                                     <div style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
@@ -354,19 +496,18 @@ export default function JarvisWidget() {
                                             width: 7,
                                             height: 7,
                                             borderRadius: '50%',
-                                            background: hablando ? '#f59e0b' : (escuchando ? '#ef4444' : '#10b981'),
+                                            background: hablando ? configActual.colorPrimario : (escuchando ? '#ef4444' : '#10b981'),
                                             boxShadow: '0 0 8px currentColor'
                                         }} />
                                         <span>
-                                            {hablando ? 'Transmitiendo respuesta...' : (escuchando ? 'Escuchando su voz...' : 'Sistemas operativos online')}
+                                            {hablando ? 'Transmitiendo...' : (escuchando ? 'Escuchando...' : 'MCP Conectado (Solo Lectura)')}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* CONTROLES DEL HEADER */}
+                            {/* Controles de audio y cerrar */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                {/* Botón silenciar/activar voz */}
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -376,22 +517,19 @@ export default function JarvisWidget() {
                                         }
                                         setVozHabilitada(!vozHabilitada);
                                     }}
-                                    title={vozHabilitada ? 'Silenciar voz de Jarvis' : 'Activar locución de voz'}
+                                    title={vozHabilitada ? 'Silenciar voz' : 'Activar voz'}
                                     style={{
-                                        background: vozHabilitada ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                                        border: `1px solid ${vozHabilitada ? 'rgba(245, 158, 11, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-                                        color: vozHabilitada ? '#f59e0b' : '#64748b',
+                                        background: vozHabilitada ? `${configActual.colorPrimario}22` : 'rgba(255, 255, 255, 0.05)',
+                                        border: `1px solid ${vozHabilitada ? configActual.colorPrimario : 'rgba(255, 255, 255, 0.1)'}`,
+                                        color: vozHabilitada ? configActual.colorPrimario : '#64748b',
                                         borderRadius: 8,
                                         cursor: 'pointer',
                                         padding: '5px 8px',
-                                        fontSize: 13,
-                                        transition: 'all 0.2s'
+                                        fontSize: 12
                                     }}
                                 >
                                     {vozHabilitada ? '🔊' : '🔇'}
                                 </button>
-
-                                {/* Botón Cerrar */}
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -404,170 +542,129 @@ export default function JarvisWidget() {
                                         border: 'none',
                                         color: '#94a3b8',
                                         cursor: 'pointer',
-                                        padding: 6,
-                                        borderRadius: 8,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
+                                        padding: 6
                                     }}
-                                    title="Minimizar Jarvis"
                                 >
                                     <IconClose style={{ width: 18, height: 18 }} />
                                 </button>
                             </div>
                         </div>
 
-                        {/* ECUALIZADOR DE ONDAS DE VOZ (WAVEFORM BARS) */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 4,
-                            marginTop: 12,
-                            height: 18
-                        }}>
+                        {/* Ondas */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10, height: 14 }}>
                             {audioFrecuencia.map((alt, i) => (
                                 <div
                                     key={i}
                                     style={{
                                         width: 3,
                                         height: `${alt}px`,
-                                        background: hablando ? '#f59e0b' : (escuchando ? '#ef4444' : 'rgba(255, 255, 255, 0.2)'),
+                                        background: hablando ? configActual.colorPrimario : (escuchando ? '#ef4444' : 'rgba(255, 255, 255, 0.2)'),
                                         borderRadius: 2,
-                                        transition: 'height 0.1s ease',
-                                        boxShadow: hablando || escuchando ? '0 0 6px currentColor' : 'none'
+                                        transition: 'height 0.1s ease'
                                     }}
                                 />
                             ))}
                         </div>
                     </div>
 
-                    {/* CUERPO DEL CHAT / HISTORIAL DE MENSAJES */}
+                    {/* BANNER DE ALERTA PROACTIVA MCP */}
+                    {alertasBanner && (
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            borderBottom: '1px solid rgba(239, 68, 68, 0.3)',
+                            padding: '6px 14px',
+                            color: '#f87171',
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}>
+                            <span>⚠️ Monitoreo MCP: {alertasBanner}</span>
+                            <button
+                                onClick={() => enviarMensaje('Monitorear alertas críticas del sistema')}
+                                style={{ background: 'none', border: 'none', color: '#fff', textDecoration: 'underline', cursor: 'pointer', fontSize: 11 }}
+                            >
+                                Analizar
+                            </button>
+                        </div>
+                    )}
+
+                    {/* CUERPO DEL CHAT */}
                     <div ref={scrollRef} style={{
                         flex: 1,
-                        padding: '16px 14px',
+                        padding: '14px',
                         overflowY: 'auto',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: 12,
-                        background: 'radial-gradient(circle at 50% 20%, rgba(20, 27, 43, 0.6) 0%, rgba(11, 14, 23, 0.95) 100%)'
+                        gap: 12
                     }}>
-                        {mensajes.map((m, idx) => (
-                            <div
-                                key={idx}
-                                style={{
-                                    alignSelf: m.remitente === 'usuario' ? 'flex-end' : 'flex-start',
-                                    maxWidth: '88%',
-                                    background: m.remitente === 'usuario'
-                                        ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-                                        : 'rgba(26, 34, 52, 0.85)',
-                                    color: m.remitente === 'usuario' ? '#0f172a' : '#f8fafc',
-                                    border: m.remitente === 'jarvis' ? '1px solid rgba(245, 158, 11, 0.2)' : 'none',
-                                    padding: '10px 14px',
-                                    borderRadius: 14,
-                                    borderBottomRightRadius: m.remitente === 'usuario' ? 2 : 14,
-                                    borderBottomLeftRadius: m.remitente === 'jarvis' ? 2 : 14,
-                                    fontSize: 13,
-                                    lineHeight: 1.5,
-                                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
-                                    position: 'relative'
-                                }}
-                            >
-                                {m.remitente === 'jarvis' && (
-                                    <div style={{
-                                        fontSize: 10,
-                                        fontWeight: 700,
-                                        color: '#f59e0b',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.06em',
-                                        marginBottom: 4,
+                        {mensajes.map((msg, index) => {
+                            const esUsuario = msg.remitente === 'usuario';
+                            return (
+                                <div
+                                    key={index}
+                                    style={{
                                         display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 5
+                                        flexDirection: 'column',
+                                        alignItems: esUsuario ? 'flex-end' : 'flex-start'
+                                    }}
+                                >
+                                    <div style={{
+                                        maxWidth: '85%',
+                                        padding: '10px 14px',
+                                        borderRadius: 14,
+                                        borderBottomRightRadius: esUsuario ? 2 : 14,
+                                        borderBottomLeftRadius: !esUsuario ? 2 : 14,
+                                        background: esUsuario ? '#2563eb' : 'rgba(30, 41, 59, 0.85)',
+                                        color: '#fff',
+                                        fontSize: 13,
+                                        lineHeight: 1.45,
+                                        border: esUsuario ? 'none' : `1px solid ${configActual.colorPrimario}33`,
+                                        whiteSpace: 'pre-wrap'
                                     }}>
-                                        <span>JARVIS</span>
+                                        {msg.texto}
+                                    </div>
+
+                                    {/* Botón de acción sugerida */}
+                                    {msg.accion_sugerida && (
                                         <button
                                             type="button"
-                                            onClick={() => hablarTexto(m.texto)}
+                                            onClick={() => ejecutarAccion(msg.accion_sugerida)}
                                             style={{
-                                                background: 'transparent',
-                                                border: 'none',
-                                                color: '#f59e0b',
-                                                cursor: 'pointer',
+                                                marginTop: 6,
+                                                background: 'rgba(255, 255, 255, 0.08)',
+                                                border: `1px solid ${configActual.colorPrimario}`,
+                                                color: configActual.colorPrimario,
+                                                borderRadius: 8,
+                                                padding: '4px 10px',
                                                 fontSize: 11,
-                                                padding: 0
+                                                fontWeight: 700,
+                                                cursor: 'pointer'
                                             }}
-                                            title="Repetir locución de voz"
                                         >
-                                            🔊
+                                            🚀 {msg.accion_sugerida}
                                         </button>
-                                    </div>
-                                )}
-
-                                <div style={{ whiteSpace: 'pre-line' }}>{m.texto}</div>
-
-                                {/* Botón de acción sugerida */}
-                                {m.accion_sugerida && (
-                                    <button
-                                        type="button"
-                                        onClick={() => ejecutarAccion(m.accion_sugerida)}
-                                        style={{
-                                            marginTop: 10,
-                                            padding: '6px 12px',
-                                            borderRadius: 8,
-                                            background: 'rgba(245, 158, 11, 0.15)',
-                                            border: '1px solid #f59e0b',
-                                            color: '#f59e0b',
-                                            fontSize: 11.5,
-                                            fontWeight: 700,
-                                            cursor: 'pointer',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                            transition: 'all 0.15s ease'
-                                        }}
-                                    >
-                                        <span>⚡ {m.accion_sugerida}</span>
-                                    </button>
-                                )}
-                            </div>
-                        ))}
+                                    )}
+                                </div>
+                            );
+                        })}
 
                         {cargando && (
-                            <div style={{
-                                alignSelf: 'flex-start',
-                                background: 'rgba(26, 34, 52, 0.85)',
-                                border: '1px solid rgba(245, 158, 11, 0.2)',
-                                color: '#cbd5e1',
-                                padding: '10px 14px',
-                                borderRadius: 14,
-                                fontSize: 12,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8
-                            }}>
-                                <div style={{
-                                    width: 14,
-                                    height: 14,
-                                    borderRadius: '50%',
-                                    border: '2px solid #f59e0b',
-                                    borderTopColor: 'transparent',
-                                    animation: 'jarvisOrbRotate 0.8s linear infinite'
-                                }} />
-                                <span>Procesando telemetría de Mix Point...</span>
+                            <div style={{ color: configActual.colorPrimario, fontSize: 12, fontStyle: 'italic' }}>
+                                {configActual.nombre} consultando base de datos por MCP...
                             </div>
                         )}
                     </div>
 
-                    {/* SUGERENCIAS RÁPIDAS EN CARRUSEL */}
+                    {/* SUGERENCIAS RÁPIDAS */}
                     <div style={{
                         padding: '8px 12px',
-                        background: '#0d111a',
+                        background: '#090d15',
                         borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-                        overflowX: 'auto',
-                        whiteSpace: 'nowrap',
                         display: 'flex',
-                        gap: 8
+                        gap: 6,
+                        overflowX: 'auto'
                     }}>
                         {sugerenciasRapidas.map((sug, i) => (
                             <button
@@ -575,15 +672,14 @@ export default function JarvisWidget() {
                                 type="button"
                                 onClick={() => enviarMensaje(sug)}
                                 style={{
-                                    background: 'rgba(255, 255, 255, 0.03)',
-                                    border: '1px solid rgba(245, 158, 11, 0.2)',
-                                    borderRadius: 14,
-                                    padding: '5px 12px',
-                                    color: '#e2e8f0',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    color: '#cbd5e1',
+                                    borderRadius: 12,
+                                    padding: '4px 8px',
                                     fontSize: 11,
                                     cursor: 'pointer',
-                                    flexShrink: 0,
-                                    transition: 'all 0.15s'
+                                    whiteSpace: 'nowrap'
                                 }}
                             >
                                 {sug}
@@ -591,76 +687,63 @@ export default function JarvisWidget() {
                         ))}
                     </div>
 
-                    {/* CAJA DE TEXTO Y ACCIONADOR DE VOZ */}
+                    {/* INPUT Y ENVÍO */}
                     <div style={{
-                        padding: 12,
-                        background: '#131824',
-                        borderTop: '1px solid rgba(245, 158, 11, 0.2)',
+                        padding: '12px',
+                        background: '#0f1420',
+                        borderTop: `1px solid ${configActual.colorPrimario}33`,
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: 8
+                        gap: 8,
+                        alignItems: 'center'
                     }}>
                         <input
                             type="text"
-                            placeholder={escuchando ? 'Escuchando su voz...' : 'Escriba o hable con Jarvis...'}
                             value={inputTexto}
                             onChange={(e) => setInputTexto(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && enviarMensaje()}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') enviarMensaje();
+                            }}
+                            placeholder={`Preguntar a ${configActual.nombre} o emitir remito...`}
                             style={{
                                 flex: 1,
-                                background: '#0a0d14',
-                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
                                 borderRadius: 10,
-                                padding: '10px 14px',
+                                padding: '8px 12px',
                                 color: '#fff',
                                 fontSize: 13,
-                                outline: 'none',
-                                transition: 'border-color 0.2s'
+                                outline: 'none'
                             }}
                         />
 
-                        {/* Botón Micrófono / Reconocimiento de Voz */}
                         <button
                             type="button"
                             onClick={toggleEscucha}
-                            title={escuchando ? 'Detener dictado' : 'Hablar por micrófono con Jarvis'}
                             style={{
-                                width: 42,
-                                height: 42,
-                                borderRadius: 10,
-                                background: escuchando
-                                    ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                                    : 'rgba(245, 158, 11, 0.15)',
-                                border: `1px solid ${escuchando ? '#ef4444' : 'rgba(245, 158, 11, 0.35)'}`,
-                                color: escuchando ? '#fff' : '#f59e0b',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                boxShadow: escuchando ? '0 0 16px rgba(239, 68, 68, 0.6)' : 'none'
+                                background: escuchando ? '#ef4444' : 'rgba(255, 255, 255, 0.1)',
+                                border: 'none',
+                                color: '#fff',
+                                borderRadius: 8,
+                                padding: '8px 10px',
+                                cursor: 'pointer'
                             }}
+                            title="Reconocimiento por voz"
                         >
-                            {escuchando ? <IconMicrofonoOff style={{ width: 18, height: 18 }} /> : <IconMicrofono style={{ width: 18, height: 18 }} />}
+                            <IconMicrofono style={{ width: 16, height: 16 }} />
                         </button>
 
-                        {/* Botón Enviar */}
                         <button
                             type="button"
                             onClick={() => enviarMensaje()}
-                            disabled={!inputTexto.trim()}
                             style={{
-                                height: 42,
-                                padding: '0 16px',
-                                borderRadius: 10,
-                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                background: configActual.colorPrimario,
                                 border: 'none',
-                                color: '#0f172a',
+                                color: '#0f131d',
+                                borderRadius: 8,
+                                padding: '8px 14px',
                                 fontWeight: 800,
                                 fontSize: 13,
-                                cursor: inputTexto.trim() ? 'pointer' : 'default',
-                                opacity: inputTexto.trim() ? 1 : 0.4,
-                                transition: 'opacity 0.2s'
+                                cursor: 'pointer'
                             }}
                         >
                             Enviar
