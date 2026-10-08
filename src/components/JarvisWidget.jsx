@@ -186,24 +186,74 @@ export default function JarvisWidget() {
         }
     }, [mensajes, cargando]);
 
-    // Text to Speech
-    function hablarTexto(texto) {
+    // Helper para seleccionar la voz más humana y natural en español
+    function seleccionarMejorVoz(voces) {
+        if (!voces || voces.length === 0) return null;
+        const vocesEs = voces.filter(v => v.lang.startsWith('es') || v.lang === 'es-AR');
+        if (vocesEs.length === 0) return null;
+
+        // 1. Prioridad: Voces Neuronales/Naturales en español (Edge / Chrome)
+        const onlineNatural = vocesEs.find(v => 
+            (v.name.includes('Natural') || v.name.includes('Online')) && 
+            (v.name.includes('Tomas') || v.name.includes('Gonzalo') || v.name.includes('Jorge') || v.name.includes('Alonso') || v.name.toLowerCase().includes('male'))
+        );
+        if (onlineNatural) return onlineNatural;
+
+        const anyNatural = vocesEs.find(v => v.name.includes('Natural') || v.name.includes('Online'));
+        if (anyNatural) return anyNatural;
+
+        // 2. Voces Google en español
+        const googleEs = vocesEs.find(v => v.name.includes('Google') || v.name.toLowerCase().includes('español'));
+        if (googleEs) return googleEs;
+
+        // 3. Voces masculinas en español
+        const maleEs = vocesEs.find(v => v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('hombre') || v.name.toLowerCase().includes('pablo') || v.name.toLowerCase().includes('raul') || v.name.toLowerCase().includes('carlos'));
+        if (maleEs) return maleEs;
+
+        // 4. Voz argentina o primera en español
+        return vocesEs.find(v => v.lang === 'es-AR') || vocesEs[0];
+    }
+
+    // Text to Speech Humano, Elegante y Conciso (J.A.R.V.I.S.)
+    function hablarTexto(textoCompleto, textoSintesis = null) {
         if (!vozHabilitada || !('speechSynthesis' in window)) return;
         try {
             window.speechSynthesis.cancel();
-            const textoLimpio = texto
+
+            // Usar síntesis vocal directa o extraer la primera frase ejecutiva humana
+            let fraseVocal = textoSintesis;
+            if (!fraseVocal || !fraseVocal.trim()) {
+                const lineas = (textoCompleto || '').split('\n').filter(l => l.trim().length > 0);
+                const primeraLinea = lineas[0] || '';
+                const matchOracion = primeraLinea.split(/(?<=[.!?])\s+/)[0];
+                fraseVocal = (matchOracion && matchOracion.length > 15) ? matchOracion : primeraLinea;
+            }
+
+            // Limpieza acústica profunda: eliminar viñetas, códigos, símbolos que suenan robóticos
+            const textoLimpio = fraseVocal
                 .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
-                .replace(/[*#_~•]/g, '');
+                .replace(/[*#_~•–—|]/g, '')
+                .replace(/https?:\/\/\S+/g, '')
+                .replace(/\(.*?\)/g, '')
+                .replace(/\bmp-\d+\b/gi, (m) => `pedido ${m.replace(/[^0-9]/g, '')}`)
+                .replace(/\$\s*(\d+[.,]?\d*)/g, '$1 pesos')
+                .replace(/\bkg\b/gi, 'kilos')
+                .replace(/\bamba\b/gi, 'Gran Buenos Aires')
+                .replace(/\bmcp\b/gi, 'sistema')
+                .replace(/\bcot\b/gi, 'análisis')
+                .trim();
+
+            if (!textoLimpio) return;
 
             const utterance = new SpeechSynthesisUtterance(textoLimpio);
             utterance.lang = 'es-AR';
-            utterance.rate = 1.05;
-            utterance.pitch = 0.98;
+            // Cadencia Jarvis: pausada, tranquila, formal (no acelerada ni robótica)
+            utterance.rate = 0.94;
+            utterance.pitch = 0.92;
 
             const voces = window.speechSynthesis.getVoices();
-            const vozEsp = voces.find(v => v.lang === 'es-AR') ||
-                           voces.find(v => v.lang.startsWith('es'));
-            if (vozEsp) utterance.voice = vozEsp;
+            const mejorVoz = seleccionarMejorVoz(voces);
+            if (mejorVoz) utterance.voice = mejorVoz;
 
             utterance.onstart = () => setHablando(true);
             utterance.onend = () => setHablando(false);
@@ -240,21 +290,24 @@ export default function JarvisWidget() {
         try {
             const data = await api.post('/jarvis/chat', { mensaje: query });
             const respuestaJarvis = data.respuesta || 'Operación procesada, señor.';
+            const vozJarvis = data.sintesis_voz || null;
 
             setMensajes(prev => [...prev, {
                 remitente: 'jarvis',
                 texto: respuestaJarvis,
+                sintesis_voz: vozJarvis,
                 datos: data.datos,
                 razonamiento_pasos: data.razonamiento_pasos,
                 fuente: data.fuente,
                 accion_sugerida: data.accion_sugerida
             }]);
 
-            hablarTexto(respuestaJarvis);
+            hablarTexto(respuestaJarvis, vozJarvis);
         } catch (err) {
-            const errMsg = 'Disculpe, señor. Hubo una interferencia al consultar los datos del servidor MCP.';
+            const errMsg = 'Disculpe, señor. Hubo una interferencia al consultar los datos del servidor.';
+            const vozErr = 'Disculpe señor, hubo una interferencia de conexión.';
             setMensajes(prev => [...prev, { remitente: 'jarvis', texto: errMsg }]);
-            hablarTexto(errMsg);
+            hablarTexto(errMsg, vozErr);
         } finally {
             setCargando(false);
         }
