@@ -1778,19 +1778,72 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
     position: fixed;
     bottom: 88px;
     right: 24px;
-    width: 380px;
+    width: 400px;
     max-width: calc(100vw - 32px);
-    height: 520px;
+    height: 560px;
     max-height: calc(100vh - 110px);
-    background: #131722;
-    border: 1px solid rgba(201, 162, 39, 0.3);
-    border-radius: 16px;
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), 0 0 20px rgba(201, 162, 39, 0.15);
+    background: #0f131d;
+    border: 1px solid rgba(201, 162, 39, 0.4);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 30px rgba(201, 162, 39, 0.2);
     display: flex;
     flex-direction: column;
     z-index: 9995;
     overflow: hidden;
-    animation: fadeInUp 0.2s ease-out;
+    animation: fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(12px);
+}
+
+/* Animaciones del Núcleo Reactor de Jarvis */
+@keyframes jarvisOrbRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes jarvisOrbRotateReverse {
+    0% { transform: rotate(360deg); }
+    100% { transform: rotate(0deg); }
+}
+
+@keyframes jarvisPulseCore {
+    0%, 100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 15px rgba(201, 162, 39, 0.5), inset 0 0 10px rgba(201, 162, 39, 0.6);
+    }
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 35px rgba(201, 162, 39, 0.85), 0 0 60px rgba(245, 158, 11, 0.4), inset 0 0 20px rgba(245, 158, 11, 0.9);
+    }
+}
+
+@keyframes jarvisSoundWave {
+    0%, 100% { height: 6px; }
+    50% { height: 26px; }
+}
+
+.jarvis-orb-speaking .jarvis-ring-outer {
+    animation: jarvisOrbRotate 2.5s linear infinite;
+    border-color: #f59e0b !important;
+}
+
+.jarvis-orb-speaking .jarvis-ring-inner {
+    animation: jarvisOrbRotateReverse 1.8s linear infinite;
+    border-color: #fbbf24 !important;
+}
+
+.jarvis-orb-speaking .jarvis-core-center {
+    animation: jarvisPulseCore 0.8s ease-in-out infinite alternate !important;
+}
+
+.jarvis-orb-listening .jarvis-ring-outer {
+    animation: jarvisOrbRotate 1.2s linear infinite;
+    border-color: #ef4444 !important;
+}
+
+.jarvis-orb-listening .jarvis-core-center {
+    animation: jarvisPulseCore 0.5s ease-in-out infinite alternate !important;
+    background: radial-gradient(circle, #ef4444 0%, #b91c1c 80%) !important;
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.8) !important;
 }
 
 /* Kanban floating bar */
