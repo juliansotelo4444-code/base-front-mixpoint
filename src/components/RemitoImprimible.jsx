@@ -417,6 +417,17 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
 
     useEffect(() => {
         if (!remito) return;
+        const nombreArchivo = `Remito_${remito.numero || 'MixPoint'}${remito.cliente_nombre ? '_' + String(remito.cliente_nombre).replace(/[^a-zA-Z0-9_-]/g, '_') : ''}`;
+        const prevTitle = document.title;
+        document.title = nombreArchivo;
+
+        return () => {
+            document.title = prevTitle;
+        };
+    }, [remito]);
+
+    useEffect(() => {
+        if (!remito) return;
         const qrTexto = `MIX POINT MAYORISTA\nAlias: mixpoint2026\nRemito: ${remito.numero || ''}\nTotal: ${fmtMoney(remito.total)}\nWhatsApp: 1167873243`;
         QRCode.toDataURL(qrTexto, {
             margin: 1,
@@ -468,7 +479,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
             <html lang="es">
             <head>
                 <meta charset="utf-8">
-                <title>Remito_${remito.numero || 'Comercial'}</title>
+                <title>Remito_${remito.numero || 'MixPoint'}</title>
                 <style>
                     ${getPrintCss()}
                 </style>
@@ -482,9 +493,16 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
 
         setTimeout(() => {
             try {
+                // Sincronizar título en la ventana principal y en el iframe para máxima compatibilidad con navegadores
+                const tituloRemito = `Remito_${remito.numero || 'MixPoint'}`;
+                document.title = tituloRemito;
+                if (frame.contentWindow?.document) {
+                    frame.contentWindow.document.title = tituloRemito;
+                }
                 frame.contentWindow.focus();
                 frame.contentWindow.print();
             } catch (e) {
+                document.title = `Remito_${remito.numero || 'MixPoint'}`;
                 window.print();
             }
         }, 300);
@@ -504,11 +522,12 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
             sheetsHtml = root.innerHTML;
         }
 
+        const nombreArchivo = `Remito_${remito.numero || 'MixPoint'}`;
         const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <title>Remito_${remito.numero || 'MixPoint'}</title>
+    <title>${nombreArchivo}</title>
     <style>
         ${getPrintCss()}
         @media screen {
@@ -530,6 +549,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     ${sheetsHtml}
     <script>
         window.onload = function() {
+            document.title = "${nombreArchivo}";
             setTimeout(function() { window.print(); }, 400);
         };
     </script>
@@ -540,7 +560,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Remito_${remito.numero || 'MixPoint'}.html`;
+        a.download = `${nombreArchivo}.html`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
