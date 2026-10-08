@@ -1,17 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import useKanbanSocket from '../hooks/useKanbanSocket';
+import { useAuth } from '../context/AuthContext';
 import {
-    IconBot, IconMicrofono, IconMicrofonoOff, IconClose,
-    IconBuscar, IconCheck, IconAlerta, IconCopy
+    IconBot, IconMicrofono, IconClose
 } from './Icons';
 
 export default function JarvisWidget() {
+    const { usuario } = useAuth();
     const [abierto, setAbierto] = useState(false);
     const [mensajes, setMensajes] = useState([
         {
             remitente: 'jarvis',
-            texto: '¡Buen día, señor! Soy J.A.R.V.I.S., su asistente de inteligencia operacional en Mix Point. Todos los subsistemas están en línea. Conectado mediante Model Context Protocol (MCP) a la base de datos central para generar remitos automatizados a partir de pedidos sin alterar otros registros, predecir quiebres de inventario y auditar el negocio.'
+            texto: '¡Buen día, señor! Soy J.A.R.V.I.S., su asistente de inteligencia operacional en Mix Point. Conectado por Model Context Protocol (MCP) a la base de datos y a la red en vivo del equipo. Puedo generar remitos automáticos, predecir quiebres de inventario o contactar directamente a cualquier miembro del equipo conectado para averiguarle lo que necesite.'
         }
     ]);
     const [inputTexto, setInputTexto] = useState('');
@@ -21,11 +23,72 @@ export default function JarvisWidget() {
     const [cargando, setCargando] = useState(false);
     const [audioFrecuencia, setAudioFrecuencia] = useState([14, 28, 20, 36, 24, 16]);
     const [alertasBanner, setAlertasBanner] = useState(null);
+    const [usuariosOnline, setUsuariosOnline] = useState([]);
+    const [consultaPendienteParaMi, setConsultaPendienteParaMi] = useState(null);
+    const [respuestaMiTexto, setRespuestaMiTexto] = useState('');
 
     const recognitionRef = useRef(null);
     const scrollRef = useRef(null);
     const waveIntervalRef = useRef(null);
     const navigate = useNavigate();
+
+    // Manejar eventos de Socket.io en tiempo real
+    const handleEventoSocket = (evento, payload) => {
+        if (evento === 'jarvis:usuarios_online') {
+            setUsuariosOnline(payload || []);
+        } else if (evento === 'jarvis:nueva_consulta_equipo') {
+            // Si la consulta es para mí o para mi rol o general
+            if (!payload.destinatario_id || payload.destinatario_id === usuario?.id || (payload.destinatario_nombre && payload.destinatario_nombre.toLowerCase() === usuario?.rol)) {
+                setConsultaPendienteParaMi(payload);
+                setAbierto(true); // Abrir widget para que responda
+                hablarTexto(`Consulta prioritaria de Jarvis: ${payload.consulta}`);
+            }
+        } else if (evento === 'jarvis:consulta_respondida') {
+            // Notificar en el chat que se obtuvo la respuesta de la persona
+            setMensajes(prev => [
+                ...prev,
+                {
+                    remitente: 'jarvis',
+                    texto: `⚡ [Respuesta en Red recibida de ${payload.destinatario_nombre}]: "${payload.respuesta}"`
+                }
+            ]);
+            hablarTexto(`${payload.destinatario_nombre} ha respondido: ${payload.respuesta}`);
+            if (consultaPendienteParaMi && consultaPendienteParaMi.id === payload.id) {
+                setConsultaPendienteParaMi(null);
+            }
+        }
+    };
+
+    const { conectado, socket } = useKanbanSocket(handleEventoSocket);
+
+    // Escuchar eventos específicos de Jarvis en el socket
+    useEffect(() => {
+        if (!socket) return;
+        socket.on('jarvis:usuarios_online', (data) => setUsuariosOnline(data || []));
+        socket.on('jarvis:nueva_consulta_equipo', (data) => {
+            if (!data.destinatario_id || data.destinatario_id === usuario?.id || (data.destinatario_nombre && data.destinatario_nombre.toLowerCase() === usuario?.rol)) {
+                setConsultaPendienteParaMi(data);
+                setAbierto(true);
+                hablarTexto(`Consulta de Jarvis: ${data.consulta}`);
+            }
+        });
+        socket.on('jarvis:consulta_respondida', (data) => {
+            setMensajes(prev => [
+                ...prev,
+                {
+                    remitente: 'jarvis',
+                    texto: `⚡ [Respuesta en Red recibida de ${data.destinatario_nombre}]: "${data.respuesta}"`
+                }
+            ]);
+            hablarTexto(`${data.destinatario_nombre} respondió: ${data.respuesta}`);
+            setConsultaPendienteParaMi(null);
+        });
+
+        // Cargar lista inicial de online
+        api.get('/jarvis/usuarios-conectados').then(({ data }) => {
+            if (data?.online) setUsuariosOnline(data.online);
+        }).catch(() => {});
+    }, [socket, usuario]);
 
     // Cargar alertas automáticas periódicas del sistema mediante MCP
     useEffect(() => {
@@ -35,16 +98,14 @@ export default function JarvisWidget() {
                 if (data && data.stock_critico && data.stock_critico.length > 0) {
                     setAlertasBanner(`${data.stock_critico.length} productos con stock crítico`);
                 }
-            } catch (e) {
-                // silencioso
-            }
+            } catch (e) {}
         }
         consultarAlertas();
         const interval = setInterval(consultarAlertas, 60000);
         return () => clearInterval(interval);
     }, []);
 
-    // Ondas dinámicas cuando Jarvis habla o escucha
+    // Ondas dinámicas
     useEffect(() => {
         if (hablando || escuchando) {
             waveIntervalRef.current = setInterval(() => {
@@ -113,7 +174,7 @@ export default function JarvisWidget() {
 
             const voces = window.speechSynthesis.getVoices();
             const vozEsp = voces.find(v => v.lang === 'es-AR') ||
-                           voces.find(v => v.lang.startsWith('es') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Castilian')));
+                           voces.find(v => v.lang.startsWith('es'));
             if (vozEsp) utterance.voice = vozEsp;
 
             utterance.onstart = () => setHablando(true);
@@ -169,6 +230,19 @@ export default function JarvisWidget() {
         }
     }
 
+    async function responderConsultaEnRed() {
+        if (!respuestaMiTexto.trim() || !consultaPendienteParaMi) return;
+        try {
+            await api.post(`/jarvis/consultas-equipo/${consultaPendienteParaMi.id}/responder`, {
+                respuesta: respuestaMiTexto.trim()
+            });
+            setConsultaPendienteParaMi(null);
+            setRespuestaMiTexto('');
+        } catch (err) {
+            alert('Error al enviar la respuesta.');
+        }
+    }
+
     function ejecutarAccion(accion) {
         if (!accion) return;
         setAbierto(false);
@@ -181,13 +255,13 @@ export default function JarvisWidget() {
         else if (accion.includes('Proveedores')) navigate('/proveedores');
     }
 
+    const otrosOnline = usuariosOnline.filter(u => u.id !== usuario?.id);
+
     const sugerenciasRapidas = [
-        'Generar remito automático para el pedido MP-1001',
+        '¿Quién está conectado en la red?',
+        otrosOnline.length > 0 ? `Preguntale a ${otrosOnline[0].nombre} cómo viene el despacho` : 'Generar remito automático para el pedido MP-1001',
         '¿Qué productos tienen predicción de quiebre de stock?',
-        'Monitorear alertas críticas del sistema',
-        '¿Cuánto stock tenemos de almendras y nueces?',
-        '¿Quiénes son nuestros mayores deudores?',
-        'Resumen de facturación de hoy'
+        'Monitorear alertas críticas del sistema'
     ];
 
     return (
@@ -214,7 +288,6 @@ export default function JarvisWidget() {
                         transform: abierto ? 'scale(0.92)' : 'scale(1)'
                     }}
                 >
-                    {/* Anillo orbital exterior giratorio */}
                     <div style={{
                         position: 'absolute',
                         inset: -5,
@@ -224,7 +297,6 @@ export default function JarvisWidget() {
                         pointerEvents: 'none'
                     }} />
 
-                    {/* Núcleo central brillante */}
                     <div style={{
                         width: 34,
                         height: 34,
@@ -239,7 +311,6 @@ export default function JarvisWidget() {
                         <IconBot style={{ width: 19, height: 19 }} />
                     </div>
 
-                    {/* Indicador de estado */}
                     <span style={{
                         position: 'absolute',
                         bottom: 0,
@@ -260,10 +331,10 @@ export default function JarvisWidget() {
                     position: 'fixed',
                     bottom: 84,
                     right: 20,
-                    width: 440,
+                    width: 450,
                     maxWidth: '92vw',
-                    height: 600,
-                    maxHeight: '82vh',
+                    height: 620,
+                    maxHeight: '84vh',
                     borderRadius: 20,
                     background: '#0d111a',
                     border: '1.5px solid rgba(245, 158, 11, 0.4)',
@@ -275,22 +346,20 @@ export default function JarvisWidget() {
                 }}>
                     {/* CABECERA CON NÚCLEO HOLOGRÁFICO "ARC REACTOR" */}
                     <div style={{
-                        padding: '16px 18px',
+                        padding: '14px 18px',
                         background: 'linear-gradient(180deg, rgba(26, 34, 52, 0.95) 0%, rgba(15, 19, 29, 0.95) 100%)',
                         borderBottom: '1px solid rgba(245, 158, 11, 0.25)',
-                        position: 'relative',
-                        overflow: 'hidden'
+                        position: 'relative'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 2, position: 'relative' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                {/* NÚCLEO REDONDO ANIMADO INTERACTIVO */}
                                 <div
                                     className={`jarvis-arc-reactor ${hablando ? 'jarvis-orb-speaking' : ''} ${escuchando ? 'jarvis-orb-listening' : ''}`}
                                     onClick={toggleEscucha}
                                     title={escuchando ? 'Click para detener escucha' : 'Click para hablar'}
                                     style={{
-                                        width: 52,
-                                        height: 52,
+                                        width: 50,
+                                        height: 50,
                                         borderRadius: '50%',
                                         position: 'relative',
                                         display: 'flex',
@@ -304,7 +373,6 @@ export default function JarvisWidget() {
                                         transition: 'all 0.3s ease'
                                     }}
                                 >
-                                    {/* Anillo exterior orbitante */}
                                     <div className="jarvis-ring-outer" style={{
                                         position: 'absolute',
                                         inset: -3,
@@ -313,7 +381,6 @@ export default function JarvisWidget() {
                                         animation: 'jarvisOrbRotate 6s linear infinite'
                                     }} />
 
-                                    {/* Anillo concéntrico interior */}
                                     <div className="jarvis-ring-inner" style={{
                                         position: 'absolute',
                                         inset: 3,
@@ -324,7 +391,6 @@ export default function JarvisWidget() {
                                         animation: 'jarvisOrbRotateReverse 3s linear infinite'
                                     }} />
 
-                                    {/* Centro del núcleo que pulsa al hablar */}
                                     <div className="jarvis-core-center" style={{
                                         width: 26,
                                         height: 26,
@@ -336,19 +402,12 @@ export default function JarvisWidget() {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         boxShadow: '0 0 18px rgba(245, 158, 11, 0.9), inset 0 0 6px #fff',
-                                        animation: hablando ? 'jarvisPulseCore 0.7s infinite alternate' : 'none',
-                                        transition: 'all 0.3s ease'
+                                        animation: hablando ? 'jarvisPulseCore 0.7s infinite alternate' : 'none'
                                     }}>
                                         {escuchando ? (
                                             <IconMicrofono style={{ width: 14, height: 14, color: '#fff' }} />
                                         ) : (
-                                            <div style={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: '50%',
-                                                background: '#fff',
-                                                boxShadow: '0 0 6px #fff'
-                                            }} />
+                                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', boxShadow: '0 0 6px #fff' }} />
                                         )}
                                     </div>
                                 </div>
@@ -357,7 +416,6 @@ export default function JarvisWidget() {
                                     <div style={{
                                         fontWeight: 800,
                                         fontSize: 15,
-                                        letterSpacing: '0.04em',
                                         color: '#fff',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -371,10 +429,9 @@ export default function JarvisWidget() {
                                             background: 'rgba(245, 158, 11, 0.2)',
                                             color: '#f59e0b',
                                             border: '1px solid rgba(245, 158, 11, 0.4)',
-                                            letterSpacing: '0.08em',
                                             fontWeight: 800
                                         }}>
-                                            AI MK-IV · MCP
+                                            MCP NETWORK
                                         </span>
                                     </div>
                                     <div style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
@@ -382,17 +439,16 @@ export default function JarvisWidget() {
                                             width: 7,
                                             height: 7,
                                             borderRadius: '50%',
-                                            background: hablando ? '#f59e0b' : (escuchando ? '#ef4444' : '#10b981'),
+                                            background: '#10b981',
                                             boxShadow: '0 0 8px currentColor'
                                         }} />
                                         <span>
-                                            {hablando ? 'Transmitiendo respuesta...' : (escuchando ? 'Escuchando su voz...' : 'Sistemas operativos online (MCP)')}
+                                            {usuariosOnline.length} miembro(s) en red
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* CONTROLES DEL HEADER */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <button
                                     type="button"
@@ -437,14 +493,7 @@ export default function JarvisWidget() {
                         </div>
 
                         {/* ONDAS DE AUDIO */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 4,
-                            marginTop: 12,
-                            height: 16
-                        }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10, height: 14 }}>
                             {audioFrecuencia.map((alt, i) => (
                                 <div
                                     key={i}
@@ -453,15 +502,109 @@ export default function JarvisWidget() {
                                         height: `${alt}px`,
                                         background: hablando ? '#f59e0b' : (escuchando ? '#ef4444' : 'rgba(255, 255, 255, 0.2)'),
                                         borderRadius: 2,
-                                        transition: 'height 0.1s ease',
-                                        boxShadow: hablando || escuchando ? '0 0 6px currentColor' : 'none'
+                                        transition: 'height 0.1s ease'
                                     }}
                                 />
                             ))}
                         </div>
                     </div>
 
-                    {/* BANNER DE ALERTA AUTOMÁTICA MCP */}
+                    {/* BARRA DE PERSONAS EN LÍNEA EN LA RED */}
+                    {usuariosOnline.length > 0 && (
+                        <div style={{
+                            padding: '6px 12px',
+                            background: '#070a10',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            overflowX: 'auto'
+                        }}>
+                            <span style={{ fontSize: 10.5, color: '#64748b', textTransform: 'uppercase', fontWeight: 800 }}>En red:</span>
+                            {usuariosOnline.map(u => (
+                                <button
+                                    key={u.id}
+                                    type="button"
+                                    onClick={() => enviarMensaje(`Preguntale a ${u.nombre} si ya revisó el stock`)}
+                                    title={`Click para pedirle a Jarvis que le consulte a ${u.nombre}`}
+                                    style={{
+                                        background: u.id === usuario?.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                                        border: `1px solid ${u.id === usuario?.id ? '#3b82f6' : '#10b981'}`,
+                                        color: u.id === usuario?.id ? '#93c5fd' : '#6ee7b7',
+                                        padding: '2px 8px',
+                                        borderRadius: 12,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+                                    <span>{u.nombre} {u.id === usuario?.id ? '(Vos)' : ''}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* BANNER DE CONSULTA ENTRANTE DIRIGIDA AL USUARIO ACTUAL */}
+                    {consultaPendienteParaMi && (
+                        <div style={{
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            borderBottom: '1px solid rgba(245, 158, 11, 0.4)',
+                            padding: '10px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 6
+                        }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>
+                                🔔 Jarvis te pregunta por solicitud del equipo:
+                            </div>
+                            <div style={{ fontSize: 13, color: '#fff' }}>
+                                "{consultaPendienteParaMi.consulta}"
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                                <input
+                                    type="text"
+                                    value={respuestaMiTexto}
+                                    onChange={(e) => setRespuestaMiTexto(e.target.value)}
+                                    placeholder="Tu respuesta inmediata para Jarvis..."
+                                    style={{
+                                        flex: 1,
+                                        background: '#0d111a',
+                                        border: '1px solid #f59e0b',
+                                        borderRadius: 6,
+                                        padding: '6px 10px',
+                                        color: '#fff',
+                                        fontSize: 12
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') responderConsultaEnRed();
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={responderConsultaEnRed}
+                                    style={{
+                                        background: '#f59e0b',
+                                        border: 'none',
+                                        color: '#000',
+                                        borderRadius: 6,
+                                        padding: '6px 12px',
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Responder
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* BANNER DE ALERTA MCP */}
                     {alertasBanner && (
                         <div style={{
                             background: 'rgba(239, 68, 68, 0.15)',
@@ -520,7 +663,6 @@ export default function JarvisWidget() {
                                         {msg.texto}
                                     </div>
 
-                                    {/* Botón de acción sugerida */}
                                     {msg.accion_sugerida && (
                                         <button
                                             type="button"
@@ -546,7 +688,7 @@ export default function JarvisWidget() {
 
                         {cargando && (
                             <div style={{ color: '#f59e0b', fontSize: 12, fontStyle: 'italic' }}>
-                                J.A.R.V.I.S. consultando registros por Model Context Protocol...
+                                J.A.R.V.I.S. consultando red y base de datos...
                             </div>
                         )}
                     </div>
@@ -597,7 +739,7 @@ export default function JarvisWidget() {
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') enviarMensaje();
                             }}
-                            placeholder="Consultar a J.A.R.V.I.S. o emitir remito..."
+                            placeholder="Preguntale a alguien del equipo o a J.A.R.V.I.S..."
                             style={{
                                 flex: 1,
                                 background: 'rgba(255, 255, 255, 0.05)',
