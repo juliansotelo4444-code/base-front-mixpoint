@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import client from '../api/client';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconBuscar, IconFlyer } from '../components/Icons';
+import CatalogoImprimibleModal from '../components/CatalogoImprimibleModal';
 import catalogoOficialData from '../data/catalogo_completo.json';
 import { obtenerImagenProducto } from '../utils/imagenProducto';
 
@@ -64,6 +65,7 @@ export default function CatalogoFlyers() {
     const [vistaCatalogo, setVistaCatalogo] = useState('grilla'); // 'grilla' | 'tabla'
     const [tabActiva, setTabActiva] = useState('catalogo'); // 'catalogo' | 'revista' | 'flyer'
     const [loading, setLoading] = useState(false);
+    const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false);
 
     // Estado del Visor de Revista Digital PDF
     const [paginaActual, setPaginaActual] = useState(1);
@@ -381,10 +383,10 @@ export default function CatalogoFlyers() {
 
                                 <button
                                     className="btn btn-secondary btn-sm"
-                                    onClick={() => window.print()}
-                                    title="Imprimir catálogo completo"
+                                    onClick={() => setMostrarModalImpresion(true)}
+                                    title="Abrir visor para imprimir o guardar catálogo en PDF"
                                 >
-                                    🖨️ Imprimir
+                                    📥 Imprimir / Guardar PDF
                                 </button>
                             </div>
                         </div>
@@ -745,8 +747,8 @@ export default function CatalogoFlyers() {
                             <button
                                 type="button"
                                 className="btn btn-primary btn-sm"
-                                onClick={() => window.print()}
-                                title="Descargar o imprimir el catálogo completo en PDF con precios actualizados de la Base de Datos"
+                                onClick={() => setMostrarModalImpresion(true)}
+                                title="Abrir visor para imprimir o guardar catálogo en PDF con fotos A4 sin desbordes"
                                 style={{ background: '#784A1C', borderColor: '#784A1C', fontWeight: 700 }}
                             >
                                 📥 Imprimir / Guardar PDF
@@ -1246,6 +1248,15 @@ export default function CatalogoFlyers() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* VISOR MODAL DE CATÁLOGO A4 LIMPIO E IMPRIMIBLE */}
+            {mostrarModalImpresion && (
+                <CatalogoImprimibleModal
+                    productos={productos}
+                    categorias={categorias}
+                    onClose={() => setMostrarModalImpresion(false)}
+                />
             )}
 
             {/* CONTENEDOR EXCLUSIVO PARA IMPRESIÓN / GUARDAR PDF DE TODAS LAS PÁGINAS (NO VISIBLE EN PANTALLA) */}
