@@ -8,23 +8,40 @@ const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', curr
 function chunkItems(items) {
     if (!items || items.length === 0) return [[]];
     const total = items.length;
-    // Si son 10 o menos, entran cómodamente en 1 sola hoja con cabecera y firmas
-    if (total <= 10) return [items];
+
+    // Si son 18 o menos ítems, entran holgadamente en 1 SOLA HOJA A4 completa (membrete, tabla, QR, totales y firmas)
+    if (total <= 18) return [items];
 
     const pages = [];
-    // La primera hoja contiene el membrete completo y los datos del cliente
-    const firstPageLimit = 11;
-    pages.push(items.slice(0, firstPageLimit));
-    let remaining = items.slice(firstPageLimit);
+    // Capacidad máxima de ítems:
+    const maxFirstPage = 24;  // Hoja 1 cuando continúa (sin totales ni firmas)
+    const maxLastPage = 18;   // Última hoja (con totales, QR y firmas)
+    const maxMiddlePage = 28; // Hojas intermedias (cabecera compacta)
+
+    // Caso de 2 hojas (entre 19 y 40 ítems)
+    if (total <= maxFirstPage + maxLastPage) {
+        // Balanceamos para que la última hoja tenga un número armónico de ítems (mínimo 6)
+        let firstPageCount = Math.min(maxFirstPage, total - 6);
+        if (firstPageCount < 14) firstPageCount = Math.ceil(total / 2);
+        pages.push(items.slice(0, firstPageCount));
+        pages.push(items.slice(firstPageCount));
+        return pages;
+    }
+
+    // Caso de 3 o más hojas
+    let firstCount = maxFirstPage;
+    pages.push(items.slice(0, firstCount));
+    let remaining = items.slice(firstCount);
 
     while (remaining.length > 0) {
-        // En la última hoja entran hasta 12 ítems junto con el bloque de totales y firmas
-        if (remaining.length <= 12) {
+        if (remaining.length <= maxLastPage) {
             pages.push(remaining);
             break;
         }
-        // Si hay más, tomamos hasta 14 ítems en hojas intermedias
-        const take = Math.min(14, remaining.length - 3);
+        let take = maxMiddlePage;
+        if (remaining.length - take < 5) {
+            take = remaining.length - 7;
+        }
         pages.push(remaining.slice(0, take));
         remaining = remaining.slice(take);
     }
@@ -48,15 +65,15 @@ function getPrintCss() {
             background: #ffffff;
             color: #1a1a1a;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            font-size: 11px;
-            line-height: 1.35;
+            font-size: 10px;
+            line-height: 1.25;
         }
         .remito-page-a4 {
             width: 210mm;
             height: 296mm;
             min-height: 296mm;
             max-height: 296mm;
-            padding: 10mm 13mm 8mm 13mm;
+            padding: 8mm 11mm 6mm 11mm;
             margin: 0 auto;
             page-break-after: always;
             break-after: page;
@@ -78,56 +95,60 @@ function getPrintCss() {
         .remito-header {
             display: grid;
             grid-template-columns: 1.4fr 0.6fr 1fr;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
-            border-bottom: 2px solid #1a1a1a;
-            padding-bottom: 10px;
+            border-bottom: 1.5px solid #1a1a1a;
+            padding-bottom: 5px;
         }
         .remito-compact-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 2px solid #1a1a1a;
-            padding-bottom: 8px;
-            margin-bottom: 10px;
+            border-bottom: 1.5px solid #1a1a1a;
+            padding-bottom: 5px;
+            margin-bottom: 6px;
         }
         .remito-logo-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 6px;
+            gap: 8px;
+            margin-bottom: 3px;
         }
         .remito-logo {
-            width: 54px;
-            height: 54px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #c9a227;
+            border: 1.5px solid #c9a227;
         }
         .remito-brand-title {
-            font-size: 16px;
+            font-size: 14.5px;
             font-weight: 800;
             color: #1a382b;
             margin: 0;
             letter-spacing: 0.02em;
+            line-height: 1.15;
         }
         .remito-brand-sub {
-            font-size: 8px;
+            font-size: 7.5px;
             font-weight: 700;
             color: #c88a35;
-            letter-spacing: 0.05em;
-            margin: 2px 0 0;
+            letter-spacing: 0.04em;
+            margin: 1px 0 0;
         }
         .remito-brand-web {
-            font-size: 9.5px;
+            font-size: 8px;
             font-weight: 600;
             color: #1a382b;
-            margin-top: 2px;
+            margin-top: 1px;
         }
         .remito-company-data {
-            font-size: 9.5px;
+            font-size: 8.5px;
             color: #444;
-            line-height: 1.35;
+            line-height: 1.25;
+        }
+        .remito-company-data p {
+            margin: 1px 0;
         }
         .remito-header-center {
             display: flex;
@@ -137,9 +158,9 @@ function getPrintCss() {
             text-align: center;
         }
         .remito-letter-box {
-            width: 46px;
-            height: 46px;
-            border: 2px solid #1a1a1a;
+            width: 38px;
+            height: 38px;
+            border: 1.5px solid #1a1a1a;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -147,22 +168,22 @@ function getPrintCss() {
             background: #fff;
         }
         .remito-letter-box .letter {
-            font-size: 24px;
+            font-size: 19px;
             font-weight: 900;
             line-height: 1;
         }
         .remito-letter-box .code {
-            font-size: 7px;
+            font-size: 6.5px;
             font-weight: 700;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.04em;
         }
         .doc-type-badge {
-            font-size: 7px;
+            font-size: 6.5px;
             font-weight: 700;
-            margin-top: 4px;
+            margin-top: 3px;
             background: #f0ede1;
-            padding: 2px 5px;
-            border-radius: 3px;
+            padding: 1px 4px;
+            border-radius: 2px;
             border: 1px solid #d4cbb3;
             white-space: nowrap;
         }
@@ -175,69 +196,76 @@ function getPrintCss() {
         .remito-num-box {
             background: #faf8f2;
             border: 1.5px solid #1a1a1a;
-            padding: 5px 12px;
-            border-radius: 4px;
-            margin-bottom: 5px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-bottom: 3px;
             text-align: right;
             width: 100%;
         }
         .remito-title {
-            font-size: 14px;
+            font-size: 12.5px;
             font-weight: 800;
             letter-spacing: 0.08em;
             color: #1a1a1a;
+            line-height: 1.1;
         }
         .remito-number {
-            font-size: 13.5px;
+            font-size: 12px;
             font-weight: 700;
             color: #1a382b;
             font-family: monospace;
+            line-height: 1.2;
         }
         .remito-meta-list {
-            font-size: 9.5px;
+            font-size: 8.5px;
             color: #333;
-            line-height: 1.35;
+            line-height: 1.25;
+        }
+        .remito-meta-list p {
+            margin: 1px 0;
         }
         .remito-info-grid {
             display: grid;
             grid-template-columns: 1.1fr 1fr;
-            gap: 14px;
+            gap: 10px;
             background: #fdfbf7;
             border: 1px solid #e2dac9;
-            border-radius: 5px;
-            padding: 8px 12px;
-            margin: 10px 0;
-            font-size: 10.5px;
+            border-radius: 4px;
+            padding: 4px 8px;
+            margin: 5px 0;
+            font-size: 9px;
+            line-height: 1.25;
         }
         .remito-info-col p {
-            margin: 2.5px 0;
+            margin: 1px 0;
         }
         .remito-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;
-            font-size: 10.5px;
+            margin-bottom: 5px;
+            font-size: 9px;
         }
         .remito-table th {
             background: #1a382b !important;
             color: #ffffff !important;
             font-weight: 700;
-            font-size: 9px;
-            letter-spacing: 0.04em;
-            padding: 5px 7px;
+            font-size: 8px;
+            letter-spacing: 0.03em;
+            padding: 3px 5px;
             border: 1px solid #1a382b;
             text-transform: uppercase;
         }
         .remito-table td {
-            padding: 6px 7px;
+            padding: 2.5px 5px;
             border: 1px solid #e1dcc9;
             vertical-align: middle;
+            line-height: 1.2;
         }
         .remito-table tbody tr:nth-child(even) {
             background: #faf8f2;
         }
         .remito-item-desc {
-            font-size: 9.5px;
+            font-size: 8px;
             color: #666;
             font-style: italic;
         }
@@ -246,8 +274,8 @@ function getPrintCss() {
             justify-content: space-between;
             align-items: center;
             border-top: 1px dashed #c4b99f;
-            padding-top: 6px;
-            font-size: 10px;
+            padding-top: 4px;
+            font-size: 8.5px;
             color: #555;
             font-weight: 600;
             margin-top: auto;
@@ -255,25 +283,25 @@ function getPrintCss() {
         .remito-payment-qr-box {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             background: #fdfbf7;
             border: 1px solid #d4cbb3;
-            border-radius: 5px;
-            padding: 6px 10px;
-            max-width: 320px;
+            border-radius: 4px;
+            padding: 3px 6px;
+            max-width: 290px;
         }
         .remito-qr-img {
-            width: 64px;
-            height: 64px;
+            width: 48px;
+            height: 48px;
             border: 1px solid #e1dcc9;
-            border-radius: 4px;
+            border-radius: 3px;
             background: #fff;
         }
         .remito-totals-box {
             background: #f7f3eb;
             border: 1.5px solid #d4cbb3;
-            border-radius: 5px;
-            padding: 7px 12px;
+            border-radius: 4px;
+            padding: 4px 8px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -282,47 +310,47 @@ function getPrintCss() {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12.5px;
+            font-size: 11.5px;
             font-weight: 800;
             color: #1a382b;
         }
         .remito-total-num {
-            font-size: 15px;
+            font-size: 13.5px;
             color: #1a382b;
             font-family: monospace;
         }
         .remito-signatures-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 36px;
-            margin-top: 16px;
-            padding-top: 8px;
+            gap: 24px;
+            margin-top: 6px;
+            padding-top: 4px;
         }
         .signature-box {
             text-align: center;
         }
         .sig-line {
-            border-top: 1.5px dashed #555;
-            margin-bottom: 5px;
+            border-top: 1px dashed #555;
+            margin-bottom: 3px;
             height: 1px;
         }
         .sig-label {
-            font-size: 9.5px;
+            font-size: 8px;
             font-weight: 700;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
             color: #1a1a1a;
             margin: 0;
         }
         .sig-sub {
-            font-size: 8.5px;
+            font-size: 7px;
             color: #777;
-            margin-top: 2px;
+            margin-top: 1px;
         }
         .remito-legal-footer {
             border-top: 1px solid #e1dcc9;
-            margin-top: 12px;
-            padding-top: 5px;
-            font-size: 8.5px;
+            margin-top: 6px;
+            padding-top: 3px;
+            font-size: 7.5px;
             color: #888;
             display: flex;
             justify-content: space-between;
@@ -335,7 +363,7 @@ function getPrintCss() {
             text-align: right;
         }
         .text-sm {
-            font-size: 9.5px;
+            font-size: 8.5px;
         }
         .muted {
             color: #666;
@@ -899,7 +927,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                 {isLastPage ? (
                                     /* TOTALES Y FIRMAS EN LA ÚLTIMA HOJA */
                                     <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16, gap: 12 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6, gap: 10 }}>
                                             <div className="remito-payment-qr-box">
                                                 {qrDataUrl && <img src={qrDataUrl} alt="QR Pago" className="remito-qr-img" />}
                                                 <div style={{ fontSize: 9, lineHeight: 1.35 }}>

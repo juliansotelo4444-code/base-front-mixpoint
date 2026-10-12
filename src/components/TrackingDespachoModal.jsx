@@ -90,22 +90,23 @@ const PLANTILLAS_TRACKING = {
 };
 
 export default function TrackingDespachoModal({ pedido, onClose, onActualizado }) {
-    if (!pedido) return null;
-
-    // Estado local para datos de despacho editables
-    const [transportista, setTransportista] = useState(pedido.transportista || '');
-    const [direccionEntrega, setDireccionEntrega] = useState(pedido.direccion_entrega || pedido.cliente_direccion || '');
-    const [bultos, setBultos] = useState(pedido.bultos || 1);
-    const [pesoKg, setPesoKg] = useState(pedido.peso_kg || '');
+    // Estado local para datos de despacho editables (llamados incondicionalmente)
+    const [transportista, setTransportista] = useState(pedido?.transportista || '');
+    const [direccionEntrega, setDireccionEntrega] = useState(pedido?.direccion_entrega || pedido?.cliente_direccion || '');
+    const [bultos, setBultos] = useState(pedido?.bultos || 1);
+    const [pesoKg, setPesoKg] = useState(pedido?.peso_kg || '');
     const [franjaHoraria, setFranjaHoraria] = useState('');
     const [plantillaSeleccionada, setPlantillaSeleccionada] = useState(
-        pedido.estado === 'entregado' ? 'entregado' :
-        pedido.estado === 'en_camino' ? 'en_camino' : 'en_preparacion'
+        pedido?.estado === 'entregado' ? 'entregado' :
+        pedido?.estado === 'en_camino' ? 'en_camino' : 'en_preparacion'
     );
     const [mensajeEditado, setMensajeEditado] = useState('');
     const [editandoMensaje, setEditandoMensaje] = useState(false);
     const [guardando, setGuardando] = useState(false);
     const [notifCopiado, setNotifCopiado] = useState(false);
+
+    // Si no hay pedido seleccionado, no renderizar el modal
+    if (!pedido) return null;
 
     // Obtener texto generado actual
     const getMensajeActual = () => {
