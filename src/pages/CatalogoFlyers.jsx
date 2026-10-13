@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import client from '../api/client';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconBuscar, IconFlyer } from '../components/Icons';
 import CatalogoImprimibleModal from '../components/CatalogoImprimibleModal';
 import catalogoOficialData from '../data/catalogo_completo.json';
 import { obtenerImagenProducto } from '../utils/imagenProducto';
+import { generarHojasCatalogo } from '../utils/catalogoPaginacion';
 
 const fmtMoney = (n) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
@@ -80,6 +81,13 @@ export default function CatalogoFlyers() {
     const [copiado, setCopiado] = useState(false);
 
     const flyerRef = useRef(null);
+
+    // Hojas balanceadas dinámicas (25 páginas oficiales sin huérfanos ni hojas en blanco)
+    const { hojas: hojasRevista, indice: indiceRevista } = useMemo(() => {
+        return generarHojasCatalogo(productos);
+    }, [productos]);
+    const totalHojasRevista = hojasRevista.length;
+    const hojaActiva = hojasRevista.find(h => h.numero === paginaActual) || hojasRevista[0] || { tipo: 'portada', numero: 1 };
 
     // Intentar sincronizar con la API si está disponible
     useEffect(() => {
@@ -233,7 +241,7 @@ export default function CatalogoFlyers() {
                         }}
                         onClick={() => setTabActiva('revista')}
                     >
-                        📖 Revista Catálogo PDF (21 Páginas)
+                        📖 Revista Catálogo PDF ({totalHojasRevista} Páginas)
                     </button>
                     <button
                         type="button"
@@ -651,7 +659,7 @@ export default function CatalogoFlyers() {
                 </div>
             )}
 
-            {/* TAB 2: REVISTA DIGITAL OFICIAL (21 PÁGINAS RENDERIZADAS) */}
+            {/* TAB 2: REVISTA DIGITAL OFICIAL ({totalHojasRevista} PÁGINAS RENDERIZADAS) */}
             {tabActiva === 'revista' && (
                 <div className="card card-pad stack gap-md" style={{ background: '#FFFFFF' }}>
                     {/* BARRA DE CONTROL DEL VISOR DE REVISTA */}
@@ -666,13 +674,13 @@ export default function CatalogoFlyers() {
                                 ◀ Anterior
                             </button>
                             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                                Página {paginaActual} de 21
+                                Página {paginaActual} de {totalHojasRevista}
                             </span>
                             <button
                                 type="button"
                                 className="btn btn-secondary btn-sm"
-                                disabled={paginaActual >= 21}
-                                onClick={() => setPaginaActual(p => Math.min(21, p + 1))}
+                                disabled={paginaActual >= totalHojasRevista}
+                                onClick={() => setPaginaActual(p => Math.min(totalHojasRevista, p + 1))}
                             >
                                 Siguiente ▶
                             </button>
@@ -683,9 +691,9 @@ export default function CatalogoFlyers() {
                                 onChange={e => setPaginaActual(Number(e.target.value))}
                                 style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--color-border-strong)', fontSize: 13 }}
                             >
-                                {PAGINAS_REVISTA.map(p => (
-                                    <option key={p.num} value={p.num}>
-                                        {p.titulo}
+                                {hojasRevista.map(p => (
+                                    <option key={p.numero} value={p.numero}>
+                                        Pág {p.numero}: {p.titulo || p.categoria} {p.subtitulo || ''}
                                     </option>
                                 ))}
                             </select>
@@ -758,15 +766,15 @@ export default function CatalogoFlyers() {
 
                     {/* SALTO RÁPIDO A SECCIONES DE LA REVISTA */}
                     <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-                        {CATEGORIAS_CON_ICONO.filter(c => c.pagina).map(c => (
+                        {indiceRevista.map(c => (
                             <button
-                                key={c.nombre}
+                                key={c.categoria}
                                 type="button"
                                 onClick={() => setPaginaActual(c.pagina)}
-                                className={`btn btn-sm ${paginaActual === c.pagina ? 'btn-primary' : 'btn-secondary'}`}
+                                className={`btn btn-sm ${hojaActiva?.categoria === c.categoria ? 'btn-primary' : 'btn-secondary'}`}
                                 style={{ fontSize: 11.5, padding: '4px 10px', whiteSpace: 'nowrap' }}
                             >
-                                {c.icono} {c.nombre} (Pág {c.pagina})
+                                🌰 {c.categoria} (Pág {c.pagina})
                             </button>
                         ))}
                     </div>
@@ -786,7 +794,7 @@ export default function CatalogoFlyers() {
                     >
                         <div style={{ width: `${zoomRevista}%`, maxWidth: zoomRevista === 100 ? 820 : 1100, transition: 'width 0.2s ease' }}>
                             {modoRevista === 'dinamica' ? (
-                                /* RENDERIZADO DINÁMICO CONECTADO A BASE DE DATOS */
+                                /* RENDERIZADO DINÁMICO BALANCEADO CONECTADO A BASE DE DATOS */
                                 <div
                                     id="catalogo-a4-page"
                                     style={{
@@ -794,129 +802,166 @@ export default function CatalogoFlyers() {
                                         borderRadius: 8,
                                         boxShadow: '0 12px 35px rgba(0,0,0,0.5)',
                                         minHeight: 1120,
-                                        padding: '28px 24px',
+                                        padding: hojaActiva.tipo === 'portada' ? 0 : '24px 20px',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         justifyContent: 'space-between',
                                         color: '#1a1a1a',
-                                        fontFamily: 'system-ui, -apple-system, sans-serif'
+                                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                                        overflow: 'hidden'
                                     }}
                                 >
                                     {/* CONTENIDO SEGÚN LA PÁGINA */}
-                                    {paginaActual === 1 ? (
-                                        /* PORTADA DINÁMICA MIX POINT */
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center', padding: '40px 20px', background: 'radial-gradient(circle at center, #FDFBF7 0%, #F5EFEB 100%)', borderRadius: 8, border: '3px solid #784A1C' }}>
-                                            <div style={{ width: 110, height: 110, borderRadius: '50%', background: '#784A1C', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, marginBottom: 20, boxShadow: '0 8px 20px rgba(120,74,28,0.3)' }}>
-                                                🌰
-                                            </div>
-                                            <h1 style={{ fontSize: 44, fontWeight: 900, color: '#784A1C', margin: '0 0 8px 0', letterSpacing: '1px' }}>
-                                                MIX POINT
-                                            </h1>
-                                            <div style={{ fontSize: 20, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: 24 }}>
-                                                Distribuidora Mayorista de Frutos Secos & Alimentos Naturales
-                                            </div>
-                                            <div style={{ width: 80, height: 4, background: '#784A1C', borderRadius: 2, marginBottom: 24 }} />
-                                            <p style={{ fontSize: 16, color: '#4b5563', maxWidth: 520, lineHeight: 1.6, margin: '0 0 32px 0' }}>
-                                                Lista oficial de precios por mayor, escalas por bulto cerrado y catálogo integral de productos de primera selección para dietéticas, comercios y distribuidores.
-                                            </p>
-
-                                            <div style={{ background: '#FFFFFF', padding: '16px 28px', borderRadius: 12, border: '1px solid #E5E7EB', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, textAlign: 'left', maxWidth: 540, width: '100%' }}>
-                                                <div>
-                                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>WhatsApp Pedidos</div>
-                                                    <div style={{ fontSize: 16, fontWeight: 800, color: '#047857' }}>📲 {WHATSAPP_OFICIAL}</div>
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>Alias de Pago</div>
-                                                    <div style={{ fontSize: 16, fontWeight: 800, color: '#B45309' }}>💳 {ALIAS_PAGO}</div>
-                                                </div>
-                                                <div style={{ gridColumn: 'span 2' }}>
-                                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>Depósito Central</div>
-                                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>📍 San Isidro 2135, Ituzaingó, Prov. Buenos Aires</div>
-                                                </div>
-                                            </div>
-
-                                            <div style={{ marginTop: 40, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FEF3C7', color: '#92400E', padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: '1px solid #FCD34D' }}>
-                                                <span>🔄 Precios actualizados en vivo con el sistema de stock</span>
-                                            </div>
+                                    {hojaActiva.tipo === 'portada' ? (
+                                        /* PORTADA OFICIAL EN ALTA DEFINICIÓN */
+                                        <div style={{ width: '100%', height: '100%', minHeight: 1120, position: 'relative' }}>
+                                            <img
+                                                src="/catalogo/portada.jpg"
+                                                alt="Portada Oficial Mix Point"
+                                                style={{ width: '100%', height: '100%', minHeight: 1120, objectFit: 'cover', display: 'block', borderRadius: 8 }}
+                                            />
                                         </div>
-                                    ) : paginaActual === 2 ? (
-                                        /* ÍNDICE DE CATEGORÍAS */
-                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                            <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '12px 20px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                                    Índice General de Categorías
-                                                </h2>
-                                                <span style={{ fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: 12 }}>
-                                                    {productos.length} Productos
-                                                </span>
-                                            </div>
+                                    ) : hojaActiva.tipo === 'indice' ? (
+                                        /* ÍNDICE EDITORIAL DE CATEGORÍAS */
+                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                                            <div>
+                                                <div style={{ marginBottom: 24, borderBottom: '3px solid #784A1C', paddingBottom: 8 }}>
+                                                    <h1 style={{ fontSize: 30, fontWeight: 900, color: '#2A1E17', margin: 0, fontFamily: '"Georgia", serif' }}>
+                                                        Índice
+                                                    </h1>
+                                                </div>
 
-                                            <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>
-                                                Seleccioná cualquiera de las siguientes secciones para consultar los productos y escalas vigentes:
-                                            </p>
-
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, flex: 1 }}>
-                                                {CATEGORIAS_CON_ICONO.filter(c => c.pagina).map(c => {
-                                                    const prodsInCat = productos.filter(p => (p.categoria || p.categoria_nombre || '').toLowerCase() === c.nombre.toLowerCase());
-                                                    return (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 4px' }}>
+                                                    {indiceRevista.map(item => (
                                                         <div
-                                                            key={c.nombre}
-                                                            onClick={() => setPaginaActual(c.pagina)}
+                                                            key={item.categoria}
+                                                            onClick={() => setPaginaActual(item.pagina)}
                                                             style={{
                                                                 display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'space-between',
-                                                                padding: '12px 16px',
-                                                                background: '#F9FAFB',
-                                                                border: '1.5px solid #E5E7EB',
-                                                                borderRadius: 8,
+                                                                alignItems: 'baseline',
+                                                                fontSize: 13,
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.15s ease'
+                                                                padding: '2px 0'
                                                             }}
+                                                            title={`Ir a ${item.categoria}`}
                                                         >
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                                <span style={{ fontSize: 24 }}>{c.icono}</span>
-                                                                <div>
-                                                                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1F2937' }}>{c.nombre}</div>
-                                                                    <div style={{ fontSize: 11, color: '#6B7280' }}>{prodsInCat.length || c.total} artículos disponibles</div>
-                                                                </div>
+                                                            <span style={{ fontWeight: 700, color: '#2A1E17', paddingRight: 8, whiteSpace: 'nowrap' }}>
+                                                                {item.categoria}
+                                                            </span>
+                                                            <span style={{ flex: 1, borderBottom: '1.5px dotted #B0A89C', margin: '0 8px', transform: 'translateY(-3px)' }} />
+                                                            <span style={{ fontSize: 11, color: '#6B5E51', fontWeight: 500, paddingRight: 10, whiteSpace: 'nowrap' }}>
+                                                                {item.total} productos
+                                                            </span>
+                                                            <span style={{ fontWeight: 800, color: '#784A1C', fontSize: 13, whiteSpace: 'nowrap' }}>
+                                                                Pág. {item.pagina}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <div style={{ marginTop: 32, background: '#FDFBF7', border: '1.5px solid #EAE3D2', borderRadius: 8, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                                                    <div>
+                                                        <div style={{ fontSize: 10, fontWeight: 800, color: '#784A1C', textTransform: 'uppercase' }}>WhatsApp Ventas Mayoristas</div>
+                                                        <div style={{ fontSize: 14, fontWeight: 800, color: '#047857', marginTop: 3 }}>📲 {WHATSAPP_OFICIAL}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: 10, fontWeight: 800, color: '#784A1C', textTransform: 'uppercase' }}>Alias de Cobro</div>
+                                                        <div style={{ fontSize: 14, fontWeight: 800, color: '#B45309', marginTop: 3 }}>💳 {ALIAS_PAGO}</div>
+                                                    </div>
+                                                    <div style={{ gridColumn: 'span 2', borderTop: '1px dashed #DDD2BE', paddingTop: 8, fontSize: 11, color: '#524336' }}>
+                                                        📍 <strong>Depósito Central:</strong> San Isidro 2135, Ituzaingó, Prov. Buenos Aires · Envíos a todo el país.
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ textAlign: 'center', fontSize: 10, color: '#786C5E', borderTop: '1px solid #EFEAE4', paddingTop: 8 }}>
+                                                Mix Point · 2
+                                            </div>
+                                        </div>
+                                    ) : hojaActiva.tipo === 'herboristeria' ? (
+                                        /* HERBORISTERÍA: FORMATO TABULAR BOTÁNICO DE ALTA DENSIDAD */
+                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                                            <div>
+                                                <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '8px 16px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <span style={{ fontSize: 16 }}>🌿</span>
+                                                        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            {hojaActiva.categoria} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.9 }}>{hojaActiva.subtitulo}</span>
+                                                        </h2>
+                                                    </div>
+                                                    <div style={{ fontSize: 10, fontWeight: 700, color: '#FEF3C7' }}>
+                                                        SELECCIÓN BOTÁNICA MAYORISTA
+                                                    </div>
+                                                </div>
+
+                                                {(() => {
+                                                    const mitad = Math.ceil(hojaActiva.productos.length / 2);
+                                                    const col1 = hojaActiva.productos.slice(0, mitad);
+                                                    const col2 = hojaActiva.productos.slice(mitad);
+
+                                                    const renderCol = (lista) => (
+                                                        <div style={{ flex: 1, border: '1px solid #E5E7EB', borderRadius: 6, overflow: 'hidden', background: '#FFFFFF' }}>
+                                                            <div style={{ background: '#F5EFEB', borderBottom: '1.5px solid #DDD2BE', padding: '5px 8px', display: 'flex', justifyContent: 'space-between', fontSize: 9, fontWeight: 800, color: '#784A1C', textTransform: 'uppercase' }}>
+                                                                <span style={{ flex: 1 }}>Variedad / Hierba</span>
+                                                                <span style={{ width: 60, textAlign: 'right' }}>x 1 kg</span>
+                                                                <span style={{ width: 60, textAlign: 'right' }}>x 5 kg</span>
                                                             </div>
-                                                            <div style={{ background: '#784A1C', color: '#FFFFFF', fontWeight: 800, fontSize: 12, padding: '4px 10px', borderRadius: 6 }}>
-                                                                Pág {c.pagina} →
+                                                            <div>
+                                                                {lista.map((p, idx) => (
+                                                                    <div key={p.id || p.nombre} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: idx % 2 === 0 ? '#FFFFFF' : '#FBF9F6', borderBottom: idx === lista.length - 1 ? 'none' : '1px solid #F1ECE6', fontSize: 10 }}>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1, minWidth: 0, paddingRight: 6 }}>
+                                                                            <span style={{ fontSize: 10, flexShrink: 0 }}>🌿</span>
+                                                                            <span style={{ fontWeight: 700, color: '#2A1E17', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                                {p.nombre}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', gap: 8, flexShrink: 0, textAlign: 'right' }}>
+                                                                            <span style={{ fontWeight: 800, color: '#784A1C', width: 60 }}>
+                                                                                {Number(p.precio_venta) > 0 ? fmtMoney(p.precio_venta) : '—'}
+                                                                            </span>
+                                                                            <span style={{ fontWeight: 600, color: '#4B5563', width: 60 }}>
+                                                                                {Number(p.precio_5kg) > 0 ? fmtMoney(p.precio_5kg) : '—'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
                                                             </div>
                                                         </div>
                                                     );
-                                                })}
+
+                                                    return (
+                                                        <div style={{ display: 'flex', gap: 12 }}>
+                                                            {renderCol(col1)}
+                                                            {renderCol(col2)}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+
+                                            <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 9.5, color: '#6B7280' }}>
+                                                <span>📲 WA: {WHATSAPP_OFICIAL}</span>
+                                                <span style={{ fontWeight: 700, color: '#784A1C' }}>Mix Point · {hojaActiva.numero}</span>
+                                                <span>💳 Alias: {ALIAS_PAGO}</span>
                                             </div>
                                         </div>
                                     ) : (
-                                        /* PÁGINAS 3 A 21: GRILLA 3 COLUMNAS IDÉNTICA AL CATÁLOGO PDF CON PRECIOS VIVOS */
-                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                            {/* ENCABEZADO DE PÁGINA (BANNER MARRÓN) */}
-                                            <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '10px 18px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <span style={{ fontSize: 20 }}>🌰</span>
-                                                    <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                        {PAGINAS_REVISTA.find(p => p.num === paginaActual)?.categoria || 'Catálogo Mayorista'}
-                                                    </h2>
+                                        /* GRILLA 3 COLUMNAS BALANCEADA DE PRODUCTOS CON PRECIOS VIVOS */
+                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                                            <div>
+                                                <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '8px 16px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <span style={{ fontSize: 16 }}>🌰</span>
+                                                        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            {hojaActiva.categoria} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.9 }}>{hojaActiva.subtitulo}</span>
+                                                        </h2>
+                                                    </div>
+                                                    <div style={{ fontSize: 10, fontWeight: 700, color: '#FEF3C7' }}>
+                                                        MIX POINT · MAYORISTA
+                                                    </div>
                                                 </div>
-                                                <div style={{ fontSize: 11, fontWeight: 600, color: '#FDE68A' }}>
-                                                    MIX POINT MAYORISTA · PÁGINA {paginaActual}
-                                                </div>
-                                            </div>
 
-                                            {/* GRILLA DE 3 COLUMNAS DE PRODUCTOS */}
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, flex: 1, alignContent: 'start' }}>
-                                                {(() => {
-                                                    const prodsDePagina = productos.filter(p => p.pagina === paginaActual);
-                                                    if (prodsDePagina.length === 0) {
-                                                        return (
-                                                            <div style={{ gridColumn: 'span 3', padding: 40, textAlign: 'center', color: '#6B7280' }}>
-                                                                No se encontraron productos registrados en esta página en la Base de Datos.
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return prodsDePagina.map(p => {
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                                                    {hojaActiva.productos?.map(p => {
                                                         const pBase = Number(p.precio_venta || 0);
                                                         const p5k = Number(p.precio_5kg || 0);
                                                         const p10k = Number(p.precio_10kg || 0);
@@ -927,63 +972,59 @@ export default function CatalogoFlyers() {
                                                             <div
                                                                 key={p.id || p.nombre}
                                                                 style={{
-                                                                    border: '1.5px solid #E5E7EB',
+                                                                    border: '1px solid #E5E7EB',
                                                                     borderRadius: 6,
                                                                     padding: 8,
                                                                     background: '#FFFFFF',
                                                                     display: 'flex',
                                                                     flexDirection: 'column',
                                                                     justifyContent: 'space-between',
-                                                                    height: 195,
+                                                                    height: 200,
                                                                     boxSizing: 'border-box'
                                                                 }}
                                                             >
-                                                                {/* FOTO DEL PRODUCTO */}
-                                                                <div style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAFA', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+                                                                <div style={{ height: 86, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAF9', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
                                                                     <img
                                                                         src={obtenerImagenProducto(p)}
                                                                         alt={p.nombre}
                                                                         style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                                                                        loading="lazy"
                                                                         onError={e => {
                                                                             e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
                                                                         }}
                                                                     />
                                                                 </div>
 
-                                                                {/* NOMBRE DEL PRODUCTO */}
-                                                                <div style={{ fontSize: 11, fontWeight: 700, color: '#1F2937', lineHeight: 1.25, height: 28, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                                                                <div style={{ fontSize: 11, fontWeight: 800, color: '#1F2937', lineHeight: 1.25, height: 28, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                                                                     {p.nombre}
                                                                 </div>
 
-                                                                {/* TABLA DE ESCALAS Y PRECIOS DE BASE DE DATOS */}
-                                                                <div style={{ marginTop: 'auto', borderTop: '1px solid #F3F4F6', paddingTop: 4 }}>
+                                                                <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 3, marginTop: 'auto' }}>
                                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                                                        <span style={{ fontSize: 9.5, color: '#6B7280', fontWeight: 600 }}>x 1 kg:</span>
-                                                                        <span style={{ fontSize: 12, fontWeight: 800, color: '#784A1C' }}>
+                                                                        <span style={{ fontSize: 9, color: '#6B7280', fontWeight: 600 }}>x 1 {p.unidad_medida || 'kg'}:</span>
+                                                                        <span style={{ fontSize: 11.5, fontWeight: 900, color: '#784A1C' }}>
                                                                             {pBase > 0 ? fmtMoney(pBase) : 'Consultar'}
                                                                         </span>
                                                                     </div>
                                                                     {p5k > 0 && (
-                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9.5 }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8.5 }}>
                                                                             <span style={{ color: '#6B7280' }}>x 5 kg:</span>
                                                                             <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p5k)}</span>
                                                                         </div>
                                                                     )}
                                                                     {p10k > 0 && (
-                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9.5 }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8.5 }}>
                                                                             <span style={{ color: '#6B7280' }}>x 10 kg:</span>
                                                                             <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p10k)}</span>
                                                                         </div>
                                                                     )}
                                                                     {p25k > 0 && (
-                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9.5 }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8.5 }}>
                                                                             <span style={{ color: '#6B7280' }}>x 25 kg:</span>
                                                                             <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p25k)}</span>
                                                                         </div>
                                                                     )}
                                                                     {p30k > 0 && (
-                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9.5 }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8.5 }}>
                                                                             <span style={{ color: '#6B7280' }}>x 30 kg:</span>
                                                                             <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p30k)}</span>
                                                                         </div>
@@ -991,23 +1032,22 @@ export default function CatalogoFlyers() {
                                                                 </div>
                                                             </div>
                                                         );
-                                                    });
-                                                })()}
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 9.5, color: '#6B7280' }}>
+                                                <span>📲 WA Pedidos: {WHATSAPP_OFICIAL}</span>
+                                                <span style={{ fontWeight: 700, color: '#784A1C' }}>Mix Point · {hojaActiva.numero}</span>
+                                                <span>💳 Alias: {ALIAS_PAGO}</span>
                                             </div>
                                         </div>
                                     )}
-
-                                    {/* PIE DE PÁGINA A4 */}
-                                    <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 10, marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: '#9CA3AF' }}>
-                                        <span>📲 WhatsApp Pedidos: <strong>{WHATSAPP_OFICIAL}</strong></span>
-                                        <span>💳 Alias de Pago: <strong>{ALIAS_PAGO}</strong></span>
-                                        <span style={{ fontWeight: 700, color: '#784A1C' }}>Página {paginaActual} de 21</span>
-                                    </div>
                                 </div>
                             ) : (
                                 /* ESCANEO ORIGINAL DEL ARCHIVO PDF */
                                 <img
-                                    src={`/catalogo/pagina_${paginaActual}.jpg`}
+                                    src={`/catalogo/pagina_${Math.min(paginaActual, 21)}.jpg`}
                                     alt={`Página ${paginaActual} del Catálogo Mix Point`}
                                     style={{
                                         width: '100%',
@@ -1024,15 +1064,15 @@ export default function CatalogoFlyers() {
                     {/* TIRA DE MINIATURAS INFERIOR PARA NAVEGACIÓN VISUAL RÁPIDA */}
                     <div>
                         <p className="text-xs muted" style={{ marginBottom: 8, fontWeight: 600 }}>
-                            Navegación visual por hojas (hacé clic en cualquier página para verla):
+                            Navegación visual por hojas ({totalHojasRevista} páginas en total):
                         </p>
                         <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 10 }}>
-                            {PAGINAS_REVISTA.map(p => {
-                                const isCur = paginaActual === p.num;
+                            {hojasRevista.map(p => {
+                                const isCur = paginaActual === p.numero;
                                 return (
                                     <div
-                                        key={p.num}
-                                        onClick={() => setPaginaActual(p.num)}
+                                        key={p.numero}
+                                        onClick={() => setPaginaActual(p.numero)}
                                         style={{
                                             cursor: 'pointer',
                                             flexShrink: 0,
@@ -1041,16 +1081,24 @@ export default function CatalogoFlyers() {
                                             borderRadius: 6,
                                             padding: 4,
                                             background: isCur ? '#FEF3C7' : '#FFFFFF',
-                                            transition: 'transform 0.1s ease'
+                                            transition: 'transform 0.1s ease',
+                                            minWidth: 70
                                         }}
                                     >
-                                        <img
-                                            src={`/catalogo/pagina_${p.num}.jpg`}
-                                            alt={`Pág ${p.num}`}
-                                            style={{ width: 64, height: 90, objectFit: 'cover', borderRadius: 4, display: 'block' }}
-                                        />
+                                        {p.numero <= 21 ? (
+                                            <img
+                                                src={`/catalogo/pagina_${p.numero}.jpg`}
+                                                alt={`Pág ${p.numero}`}
+                                                style={{ width: 64, height: 90, objectFit: 'cover', borderRadius: 4, display: 'block' }}
+                                            />
+                                        ) : (
+                                            <div style={{ width: 64, height: 90, borderRadius: 4, background: '#F5EFEB', border: '1px solid #E2DCC9', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#784A1C', fontWeight: 700, padding: 4 }}>
+                                                <span>🌿</span>
+                                                <span>Pág {p.numero}</span>
+                                            </div>
+                                        )}
                                         <div style={{ fontSize: 10, fontWeight: isCur ? 700 : 500, marginTop: 4, color: isCur ? '#92400E' : '#64748b' }}>
-                                            Pág {p.num}
+                                            Pág {p.numero}
                                         </div>
                                     </div>
                                 );
@@ -1258,166 +1306,6 @@ export default function CatalogoFlyers() {
                     onClose={() => setMostrarModalImpresion(false)}
                 />
             )}
-
-            {/* CONTENEDOR EXCLUSIVO PARA IMPRESIÓN / GUARDAR PDF DE TODAS LAS PÁGINAS (NO VISIBLE EN PANTALLA) */}
-            <div className="catalogo-print-container" style={{ display: 'none' }}>
-                {PAGINAS_REVISTA.map(pag => (
-                    <div key={`print-pag-${pag.num}`} className="catalogo-page-a4">
-                        {pag.num === 1 ? (
-                            /* PORTADA IMPRESA */
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', padding: '60px 20px', border: '3.5px solid #784A1C', borderRadius: 10, boxSizing: 'border-box' }}>
-                                <div style={{ width: 120, height: 120, borderRadius: '50%', background: '#784A1C', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60, marginBottom: 24 }}>
-                                    🌰
-                                </div>
-                                <h1 style={{ fontSize: 46, fontWeight: 900, color: '#784A1C', margin: '0 0 10px 0', letterSpacing: '1.5px' }}>
-                                    MIX POINT
-                                </h1>
-                                <div style={{ fontSize: 22, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: 26 }}>
-                                    Distribuidora Mayorista de Alimentos Naturales
-                                </div>
-                                <div style={{ width: 100, height: 5, background: '#784A1C', borderRadius: 3, marginBottom: 30 }} />
-                                <p style={{ fontSize: 16, color: '#4B5563', maxWidth: 540, lineHeight: 1.6, margin: '0 0 40px 0' }}>
-                                    Catálogo oficial y lista mayorista de precios con escalas por bulto cerrado. Venta directa a dietéticas y comercios de todo el país.
-                                </p>
-                                <div style={{ border: '1.5px solid #D1D5DB', borderRadius: 10, padding: '20px 30px', width: '80%', maxWidth: 500, textAlign: 'left', background: '#F9FAFB' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-                                        <div>
-                                            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>WhatsApp Oficial</div>
-                                            <div style={{ fontSize: 16, fontWeight: 800, color: '#047857' }}>📲 {WHATSAPP_OFICIAL}</div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Alias Transferencia</div>
-                                            <div style={{ fontSize: 16, fontWeight: 800, color: '#B45309' }}>💳 {ALIAS_PAGO}</div>
-                                        </div>
-                                        <div style={{ gridColumn: 'span 2' }}>
-                                            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Depósito & Envíos</div>
-                                            <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>📍 San Isidro 2135, Ituzaingó, Prov. Buenos Aires</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style={{ marginTop: 'auto', fontSize: 12, color: '#9CA3AF' }}>
-                                    Documento actualizado automáticamente desde el sistema central de gestión
-                                </div>
-                            </div>
-                        ) : pag.num === 2 ? (
-                            /* ÍNDICE IMPRESO */
-                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                                <div>
-                                    <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '12px 20px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, textTransform: 'uppercase' }}>
-                                            Índice de Categorías
-                                        </h2>
-                                        <span style={{ fontSize: 12, fontWeight: 700 }}>
-                                            {productos.length} Productos
-                                        </span>
-                                    </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-                                        {CATEGORIAS_CON_ICONO.filter(c => c.pagina).map(c => (
-                                            <div key={c.nombre} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', border: '1.5px solid #E5E7EB', borderRadius: 8, background: '#F9FAFB' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <span style={{ fontSize: 22 }}>{c.icono}</span>
-                                                    <span style={{ fontSize: 14, fontWeight: 700, color: '#1F2937' }}>{c.nombre}</span>
-                                                </div>
-                                                <div style={{ background: '#784A1C', color: '#FFFFFF', fontWeight: 800, fontSize: 12, padding: '3px 8px', borderRadius: 4 }}>
-                                                    Pág {c.pagina}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9CA3AF' }}>
-                                    <span>📲 WA: {WHATSAPP_OFICIAL}</span>
-                                    <span>💳 Alias: {ALIAS_PAGO}</span>
-                                    <span>Página 2 de 21</span>
-                                </div>
-                            </div>
-                        ) : (
-                            /* PÁGINAS DE PRODUCTOS IMPRESAS (3 A 21) */
-                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                                <div>
-                                    <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '10px 18px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <span style={{ fontSize: 20 }}>🌰</span>
-                                            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, textTransform: 'uppercase' }}>
-                                                {pag.categoria}
-                                            </h2>
-                                        </div>
-                                        <div style={{ fontSize: 11, fontWeight: 700, color: '#FDE68A' }}>
-                                            MIX POINT · PÁGINA {pag.num}
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                                        {productos.filter(p => p.pagina === pag.num).map(p => {
-                                            const pBase = Number(p.precio_venta || 0);
-                                            const p5k = Number(p.precio_5kg || 0);
-                                            const p10k = Number(p.precio_10kg || 0);
-                                            const p25k = Number(p.precio_25kg || 0);
-                                            const p30k = Number(p.precio_30kg || 0);
-
-                                            return (
-                                                <div key={p.id || p.nombre} style={{ border: '1px solid #D1D5DB', borderRadius: 6, padding: 6, background: '#FFFFFF', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: 185, boxSizing: 'border-box' }}>
-                                                    <div style={{ height: 75, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAFA', borderRadius: 4, overflow: 'hidden', marginBottom: 4 }}>
-                                                        <img
-                                                            src={obtenerImagenProducto(p)}
-                                                            alt={p.nombre}
-                                                            style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                                                            onError={e => {
-                                                                e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#111827', lineHeight: 1.25, height: 26, overflow: 'hidden' }}>
-                                                        {p.nombre}
-                                                    </div>
-                                                    <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 3, marginTop: 'auto' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                                            <span style={{ fontSize: 9, color: '#6B7280', fontWeight: 600 }}>x 1 kg:</span>
-                                                            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#784A1C' }}>
-                                                                {pBase > 0 ? fmtMoney(pBase) : 'Consultar'}
-                                                            </span>
-                                                        </div>
-                                                        {p5k > 0 && (
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9 }}>
-                                                                <span style={{ color: '#6B7280' }}>x 5 kg:</span>
-                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p5k)}</span>
-                                                            </div>
-                                                        )}
-                                                        {p10k > 0 && (
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9 }}>
-                                                                <span style={{ color: '#6B7280' }}>x 10 kg:</span>
-                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p10k)}</span>
-                                                            </div>
-                                                        )}
-                                                        {p25k > 0 && (
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9 }}>
-                                                                <span style={{ color: '#6B7280' }}>x 25 kg:</span>
-                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p25k)}</span>
-                                                            </div>
-                                                        )}
-                                                        {p30k > 0 && (
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 9 }}>
-                                                                <span style={{ color: '#6B7280' }}>x 30 kg:</span>
-                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p30k)}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#9CA3AF' }}>
-                                    <span>📲 WA: {WHATSAPP_OFICIAL}</span>
-                                    <span>💳 Alias: {ALIAS_PAGO}</span>
-                                    <span style={{ fontWeight: 700, color: '#784A1C' }}>Página {pag.num} de 21</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
         </div>
     );
 }

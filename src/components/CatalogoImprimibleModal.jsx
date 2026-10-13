@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { obtenerImagenProducto } from '../utils/imagenProducto';
+import { generarHojasCatalogo } from '../utils/catalogoPaginacion';
 
 const fmtMoney = (n) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
@@ -33,17 +34,22 @@ function getPrintCss() {
             height: 297mm;
             min-height: 297mm;
             max-height: 297mm;
-            padding: 10mm 12mm 8mm 12mm;
             margin: 0 auto;
             page-break-after: always;
             break-after: page;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
             position: relative;
             background: #ffffff;
             overflow: hidden;
             box-sizing: border-box;
+        }
+        .catalogo-print-sheet.sheet-portada {
+            padding: 0;
+        }
+        .catalogo-print-sheet.sheet-content {
+            padding: 10mm 12mm 8mm 12mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .catalogo-print-sheet:last-child {
             page-break-after: avoid;
@@ -61,7 +67,7 @@ export default function CatalogoImprimibleModal({ productos = [], categorias = [
     const [zoomScale, setZoomScale] = useState(0.75);
     const [modoAjuste, setModoAjuste] = useState('auto');
 
-    // Auto-ajuste de escala de zoom
+    // Auto-ajuste de escala de zoom para la pantalla
     useEffect(() => {
         const calcularAuto = () => {
             if (typeof window === 'undefined') return;
@@ -94,75 +100,10 @@ export default function CatalogoImprimibleModal({ productos = [], categorias = [
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [onClose]);
 
-    // Generar páginas garantizando que CADA PÁGINA tiene máximo 12 productos (3 columnas x 4 filas)
-    // para que JAMÁS desborde los 297mm del formato A4
-    const hojasGeneradas = useMemo(() => {
-        const hojas = [];
-
-        // HOJA 1: PORTADA EDITORIAL
-        hojas.push({
-            tipo: 'portada',
-            numero: 1,
-            titulo: 'Portada Oficial'
-        });
-
-        // HOJA 2: ÍNDICE DE CATEGORÍAS
-        hojas.push({
-            tipo: 'indice',
-            numero: 2,
-            titulo: 'Índice General'
-        });
-
-        // PÁGINAS DE PRODUCTOS POR CATEGORÍA
-        // Agrupar productos válidos por categoría
-        const categoriasMap = new Map();
-        productos.forEach(p => {
-            const cat = p.categoria_nombre || p.categoria || 'Varios';
-            if (!categoriasMap.has(cat)) {
-                categoriasMap.set(cat, []);
-            }
-            categoriasMap.get(cat).push(p);
-        });
-
-        let currentPagNum = 3;
-
-        categoriasMap.forEach((prodsCat, catNombre) => {
-            // Máximo 12 productos por hoja A4 para mantener encuadre estricto de 3 columnas x 4 filas
-            const maxPorHoja = 12;
-            const totalHojasCat = Math.ceil(prodsCat.length / maxPorHoja);
-
-            for (let i = 0; i < totalHojasCat; i++) {
-                const chunk = prodsCat.slice(i * maxPorHoja, (i + 1) * maxPorHoja);
-                hojas.push({
-                    tipo: 'productos',
-                    numero: currentPagNum++,
-                    categoria: catNombre,
-                    subtitulo: totalHojasCat > 1 ? `(Parte ${i + 1} de ${totalHojasCat})` : '',
-                    productos: chunk
-                });
-            }
-        });
-
-        return hojas;
+    // Generar hojas balanceadas y el índice exacto
+    const { hojas: hojasGeneradas, indice: indiceCategorias } = useMemo(() => {
+        return generarHojasCatalogo(productos);
     }, [productos]);
-
-    // Mapeo dinámico para el índice (categoría -> primera página donde aparece)
-    const indiceCategorias = useMemo(() => {
-        const map = [];
-        const vistas = new Set();
-        hojasGeneradas.forEach(h => {
-            if (h.tipo === 'productos' && !vistas.has(h.categoria)) {
-                vistas.add(h.categoria);
-                const count = productos.filter(p => (p.categoria_nombre || p.categoria || 'Varios') === h.categoria).length;
-                map.push({
-                    categoria: h.categoria,
-                    pagina: h.numero,
-                    total: count
-                });
-            }
-        });
-        return map;
-    }, [hojasGeneradas, productos]);
 
     // Función de impresión aislada en Iframe (cero elementos de la web)
     const handlePrint = () => {
@@ -282,10 +223,10 @@ export default function CatalogoImprimibleModal({ productos = [], categorias = [
                     </div>
                     <div>
                         <h2 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#F8FAFC', letterSpacing: '0.02em' }}>
-                            Catálogo Oficial & Lista de Precios Mayorista
+                            Catálogo Oficial & Lista de Precios Mayorista Mix Point
                         </h2>
                         <span style={{ fontSize: 11, color: '#94A3B8' }}>
-                            {productos.length} productos clasificados · {totalPages} páginas A4 sin desbordes
+                            {productos.length} productos clasificados · {totalPages} páginas A4 optimizadas sin páginas en blanco
                         </span>
                     </div>
                 </div>
@@ -461,257 +402,422 @@ export default function CatalogoImprimibleModal({ productos = [], categorias = [
                                         background: '#FFFFFF'
                                     }}
                                 >
-                                    <div className="catalogo-print-sheet">
-                                        {/* =========================================================
-                                            HOJA 1: PORTADA EDITORIAL OFICIAL
-                                            ========================================================= */}
-                                        {hoja.tipo === 'portada' && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', border: '3.5px solid #784A1C', borderRadius: 8, padding: '36px 28px', boxSizing: 'border-box', background: 'radial-gradient(circle at center, #FFFFFF 0%, #FDFBF7 100%)', textAlign: 'center' }}>
-                                                {/* Header Portada */}
-                                                <div>
-                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FEF3C7', color: '#92400E', padding: '4px 14px', borderRadius: 16, fontSize: 10, fontWeight: 800, border: '1px solid #FCD34D', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                                                        LISTA OFICIAL DE PRECIOS MAYORISTA
-                                                    </div>
-                                                </div>
+                                    {/* =========================================================
+                                        HOJA 1: PORTADA OFICIAL (IMAGEN HD COMPLETA SANGRADA)
+                                        ========================================================= */}
+                                    {hoja.tipo === 'portada' && (
+                                        <div className="catalogo-print-sheet sheet-portada">
+                                            <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                                                <img
+                                                    src="/catalogo/portada.jpg"
+                                                    alt="Catálogo Oficial Mix Point Mayorista"
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'cover',
+                                                        display: 'block'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
 
-                                                {/* Centro Portada */}
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: 'auto 0' }}>
-                                                    <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#784A1C', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, marginBottom: 16, border: '2.5px solid #C9A227', boxShadow: '0 8px 24px rgba(120,74,28,0.35)' }}>
-                                                        🌰
-                                                    </div>
-                                                    <h1 style={{ fontSize: 38, fontWeight: 900, color: '#784A1C', margin: '0 0 6px', letterSpacing: '1.5px', lineHeight: 1.1 }}>
-                                                        MIX POINT
+                                    {/* =========================================================
+                                        HOJA 2: ÍNDICE EDITORIAL CON LÍNEAS PUNTEADAS
+                                        ========================================================= */}
+                                    {hoja.tipo === 'indice' && (
+                                        <div className="catalogo-print-sheet sheet-content">
+                                            <div>
+                                                {/* Header Índice Editorial */}
+                                                <div style={{ marginBottom: 28, borderBottom: '3px solid #784A1C', paddingBottom: 8 }}>
+                                                    <h1 style={{
+                                                        fontSize: 32,
+                                                        fontWeight: 900,
+                                                        color: '#2A1E17',
+                                                        margin: 0,
+                                                        fontFamily: '"Georgia", serif, -apple-system, BlinkMacSystemFont, "Segoe UI"',
+                                                        letterSpacing: '0.02em'
+                                                    }}>
+                                                        Índice
                                                     </h1>
-                                                    <div style={{ fontSize: 16, fontWeight: 800, color: '#92400E', textTransform: 'uppercase', letterSpacing: '2.5px', marginBottom: 18 }}>
-                                                        Distribuidora Mayorista de Alimentos Naturales
-                                                    </div>
-                                                    <div style={{ width: 70, height: 4, background: '#784A1C', borderRadius: 2, marginBottom: 20 }} />
-                                                    <p style={{ fontSize: 13, color: '#4B5563', maxWidth: 480, lineHeight: 1.5, margin: '0 0 28px' }}>
-                                                        Frutos secos, mixes especiales, cereales, semillas, harinas y herboristería de primera selección. Trazabilidad garantizada bajo norma FEFO y escalas de precios por bulto cerrado.
-                                                    </p>
-
-                                                    {/* Tarjeta de Contacto Oficial */}
-                                                    <div style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: 8, padding: '16px 24px', width: '100%', maxWidth: 480, textAlign: 'left', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                                                        <div>
-                                                            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>WhatsApp Ventas</div>
-                                                            <div style={{ fontSize: 14, fontWeight: 800, color: '#047857' }}>📲 {WHATSAPP_OFICIAL}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Alias de Cobro</div>
-                                                            <div style={{ fontSize: 14, fontWeight: 800, color: '#B45309' }}>💳 {ALIAS_PAGO}</div>
-                                                        </div>
-                                                        <div style={{ gridColumn: 'span 2' }}>
-                                                            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Depósito & Envíos a Todo el País</div>
-                                                            <div style={{ fontSize: 11.5, fontWeight: 600, color: '#1E293B' }}>📍 San Isidro 2135, Ituzaingó, Prov. Buenos Aires</div>
-                                                        </div>
-                                                    </div>
                                                 </div>
 
-                                                {/* Footer Portada */}
-                                                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 10, fontSize: 9.5, color: '#94A3B8', display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span>🌐 www.distribuidora-mix-point.com.ar</span>
-                                                    <span>Edición Oficial Actualizada</span>
-                                                    <span>Página 1 de {totalPages}</span>
+                                                {/* Lista Punteada de Categorías */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 4px' }}>
+                                                    {indiceCategorias.map(item => (
+                                                        <div
+                                                            key={item.categoria}
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'baseline',
+                                                                fontSize: 13,
+                                                                fontFamily: '"Georgia", serif, -apple-system, BlinkMacSystemFont, "Segoe UI"'
+                                                            }}
+                                                        >
+                                                            <span style={{ fontWeight: 700, color: '#2A1E17', paddingRight: 8, whiteSpace: 'nowrap' }}>
+                                                                {item.categoria}
+                                                            </span>
+                                                            <span style={{
+                                                                flex: 1,
+                                                                borderBottom: '1.5px dotted #B0A89C',
+                                                                margin: '0 8px',
+                                                                transform: 'translateY(-3px)'
+                                                            }} />
+                                                            <span style={{ fontSize: 11, color: '#6B5E51', fontWeight: 500, paddingRight: 10, whiteSpace: 'nowrap' }}>
+                                                                {item.total} productos
+                                                            </span>
+                                                            <span style={{ fontWeight: 800, color: '#784A1C', fontSize: 13, whiteSpace: 'nowrap' }}>
+                                                                Pág. {item.pagina}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Cuadro Institucional y Comercial */}
+                                                <div
+                                                    style={{
+                                                        marginTop: 36,
+                                                        background: '#FDFBF7',
+                                                        border: '1.5px solid #EAE3D2',
+                                                        borderRadius: 8,
+                                                        padding: '16px 20px',
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(2, 1fr)',
+                                                        gap: 16
+                                                    }}
+                                                >
+                                                    <div>
+                                                        <div style={{ fontSize: 9.5, fontWeight: 800, color: '#784A1C', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            Ventas & Asesoramiento Mayorista
+                                                        </div>
+                                                        <div style={{ fontSize: 13, fontWeight: 800, color: '#047857', marginTop: 3 }}>
+                                                            📲 WhatsApp: {WHATSAPP_OFICIAL}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: 9.5, fontWeight: 800, color: '#784A1C', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            Datos de Cobro Oficial
+                                                        </div>
+                                                        <div style={{ fontSize: 13, fontWeight: 800, color: '#B45309', marginTop: 3 }}>
+                                                            💳 Alias: {ALIAS_PAGO}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ gridColumn: 'span 2', borderTop: '1px dashed #DDD2BE', paddingTop: 10 }}>
+                                                        <div style={{ fontSize: 11, color: '#524336', lineHeight: 1.4 }}>
+                                                            📍 <strong>Depósito Central:</strong> San Isidro 2135, Ituzaingó, Prov. de Buenos Aires. Envíos y logística a todo el país. Precios netos por bulto cerrado y fraccionado de primera calidad.
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        )}
 
-                                        {/* =========================================================
-                                            HOJA 2: ÍNDICE DE CATEGORÍAS
-                                            ========================================================= */}
-                                        {hoja.tipo === 'indice' && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                                                <div>
-                                                    {/* Header de Categoría */}
-                                                    <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '10px 18px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                            <span style={{ fontSize: 22 }}>📋</span>
-                                                            <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                                                Índice General de Categorías
-                                                            </h2>
-                                                        </div>
-                                                        <span style={{ fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.2)', padding: '3px 8px', borderRadius: 10 }}>
-                                                            {productos.length} Productos
-                                                        </span>
+                                            {/* Footer Editorial de Página */}
+                                            <div style={{ textAlign: 'center', fontSize: 10, color: '#786C5E', borderTop: '1px solid #EFEAE4', paddingTop: 8 }}>
+                                                Mix Point · 2
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* =========================================================
+                                        HOJAS DE PRODUCTOS EN CUADRÍCULA (BALANCEADAS)
+                                        ========================================================= */}
+                                    {hoja.tipo === 'productos' && (
+                                        <div className="catalogo-print-sheet sheet-content">
+                                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                                {/* Header de Categoría (Banner Marrón Oficial) */}
+                                                <div
+                                                    style={{
+                                                        background: '#784A1C',
+                                                        color: '#FFFFFF',
+                                                        padding: '8px 16px',
+                                                        borderRadius: 6,
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        marginBottom: 10
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <span style={{ fontSize: 16 }}>🌰</span>
+                                                        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            {hoja.categoria} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.9 }}>{hoja.subtitulo}</span>
+                                                        </h2>
                                                     </div>
+                                                    <div style={{ fontSize: 10, fontWeight: 700, color: '#FEF3C7', letterSpacing: '0.05em' }}>
+                                                        MIX POINT · MAYORISTA
+                                                    </div>
+                                                </div>
 
-                                                    {/* Grilla de Categorías del Índice */}
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-                                                        {indiceCategorias.map(item => (
+                                                {/* Cuadrícula de Productos (3 columnas x filas dinámicas) */}
+                                                <div
+                                                    style={{
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(3, 1fr)',
+                                                        gap: 8,
+                                                        flex: 1,
+                                                        alignContent: 'start'
+                                                    }}
+                                                >
+                                                    {hoja.productos.map(p => {
+                                                        const pBase = Number(p.precio_venta || 0);
+                                                        const p5k = Number(p.precio_5kg || 0);
+                                                        const p10k = Number(p.precio_10kg || 0);
+                                                        const p25k = Number(p.precio_25kg || 0);
+                                                        const p30k = Number(p.precio_30kg || 0);
+
+                                                        // Ajustar la altura visual de la tarjeta según la cantidad de items de la hoja
+                                                        const esHojaDensa = hoja.productos.length > 9;
+                                                        const cardHeight = esHojaDensa ? 190 : 215;
+                                                        const imgHeight = esHojaDensa ? 84 : 100;
+
+                                                        return (
                                                             <div
-                                                                key={item.categoria}
+                                                                key={p.id || p.nombre}
                                                                 style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'space-between',
-                                                                    padding: '10px 14px',
-                                                                    border: '1.2px solid #E2E8F0',
+                                                                    border: '1px solid #E5E7EB',
                                                                     borderRadius: 6,
-                                                                    background: '#F8FAFC'
+                                                                    padding: '6px 8px',
+                                                                    background: '#FFFFFF',
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    justifyContent: 'space-between',
+                                                                    height: cardHeight,
+                                                                    boxSizing: 'border-box'
                                                                 }}
                                                             >
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                                    <span style={{ fontSize: 16 }}>🌰</span>
-                                                                    <div>
-                                                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>{item.categoria}</div>
-                                                                        <div style={{ fontSize: 9.5, color: '#64748B' }}>{item.total} variedades</div>
-                                                                    </div>
-                                                                </div>
-                                                                <div style={{ background: '#784A1C', color: '#FFFFFF', fontWeight: 800, fontSize: 11, padding: '2px 8px', borderRadius: 4 }}>
-                                                                    Pág {item.pagina}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Footer de Página */}
-                                                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#64748B' }}>
-                                                    <span>📲 Pedidos WhatsApp: {WHATSAPP_OFICIAL}</span>
-                                                    <span>💳 Alias: {ALIAS_PAGO}</span>
-                                                    <span style={{ fontWeight: 700, color: '#784A1C' }}>Página 2 de {totalPages}</span>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* =========================================================
-                                            HOJAS DE PRODUCTOS: 3 A N (MÁXIMO 12 POR HOJA EN 3x4)
-                                            ========================================================= */}
-                                        {hoja.tipo === 'productos' && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                                                <div>
-                                                    {/* Header de Categoría */}
-                                                    <div style={{ background: '#784A1C', color: '#FFFFFF', padding: '8px 16px', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                            <span style={{ fontSize: 18 }}>🌰</span>
-                                                            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                                                {hoja.categoria} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.9 }}>{hoja.subtitulo}</span>
-                                                            </h2>
-                                                        </div>
-                                                        <div style={{ fontSize: 10, fontWeight: 700, color: '#FEF3C7', letterSpacing: '0.04em' }}>
-                                                            MIX POINT · PÁGINA {hoja.numero}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Cuadrícula Estricta de Productos: 3 Columnas x hasta 4 Filas */}
-                                                    <div
-                                                        style={{
-                                                            display: 'grid',
-                                                            gridTemplateColumns: 'repeat(3, 1fr)',
-                                                            gap: 8
-                                                        }}
-                                                    >
-                                                        {hoja.productos.map(p => {
-                                                            const pBase = Number(p.precio_venta || 0);
-                                                            const p5k = Number(p.precio_5kg || 0);
-                                                            const p10k = Number(p.precio_10kg || 0);
-                                                            const p25k = Number(p.precio_25kg || 0);
-                                                            const p30k = Number(p.precio_30kg || 0);
-
-                                                            return (
+                                                                {/* Foto del Producto */}
                                                                 <div
-                                                                    key={p.id || p.nombre}
                                                                     style={{
-                                                                        border: '1px solid #D1D5DB',
-                                                                        borderRadius: 6,
-                                                                        padding: '6px 7px',
-                                                                        background: '#FFFFFF',
+                                                                        height: imgHeight,
                                                                         display: 'flex',
-                                                                        flexDirection: 'column',
-                                                                        justifyContent: 'space-between',
-                                                                        height: 54 * 3.4, // Altura exacta calculada para 4 filas en A4 sin desborde
-                                                                        maxHeight: 190,
-                                                                        boxSizing: 'border-box'
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        background: '#FAFAF9',
+                                                                        borderRadius: 4,
+                                                                        overflow: 'hidden',
+                                                                        marginBottom: 4
                                                                     }}
                                                                 >
-                                                                    {/* Foto del Producto */}
-                                                                    <div
-                                                                        style={{
-                                                                            height: 74,
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            background: '#F9FAFB',
-                                                                            borderRadius: 4,
-                                                                            overflow: 'hidden',
-                                                                            marginBottom: 4
+                                                                    <img
+                                                                        src={obtenerImagenProducto(p)}
+                                                                        alt={p.nombre}
+                                                                        style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                                                                        onError={e => {
+                                                                            e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
                                                                         }}
-                                                                    >
-                                                                        <img
-                                                                            src={obtenerImagenProducto(p)}
-                                                                            alt={p.nombre}
-                                                                            style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                                                                            onError={e => {
-                                                                                e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg';
-                                                                            }}
-                                                                        />
-                                                                    </div>
-
-                                                                    {/* Nombre del Producto */}
-                                                                    <div
-                                                                        style={{
-                                                                            fontSize: 10,
-                                                                            fontWeight: 800,
-                                                                            color: '#111827',
-                                                                            lineHeight: 1.2,
-                                                                            height: 24,
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis'
-                                                                        }}
-                                                                        title={p.nombre}
-                                                                    >
-                                                                        {p.nombre}
-                                                                    </div>
-
-                                                                    {/* Tabla de Precios por Escala */}
-                                                                    <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 2, marginTop: 'auto' }}>
-                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                                                            <span style={{ fontSize: 8.5, color: '#6B7280', fontWeight: 600 }}>x 1 {p.unidad_medida || 'kg'}:</span>
-                                                                            <span style={{ fontSize: 11, fontWeight: 900, color: '#784A1C' }}>
-                                                                                {pBase > 0 ? fmtMoney(pBase) : 'Consultar'}
-                                                                            </span>
-                                                                        </div>
-                                                                        {p5k > 0 && (
-                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8 }}>
-                                                                                <span style={{ color: '#6B7280' }}>x 5 kg:</span>
-                                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p5k)}</span>
-                                                                            </div>
-                                                                        )}
-                                                                        {p10k > 0 && (
-                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8 }}>
-                                                                                <span style={{ color: '#6B7280' }}>x 10 kg:</span>
-                                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p10k)}</span>
-                                                                            </div>
-                                                                        )}
-                                                                        {p25k > 0 && (
-                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8 }}>
-                                                                                <span style={{ color: '#6B7280' }}>x 25 kg:</span>
-                                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p25k)}</span>
-                                                                            </div>
-                                                                        )}
-                                                                        {p30k > 0 && (
-                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8 }}>
-                                                                                <span style={{ color: '#6B7280' }}>x 30 kg:</span>
-                                                                                <span style={{ fontWeight: 700 }}>{fmtMoney(p30k)}</span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                    />
                                                                 </div>
-                                                            );
-                                                        })}
+
+                                                                {/* Nombre del Producto */}
+                                                                <div
+                                                                    style={{
+                                                                        fontSize: 10.5,
+                                                                        fontWeight: 800,
+                                                                        color: '#1F2937',
+                                                                        lineHeight: 1.25,
+                                                                        height: 28,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        display: '-webkit-box',
+                                                                        WebkitLineClamp: 2,
+                                                                        WebkitBoxOrient: 'vertical'
+                                                                    }}
+                                                                    title={p.nombre}
+                                                                >
+                                                                    {p.nombre}
+                                                                </div>
+
+                                                                {/* Tabla de Precios por Escala */}
+                                                                <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 2, marginTop: 'auto' }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                                                        <span style={{ fontSize: 9, color: '#6B7280', fontWeight: 600 }}>x 1 {p.unidad_medida || 'kg'}:</span>
+                                                                        <span style={{ fontSize: 11, fontWeight: 900, color: '#784A1C' }}>
+                                                                            {pBase > 0 ? fmtMoney(pBase) : 'Consultar'}
+                                                                        </span>
+                                                                    </div>
+                                                                    {p5k > 0 && (
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8.5 }}>
+                                                                            <span style={{ color: '#6B7280' }}>x 5 kg:</span>
+                                                                            <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p5k)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {p10k > 0 && (
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8.5 }}>
+                                                                            <span style={{ color: '#6B7280' }}>x 10 kg:</span>
+                                                                            <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p10k)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {p25k > 0 && (
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8.5 }}>
+                                                                            <span style={{ color: '#6B7280' }}>x 25 kg:</span>
+                                                                            <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p25k)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {p30k > 0 && (
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 8.5 }}>
+                                                                            <span style={{ color: '#6B7280' }}>x 30 kg:</span>
+                                                                            <span style={{ fontWeight: 700, color: '#374151' }}>{fmtMoney(p30k)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            {/* Footer Editorial de Página */}
+                                            <div
+                                                style={{
+                                                    borderTop: '1px solid #E5E7EB',
+                                                    paddingTop: 6,
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    fontSize: 9,
+                                                    color: '#6B7280'
+                                                }}
+                                            >
+                                                <span>📲 WA Pedidos: {WHATSAPP_OFICIAL}</span>
+                                                <span style={{ fontWeight: 700, color: '#784A1C' }}>Mix Point · {hoja.numero}</span>
+                                                <span>💳 Alias: {ALIAS_PAGO}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* =========================================================
+                                        HOJAS DE HERBORISTERÍA: FORMATO TABULAR BOTÁNICO DE ALTA DENSIDAD
+                                        ========================================================= */}
+                                    {hoja.tipo === 'herboristeria' && (
+                                        <div className="catalogo-print-sheet sheet-content">
+                                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                                {/* Header de Herboristería */}
+                                                <div
+                                                    style={{
+                                                        background: '#784A1C',
+                                                        color: '#FFFFFF',
+                                                        padding: '8px 16px',
+                                                        borderRadius: 6,
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        marginBottom: 10
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <span style={{ fontSize: 16 }}>🌿</span>
+                                                        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            {hoja.categoria} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.9 }}>{hoja.subtitulo}</span>
+                                                        </h2>
+                                                    </div>
+                                                    <div style={{ fontSize: 10, fontWeight: 700, color: '#FEF3C7', letterSpacing: '0.05em' }}>
+                                                        SELECCIÓN BOTÁNICA MAYORISTA
                                                     </div>
                                                 </div>
 
-                                                {/* Footer de Página */}
-                                                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 6, display: 'flex', justifyContent: 'space-between', fontSize: 8.5, color: '#64748B' }}>
-                                                    <span>📲 WA Pedidos: {WHATSAPP_OFICIAL}</span>
-                                                    <span>💳 Alias: {ALIAS_PAGO}</span>
-                                                    <span>📍 San Isidro 2135, Ituzaingó</span>
-                                                    <span style={{ fontWeight: 800, color: '#784A1C' }}>Página {hoja.numero} de {totalPages}</span>
-                                                </div>
+                                                {/* Tabla Botánica Dividida en 2 Columnas Paralelas de Alta Legibilidad */}
+                                                {(() => {
+                                                    const mitad = Math.ceil(hoja.productos.length / 2);
+                                                    const col1 = hoja.productos.slice(0, mitad);
+                                                    const col2 = hoja.productos.slice(mitad);
+
+                                                    const renderColumna = (lista, tituloCol) => (
+                                                        <div style={{ flex: 1, border: '1px solid #E5E7EB', borderRadius: 6, overflow: 'hidden', background: '#FFFFFF' }}>
+                                                            {/* Encabezado de la Sub-Columna */}
+                                                            <div
+                                                                style={{
+                                                                    background: '#F5EFEB',
+                                                                    borderBottom: '1.5px solid #DDD2BE',
+                                                                    padding: '5px 8px',
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'center',
+                                                                    fontSize: 9,
+                                                                    fontWeight: 800,
+                                                                    color: '#784A1C',
+                                                                    textTransform: 'uppercase'
+                                                                }}
+                                                            >
+                                                                <span style={{ flex: 1 }}>Variedad / Hierba</span>
+                                                                <span style={{ width: 56, textAlign: 'right' }}>x 1 kg</span>
+                                                                <span style={{ width: 56, textAlign: 'right' }}>x 5 kg</span>
+                                                            </div>
+
+                                                            {/* Filas de Hierbas Medicinales */}
+                                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                {lista.map((p, idx) => {
+                                                                    const pBase = Number(p.precio_venta || 0);
+                                                                    const p5k = Number(p.precio_5kg || 0);
+
+                                                                    return (
+                                                                        <div
+                                                                            key={p.id || p.nombre}
+                                                                            style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'space-between',
+                                                                                padding: '4px 8px',
+                                                                                background: idx % 2 === 0 ? '#FFFFFF' : '#FBF9F6',
+                                                                                borderBottom: idx === lista.length - 1 ? 'none' : '1px solid #F1ECE6',
+                                                                                fontSize: 9.5
+                                                                            }}
+                                                                        >
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1, minWidth: 0, paddingRight: 6 }}>
+                                                                                <span style={{ fontSize: 10, flexShrink: 0, opacity: 0.8 }}>🌿</span>
+                                                                                <span
+                                                                                    style={{
+                                                                                        fontWeight: 700,
+                                                                                        color: '#2A1E17',
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
+                                                                                        whiteSpace: 'nowrap'
+                                                                                    }}
+                                                                                    title={p.nombre}
+                                                                                >
+                                                                                    {p.nombre}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div style={{ display: 'flex', gap: 8, flexShrink: 0, textAlign: 'right' }}>
+                                                                                <span style={{ fontWeight: 800, color: '#784A1C', width: 56 }}>
+                                                                                    {pBase > 0 ? fmtMoney(pBase) : '—'}
+                                                                                </span>
+                                                                                <span style={{ fontWeight: 600, color: '#4B5563', width: 56 }}>
+                                                                                    {p5k > 0 ? fmtMoney(p5k) : '—'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+
+                                                    return (
+                                                        <div style={{ display: 'flex', gap: 10, flex: 1 }}>
+                                                            {renderColumna(col1, 'Parte A')}
+                                                            {renderColumna(col2, 'Parte B')}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
-                                        )}
-                                    </div>
+
+                                            {/* Footer Editorial de Página */}
+                                            <div
+                                                style={{
+                                                    borderTop: '1px solid #E5E7EB',
+                                                    paddingTop: 6,
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    fontSize: 9,
+                                                    color: '#6B7280'
+                                                }}
+                                            >
+                                                <span>📲 WA Pedidos: {WHATSAPP_OFICIAL}</span>
+                                                <span style={{ fontWeight: 700, color: '#784A1C' }}>Mix Point · {hoja.numero}</span>
+                                                <span>💳 Alias: {ALIAS_PAGO}</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );
