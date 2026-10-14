@@ -46,7 +46,9 @@ export function useKanbanSocket(onEvento) {
             'remito:editado',
             'remito:estado_cambiado',
             'kanban:movido',
-            'kanban:batch_actualizado'
+            'kanban:batch_actualizado',
+            'pedido_web_nuevo',
+            'pedido_web_actualizado'
         ];
 
         eventos.forEach((evento) => {

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
 import RemitoImprimible from '../components/RemitoImprimible';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconBuscar } from '../components/Icons';
 import { formatearFecha } from '../utils/fechas';
+import useKanbanSocket from '../hooks/useKanbanSocket';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
@@ -14,12 +15,26 @@ export default function PedidosWeb() {
     const [configOpen, setConfigOpen] = useState(false);
     const [tempUrl, setTempUrl] = useState('');
     const [loading, setLoading] = useState(true);
+    const [importando, setImportando] = useState(false);
+    const [origen, setOrigen] = useState('base_de_datos');
     const [generandoId, setGenerandoId] = useState(null);
     const [remitoParaImprimir, setRemitoParaImprimir] = useState(null);
     const [error, setError] = useState('');
     const [mensaje, setMensaje] = useState('');
     const [q, setQ] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('todos');
+
+    const handleEventoSocket = useCallback((evento, payload) => {
+        if (evento === 'pedido_web_nuevo') {
+            setMensaje(`🔔 ¡Nuevo pedido web #${payload.numero} de ${payload.cliente_nombre}!`);
+            cargarConfigYPedidos();
+            setTimeout(() => setMensaje(''), 7000);
+        } else if (evento === 'pedido_web_actualizado') {
+            cargarConfigYPedidos();
+        }
+    }, []);
+
+    useKanbanSocket(handleEventoSocket);
 
     async function cargarConfigYPedidos() {
         setLoading(true);
@@ -31,6 +46,7 @@ export default function PedidosWeb() {
 
             const { data } = await client.get('/integraciones/pedidos-web');
             setPedidos(data.pedidos || []);
+            setOrigen(data.origen || 'base_de_datos');
         } catch (err) {
             setError(err.response?.data?.error || 'No se pudieron cargar los pedidos web.');
         } finally {
@@ -41,6 +57,22 @@ export default function PedidosWeb() {
     useEffect(() => {
         cargarConfigYPedidos();
     }, []);
+
+    async function importarHistoricoSheets() {
+        if (!window.confirm('¿Deseas importar los pedidos registrados en tu Google Sheets histórico hacia la base de datos PostgreSQL?')) return;
+        setImportando(true);
+        setError('');
+        try {
+            const { data } = await client.post('/integraciones/importar-historico-sheets');
+            setMensaje(data.mensaje || 'Histórico importado correctamente.');
+            setTimeout(() => setMensaje(''), 5000);
+            cargarConfigYPedidos();
+        } catch (err) {
+            setError(err.response?.data?.error || 'Error al importar pedidos históricos.');
+        } finally {
+            setImportando(false);
+        }
+    }
 
     async function guardarConfig(e) {
         e.preventDefault();
@@ -106,14 +138,32 @@ export default function PedidosWeb() {
         <div className="stack gap-lg">
             <div className="spread page-header">
                 <div>
-                    <h1 style={{ fontSize: 26 }}>Bandeja de Pedidos Web</h1>
+                    <div className="row gap-sm" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                        <h1 style={{ fontSize: 26, margin: 0 }}>Bandeja de Pedidos Web</h1>
+                        <span className="badge" style={{
+                            background: origen === 'base_de_datos' ? '#ECFDF5' : '#FFFBEB',
+                            color: origen === 'base_de_datos' ? '#065F46' : '#92400E',
+                            border: `1px solid ${origen === 'base_de_datos' ? '#A7F3D0' : '#FDE68A'}`,
+                            fontSize: 12,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '3px 8px'
+                        }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: origen === 'base_de_datos' ? '#10B981' : '#F59E0B' }} />
+                            {origen === 'base_de_datos' ? 'Conexión Directa Neon DB (En vivo)' : 'Google Sheets'}
+                        </span>
+                    </div>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>
-                        {pedidos.length} pedidos sincronizados desde Google Sheets · Distribuidora Mix Point
+                        {pedidos.length} pedidos registrados · Distribuidora Mix Point (Gus-Gus)
                     </p>
                 </div>
-                <div className="row gap-sm">
+                <div className="row gap-sm" style={{ flexWrap: 'wrap' }}>
+                    <button className="btn btn-secondary" onClick={importarHistoricoSheets} disabled={importando || loading} title="Copiar pedidos que estaban en Google Sheets a la base de datos">
+                        {importando ? 'Importando...' : '📥 Importar histórico Sheets'}
+                    </button>
                     <button className="btn btn-secondary" onClick={() => setConfigOpen(true)}>
-                        ⚙️ Configurar enlace Sheets
+                        ⚙️ Sheets
                     </button>
                     <button className="btn btn-primary" onClick={cargarConfigYPedidos} disabled={loading}>
                         {loading ? 'Cargando...' : '🔄 Actualizar pedidos'}
@@ -184,6 +234,13 @@ export default function PedidosWeb() {
                                             </td>
                                             <td>
                                                 <div style={{ fontWeight: 600 }}>{p.nombre}</div>
+                                                {p.metodo_pago && (
+                                                    <div style={{ marginTop: 2 }}>
+                                                        <span className="badge badge-neutral" style={{ fontSize: 10, padding: '1px 6px' }}>
+                                                            💳 {p.metodo_pago}
+                                                        </span>
+                                                    </div>
+                                                )}
                                                 {p.telefono && (() => {
                                                     const telLimpio = String(p.telefono).replace(/\D/g, '');
                                                     const telWa = telLimpio.startsWith('549') ? telLimpio : (telLimpio.length >= 10 ? `549${telLimpio}` : '5491167873243');
@@ -206,6 +263,11 @@ export default function PedidosWeb() {
                                             <td>
                                                 <div>{p.direccion || '—'}</div>
                                                 {p.zona && <span className="badge badge-neutral" style={{ fontSize: 10, marginTop: 3 }}>{p.zona}</span>}
+                                                {p.notas && (
+                                                    <div className="muted text-xs" style={{ marginTop: 3, fontStyle: 'italic', maxWidth: 220 }}>
+                                                        📝 {p.notas}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td style={{ maxWidth: 320 }}>
                                                 <div style={{ fontSize: 12, lineHeight: 1.4 }}>
