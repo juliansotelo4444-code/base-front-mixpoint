@@ -8,6 +8,7 @@ import VoiceSearchButton from '../components/VoiceSearchButton';
 import EtiquetaDespachoModal from '../components/EtiquetaDespachoModal';
 import { IconPlus, IconBuscar } from '../components/Icons';
 import { getFechaHoyLocal, formatearFecha } from '../utils/fechas';
+import { exportarRemitoAWord } from '../utils/remitoWordExport';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
@@ -1248,6 +1249,14 @@ export default function Remitos() {
                                     }}
                                 >
                                     🖨️ Imprimir Remito QR
+                                </button>
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => exportarRemitoAWord(detalle)}
+                                    style={{ borderColor: '#93C5FD', color: '#1E40AF', background: '#EFF6FF', fontWeight: 600 }}
+                                    title="Descargar remito editable para Microsoft Word (.doc)"
+                                >
+                                    📄 Descargar Word (.doc)
                                 </button>
                                 <button
                                     className="btn btn-secondary btn-sm"

@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
 import { formatearFecha } from '../utils/fechas';
+import { exportarRemitoAWord } from '../utils/remitoWordExport';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
@@ -881,10 +882,26 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                         </button>
                         <button
                             className="btn btn-secondary btn-sm"
+                            onClick={() => exportarRemitoAWord(remito)}
+                            style={{
+                                padding: '6px 13px',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: '#1E40AF',
+                                background: '#EFF6FF',
+                                borderColor: '#93C5FD'
+                            }}
+                            title="Descargar remito editable para abrir en Microsoft Word (.doc)"
+                        >
+                            📝 Descargar Word (.doc)
+                        </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
                             onClick={handleDownloadHtml}
                             style={{ padding: '6px 12px', fontSize: 12 }}
+                            title="Descargar copia HTML imprimible"
                         >
-                            📥 Descargar
+                            📥 Descargar HTML
                         </button>
                         {onAbrirEtiquetas && (
                             <button
