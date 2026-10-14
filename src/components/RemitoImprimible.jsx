@@ -5,33 +5,44 @@ import { formatearFecha } from '../utils/fechas';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
 
-function chunkItems(items) {
+function chunkItems(items, densidad = 'auto') {
     if (!items || items.length === 0) return [[]];
     const total = items.length;
 
-    // Si son 18 o menos ítems, entran holgadamente en 1 SOLA HOJA A4 completa (membrete, tabla, QR, totales y firmas)
-    if (total <= 18) return [items];
+    // 1. Modo Compacto forzado: hasta 34 ítems entran en 1 hoja
+    if (densidad === 'compacto' && total <= 34) {
+        return [items];
+    }
+
+    // 2. Modo Auto Inteligente: hasta 28 ítems entran en 1 sola hoja A4 completa
+    if (densidad === 'auto' && total <= 28) {
+        return [items];
+    }
+
+    // 3. Modo Cómodo / Espacioso: hasta 16 ítems en 1 hoja
+    if (densidad === 'comodo' && total <= 16) {
+        return [items];
+    }
 
     const pages = [];
-    // Capacidad máxima de ítems:
-    const maxFirstPage = 24;  // Hoja 1 cuando continúa (sin totales ni firmas)
-    const maxLastPage = 18;   // Última hoja (con totales, QR y firmas)
-    const maxMiddlePage = 28; // Hojas intermedias (cabecera compacta)
+    // En Hoja 1 entran hasta 30-32 ítems cómodamente porque no lleva totales ni firmas
+    const maxFirstPage = densidad === 'compacto' ? 34 : 30;
+    const maxMiddlePage = densidad === 'compacto' ? 36 : 32;
+    const maxLastPage = densidad === 'compacto' ? 26 : 22;
 
-    // Caso de 2 hojas (entre 19 y 40 ítems)
+    // Caso de 2 hojas (entre 29 y 54 ítems)
     if (total <= maxFirstPage + maxLastPage) {
-        // Balanceamos para que la última hoja tenga un número armónico de ítems (mínimo 6)
-        let firstPageCount = Math.min(maxFirstPage, total - 6);
-        if (firstPageCount < 14) firstPageCount = Math.ceil(total / 2);
+        let firstPageCount = Math.min(maxFirstPage, total <= 38 ? Math.max(18, total - 8) : maxFirstPage);
+        if (firstPageCount >= total) firstPageCount = total - 6;
         pages.push(items.slice(0, firstPageCount));
         pages.push(items.slice(firstPageCount));
         return pages;
     }
 
     // Caso de 3 o más hojas
-    let firstCount = maxFirstPage;
-    pages.push(items.slice(0, firstCount));
-    let remaining = items.slice(firstCount);
+    let remaining = [...items];
+    pages.push(remaining.slice(0, maxFirstPage));
+    remaining = remaining.slice(maxFirstPage);
 
     while (remaining.length > 0) {
         if (remaining.length <= maxLastPage) {
@@ -40,7 +51,7 @@ function chunkItems(items) {
         }
         let take = maxMiddlePage;
         if (remaining.length - take < 5) {
-            take = remaining.length - 7;
+            take = remaining.length - 8;
         }
         pages.push(remaining.slice(0, take));
         remaining = remaining.slice(take);
@@ -368,6 +379,129 @@ function getPrintCss() {
         .muted {
             color: #666;
         }
+
+        /* ========================================================
+           MODO COMPACTO INTELIGENTE (AHORRO MÁXIMO DE ESPACIO / 1 HOJA)
+           ======================================================== */
+        .remito-page-a4.compact-mode {
+            padding: 4.5mm 8mm 4mm 8mm !important;
+        }
+        .remito-page-a4.compact-mode .remito-header {
+            padding-bottom: 2px !important;
+            gap: 6px !important;
+        }
+        .remito-page-a4.compact-mode .remito-logo {
+            width: 30px !important;
+            height: 30px !important;
+        }
+        .remito-page-a4.compact-mode .remito-brand-title {
+            font-size: 12.5px !important;
+            line-height: 1.1 !important;
+        }
+        .remito-page-a4.compact-mode .remito-brand-sub {
+            font-size: 6.5px !important;
+            margin: 0 !important;
+        }
+        .remito-page-a4.compact-mode .remito-brand-web {
+            display: none !important;
+        }
+        .remito-page-a4.compact-mode .remito-company-data {
+            font-size: 7px !important;
+            line-height: 1.15 !important;
+        }
+        .remito-page-a4.compact-mode .remito-company-data p {
+            margin: 0.5px 0 !important;
+        }
+        .remito-page-a4.compact-mode .remito-letter-box {
+            width: 28px !important;
+            height: 28px !important;
+        }
+        .remito-page-a4.compact-mode .remito-letter-box .letter {
+            font-size: 14px !important;
+        }
+        .remito-page-a4.compact-mode .doc-type-badge {
+            font-size: 5.5px !important;
+            padding: 1px 3px !important;
+            margin-top: 1px !important;
+        }
+        .remito-page-a4.compact-mode .remito-num-box {
+            padding: 2px 6px !important;
+            margin-bottom: 1px !important;
+        }
+        .remito-page-a4.compact-mode .remito-title {
+            font-size: 10px !important;
+        }
+        .remito-page-a4.compact-mode .remito-number {
+            font-size: 10.5px !important;
+        }
+        .remito-page-a4.compact-mode .remito-meta-list {
+            font-size: 7px !important;
+            line-height: 1.15 !important;
+        }
+        .remito-page-a4.compact-mode .remito-meta-list p {
+            margin: 0.5px 0 !important;
+        }
+        .remito-page-a4.compact-mode .remito-info-grid {
+            padding: 2px 6px !important;
+            margin: 2px 0 2px 0 !important;
+            font-size: 7.5px !important;
+            line-height: 1.15 !important;
+            gap: 6px !important;
+        }
+        .remito-page-a4.compact-mode .remito-info-col p {
+            margin: 0.5px 0 !important;
+        }
+        .remito-page-a4.compact-mode .remito-table {
+            margin-bottom: 2px !important;
+            font-size: 7.5px !important;
+        }
+        .remito-page-a4.compact-mode .remito-table th {
+            padding: 1.5px 4px !important;
+            font-size: 7px !important;
+        }
+        .remito-page-a4.compact-mode .remito-table td {
+            padding: 1px 4px !important;
+            line-height: 1.1 !important;
+            font-size: 7.5px !important;
+        }
+        .remito-page-a4.compact-mode .remito-payment-qr-box {
+            padding: 2px 5px !important;
+            gap: 5px !important;
+            max-width: 240px !important;
+        }
+        .remito-page-a4.compact-mode .remito-qr-img {
+            width: 32px !important;
+            height: 32px !important;
+        }
+        .remito-page-a4.compact-mode .remito-totals-box {
+            padding: 2px 6px !important;
+            min-width: 230px !important;
+        }
+        .remito-page-a4.compact-mode .remito-total-row {
+            font-size: 10px !important;
+        }
+        .remito-page-a4.compact-mode .remito-total-num {
+            font-size: 11.5px !important;
+        }
+        .remito-page-a4.compact-mode .remito-signatures-grid {
+            gap: 16px !important;
+            margin-top: 2px !important;
+            padding-top: 2px !important;
+        }
+        .remito-page-a4.compact-mode .sig-line {
+            margin-bottom: 2px !important;
+        }
+        .remito-page-a4.compact-mode .sig-label {
+            font-size: 6.5px !important;
+        }
+        .remito-page-a4.compact-mode .sig-sub {
+            font-size: 5.5px !important;
+        }
+        .remito-page-a4.compact-mode .remito-legal-footer {
+            margin-top: 2px !important;
+            padding-top: 2px !important;
+            font-size: 6px !important;
+        }
     `;
 }
 
@@ -377,6 +511,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     const [paginaActiva, setPaginaActiva] = useState('todas'); // 'todas' | 0 | 1...
     const [zoomScale, setZoomScale] = useState(0.85);
     const [modoAjuste, setModoAjuste] = useState('auto'); // 'auto' | '100' | 'manual'
+    const [densidad, setDensidad] = useState('auto'); // 'auto' | 'compacto' | 'comodo'
 
     useEffect(() => {
         const calcularAuto = () => {
@@ -466,7 +601,9 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
 
     if (!remito) return null;
 
-    const pages = chunkItems(remito.items || []);
+    const totalItems = remito.items?.length || 0;
+    const isCompact = densidad === 'compacto' || (densidad === 'auto' && totalItems >= 15);
+    const pages = chunkItems(remito.items || [], densidad);
     const fechaFormateada = formatearFecha(remito.fecha || new Date());
 
     const handlePrint = () => {
@@ -620,9 +757,48 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                         <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>
                             {fmtMoney(remito.total)}
                         </span>
-                        <span className="text-xs muted">
-                            ({remito.items?.length || 0} ítems en {totalPages} {totalPages === 1 ? 'hoja' : 'hojas'})
+                        <span className="badge" style={{
+                            fontSize: 11,
+                            background: totalPages === 1 ? '#ECFDF5' : '#FEF3C7',
+                            color: totalPages === 1 ? '#065F46' : '#92400E',
+                            border: `1px solid ${totalPages === 1 ? '#A7F3D0' : '#FDE68A'}`,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5
+                        }}>
+                            {totalPages === 1 ? '🌱 1 Hoja (Ahorro de papel)' : `📄 ${totalPages} Hojas`} · {remito.items?.length || 0} ítems
                         </span>
+
+                        <div className="row gap-xs" style={{ background: 'var(--color-bg)', padding: '2px 5px', borderRadius: 6, border: '1px solid var(--color-border)', alignItems: 'center' }}>
+                            <span style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 600, paddingLeft: 4 }}>Densidad:</span>
+                            <button
+                                type="button"
+                                className={`btn btn-xs ${densidad === 'auto' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setDensidad('auto')}
+                                style={{ padding: '2px 7px', fontSize: 11 }}
+                                title="Auto: adapta automáticamente hasta 28 productos en 1 sola hoja"
+                            >
+                                ⚡ Auto
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn btn-xs ${densidad === 'compacto' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setDensidad('compacto')}
+                                style={{ padding: '2px 7px', fontSize: 11 }}
+                                title="Forzar modo compacto (1 hoja hasta 34 productos)"
+                            >
+                                🌱 Compacto
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn btn-xs ${densidad === 'comodo' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setDensidad('comodo')}
+                                style={{ padding: '2px 7px', fontSize: 11 }}
+                                title="Modo espacioso tradicional"
+                            >
+                                📄 Amplio
+                            </button>
+                        </div>
                     </div>
 
                     {/* SELECTOR DE PÁGINAS Y ZOOM */}
@@ -780,7 +956,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                 }}
                             >
                                 <div
-                                    className="remito-page-a4"
+                                    className={`remito-page-a4 ${isCompact ? 'compact-mode' : ''}`}
                                     style={{
                                         width: `${baseWidthPx}px`,
                                         height: `${baseHeightPx}px`,
