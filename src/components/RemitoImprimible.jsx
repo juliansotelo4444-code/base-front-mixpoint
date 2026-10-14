@@ -10,31 +10,31 @@ function chunkItems(items, densidad = 'auto') {
     if (!items || items.length === 0) return [[]];
     const total = items.length;
 
-    // 1. Modo Compacto forzado: hasta 34 ítems entran en 1 hoja
-    if (densidad === 'compacto' && total <= 34) {
+    // 1. Modo Compacto forzado: hasta 40 ítems entran en 1 hoja
+    if (densidad === 'compacto' && total <= 40) {
         return [items];
     }
 
-    // 2. Modo Auto Inteligente: hasta 28 ítems entran en 1 sola hoja A4 completa
-    if (densidad === 'auto' && total <= 28) {
+    // 2. Modo Auto Inteligente: hasta 36 ítems entran en 1 sola hoja A4 completa sin desperdicio
+    if (densidad === 'auto' && total <= 36) {
         return [items];
     }
 
-    // 3. Modo Cómodo / Espacioso: hasta 16 ítems en 1 hoja
-    if (densidad === 'comodo' && total <= 16) {
+    // 3. Modo Cómodo / Espacioso: hasta 18 ítems en 1 hoja
+    if (densidad === 'comodo' && total <= 18) {
         return [items];
     }
 
     const pages = [];
-    // En Hoja 1 entran hasta 30-32 ítems cómodamente porque no lleva totales ni firmas
-    const maxFirstPage = densidad === 'compacto' ? 34 : 30;
-    const maxMiddlePage = densidad === 'compacto' ? 36 : 32;
-    const maxLastPage = densidad === 'compacto' ? 26 : 22;
+    // En Hoja 1 entran hasta 34 ítems cómodamente porque no lleva totales ni firmas
+    const maxFirstPage = densidad === 'compacto' ? 38 : 34;
+    const maxMiddlePage = densidad === 'compacto' ? 40 : 36;
+    const maxLastPage = densidad === 'compacto' ? 30 : 26;
 
-    // Caso de 2 hojas (entre 29 y 54 ítems)
+    // Caso de 2 hojas (entre 37 y 64 ítems)
     if (total <= maxFirstPage + maxLastPage) {
-        let firstPageCount = Math.min(maxFirstPage, total <= 38 ? Math.max(18, total - 8) : maxFirstPage);
-        if (firstPageCount >= total) firstPageCount = total - 6;
+        // Llenar Hoja 1 de forma pareja y óptima (nunca dejarla a la mitad)
+        const firstPageCount = Math.min(maxFirstPage, Math.ceil(total * 0.58));
         pages.push(items.slice(0, firstPageCount));
         pages.push(items.slice(firstPageCount));
         return pages;
@@ -64,42 +64,47 @@ function getPrintCss() {
     return `
         @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 5mm 8mm 5mm 8mm;
         }
         * {
-            box-sizing: border-box;
+            box-sizing: border-box !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
         html, body {
-            margin: 0;
-            padding: 0;
-            background: #ffffff;
-            color: #1a1a1a;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            color: #1a1a1a !important;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            font-size: 10px;
-            line-height: 1.25;
+            font-size: 9px;
+            line-height: 1.2;
         }
         .remito-page-a4 {
-            width: 210mm;
-            height: 296mm;
-            min-height: 296mm;
-            max-height: 296mm;
-            padding: 8mm 11mm 6mm 11mm;
-            margin: 0 auto;
-            page-break-after: always;
-            break-after: page;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            min-height: auto !important;
+            max-height: 286mm !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
             position: relative;
             background: #ffffff;
-            overflow: hidden;
-            box-sizing: border-box;
+            box-sizing: border-box !important;
         }
         .remito-page-a4:last-child {
-            page-break-after: avoid;
-            break-after: avoid;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+        }
+        .remito-page-a4.compact-mode {
+            padding: 0 !important;
         }
         .page-screen-badge {
             display: none !important;
@@ -603,7 +608,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     if (!remito) return null;
 
     const totalItems = remito.items?.length || 0;
-    const isCompact = densidad === 'compacto' || (densidad === 'auto' && totalItems >= 15);
+    const isCompact = densidad === 'compacto' || (densidad === 'auto' && totalItems >= 10);
     const pages = chunkItems(remito.items || [], densidad);
     const fechaFormateada = formatearFecha(remito.fecha || new Date());
 
@@ -617,8 +622,17 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
         const pageNodes = root.querySelectorAll('.remito-page-a4');
         let sheetsHtml = '';
         if (pageNodes && pageNodes.length > 0) {
-            pageNodes.forEach(node => {
-                sheetsHtml += node.outerHTML;
+            Array.from(pageNodes).forEach(node => {
+                const clone = node.cloneNode(true);
+                // Limpiar dimensiones fijas en píxeles del zoom de pantalla para que la hoja A4 de impresión sea perfecta
+                clone.style.width = '';
+                clone.style.height = '';
+                clone.style.minHeight = '';
+                clone.style.maxHeight = '';
+                clone.style.margin = '';
+                clone.style.boxShadow = '';
+                clone.style.transform = '';
+                sheetsHtml += clone.outerHTML;
             });
         } else {
             sheetsHtml = root.innerHTML;
@@ -777,16 +791,16 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                 className={`btn btn-xs ${densidad === 'auto' ? 'btn-primary' : 'btn-ghost'}`}
                                 onClick={() => setDensidad('auto')}
                                 style={{ padding: '2px 7px', fontSize: 11 }}
-                                title="Auto: adapta automáticamente hasta 28 productos en 1 sola hoja"
+                                title="Auto: adapta automáticamente hasta 36 productos en 1 sola hoja sin desperdicio"
                             >
-                                ⚡ Auto
+                                ⚡ Auto (1 Hoja)
                             </button>
                             <button
                                 type="button"
                                 className={`btn btn-xs ${densidad === 'compacto' ? 'btn-primary' : 'btn-ghost'}`}
                                 onClick={() => setDensidad('compacto')}
                                 style={{ padding: '2px 7px', fontSize: 11 }}
-                                title="Forzar modo compacto (1 hoja hasta 34 productos)"
+                                title="Forzar modo ultra compacto (hasta 40 productos en 1 sola hoja)"
                             >
                                 🌱 Compacto
                             </button>
