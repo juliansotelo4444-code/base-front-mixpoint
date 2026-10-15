@@ -10,31 +10,30 @@ function chunkItems(items, densidad = 'auto') {
     if (!items || items.length === 0) return [[]];
     const total = items.length;
 
-    // 1. Modo Compacto forzado: hasta 40 ítems entran en 1 hoja
-    if (densidad === 'compacto' && total <= 40) {
+    // 1. Modo Compacto forzado: hasta 24 ítems entran en 1 sola hoja A4
+    if (densidad === 'compacto' && total <= 24) {
         return [items];
     }
 
-    // 2. Modo Auto Inteligente: hasta 36 ítems entran en 1 sola hoja A4 completa sin desperdicio
-    if (densidad === 'auto' && total <= 36) {
+    // 2. Modo Auto Inteligente: hasta 18 ítems entran de forma impecable y súper legible en 1 hoja
+    if (densidad === 'auto' && total <= 18) {
         return [items];
     }
 
-    // 3. Modo Cómodo / Espacioso: hasta 18 ítems en 1 hoja
-    if (densidad === 'comodo' && total <= 18) {
+    // 3. Modo Cómodo / Espacioso: hasta 12 ítems en 1 hoja
+    if (densidad === 'comodo' && total <= 12) {
         return [items];
     }
 
     const pages = [];
-    // En Hoja 1 entran hasta 34 ítems cómodamente porque no lleva totales ni firmas
-    const maxFirstPage = densidad === 'compacto' ? 38 : 34;
-    const maxMiddlePage = densidad === 'compacto' ? 40 : 36;
-    const maxLastPage = densidad === 'compacto' ? 30 : 26;
+    // En Hoja 1 entran hasta 22 ítems porque no lleva totales ni firmas
+    const maxFirstPage = densidad === 'compacto' ? 24 : 20;
+    const maxMiddlePage = densidad === 'compacto' ? 26 : 22;
+    const maxLastPage = densidad === 'compacto' ? 18 : 14;
 
-    // Caso de 2 hojas (entre 37 y 64 ítems)
+    // Caso de 2 hojas
     if (total <= maxFirstPage + maxLastPage) {
-        // Llenar Hoja 1 de forma pareja y óptima (nunca dejarla a la mitad)
-        const firstPageCount = Math.min(maxFirstPage, Math.ceil(total * 0.58));
+        const firstPageCount = Math.min(maxFirstPage, Math.ceil(total * 0.55));
         pages.push(items.slice(0, firstPageCount));
         pages.push(items.slice(firstPageCount));
         return pages;
@@ -51,8 +50,8 @@ function chunkItems(items, densidad = 'auto') {
             break;
         }
         let take = maxMiddlePage;
-        if (remaining.length - take < 5) {
-            take = remaining.length - 8;
+        if (remaining.length - take < 4) {
+            take = remaining.length - 6;
         }
         pages.push(remaining.slice(0, take));
         remaining = remaining.slice(take);
@@ -64,7 +63,7 @@ function getPrintCss() {
     return `
         @page {
             size: A4 portrait;
-            margin: 5mm 8mm 5mm 8mm;
+            margin: 7mm 10mm 7mm 10mm;
         }
         * {
             box-sizing: border-box !important;
@@ -75,17 +74,17 @@ function getPrintCss() {
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
-            color: #1a1a1a !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            font-size: 9px;
-            line-height: 1.2;
+            color: #0f172a !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.35;
         }
         .remito-page-a4 {
             width: 100% !important;
             max-width: 100% !important;
-            height: auto !important;
-            min-height: auto !important;
-            max-height: 286mm !important;
+            height: 281mm !important;
+            min-height: 281mm !important;
+            max-height: 281mm !important;
             padding: 0 !important;
             margin: 0 auto !important;
             page-break-after: always !important;
@@ -94,79 +93,94 @@ function getPrintCss() {
             break-inside: avoid !important;
             display: flex !important;
             flex-direction: column !important;
-            justify-content: flex-start !important;
+            justify-content: space-between !important;
             position: relative;
-            background: #ffffff;
+            background: #ffffff !important;
             box-sizing: border-box !important;
         }
         .remito-page-a4:last-child {
             page-break-after: avoid !important;
             break-after: avoid !important;
         }
-        .remito-page-a4.compact-mode {
-            padding: 0 !important;
-        }
         .page-screen-badge {
             display: none !important;
         }
+
+        .remito-top-block {
+            flex-shrink: 0;
+        }
+        .remito-middle-block {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            margin: 4px 0 8px 0;
+        }
+        .remito-bottom-block {
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+
+        /* ENCABEZADO */
         .remito-header {
             display: grid;
-            grid-template-columns: 1.4fr 0.6fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1.45fr 0.55fr 1fr;
+            gap: 12px;
             align-items: center;
-            border-bottom: 1.5px solid #1a1a1a;
-            padding-bottom: 5px;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 7px;
         }
         .remito-compact-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1.5px solid #1a1a1a;
-            padding-bottom: 5px;
-            margin-bottom: 6px;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
         }
         .remito-logo-row {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 3px;
+            gap: 10px;
+            margin-bottom: 4px;
         }
         .remito-logo {
-            width: 42px;
-            height: 42px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             object-fit: cover;
             border: 1.5px solid #c9a227;
         }
         .remito-brand-title {
-            font-size: 14.5px;
+            font-size: 17px;
             font-weight: 800;
             color: #1a382b;
             margin: 0;
             letter-spacing: 0.02em;
-            line-height: 1.15;
+            line-height: 1.2;
         }
         .remito-brand-sub {
-            font-size: 7.5px;
+            font-size: 8.5px;
             font-weight: 700;
-            color: #c88a35;
+            color: #b45309;
             letter-spacing: 0.04em;
             margin: 1px 0 0;
         }
         .remito-brand-web {
-            font-size: 8px;
+            font-size: 9px;
             font-weight: 600;
             color: #1a382b;
             margin-top: 1px;
         }
         .remito-company-data {
-            font-size: 8.5px;
-            color: #444;
-            line-height: 1.25;
+            font-size: 9.5px;
+            color: #334155;
+            line-height: 1.35;
         }
         .remito-company-data p {
             margin: 1px 0;
         }
+
+        /* CUADRO LETRA R */
         .remito-header-center {
             display: flex;
             flex-direction: column;
@@ -175,35 +189,40 @@ function getPrintCss() {
             text-align: center;
         }
         .remito-letter-box {
-            width: 38px;
-            height: 38px;
-            border: 1.5px solid #1a1a1a;
+            width: 44px;
+            height: 44px;
+            border: 2px solid #0f172a;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #fff;
+            background: #ffffff;
         }
         .remito-letter-box .letter {
-            font-size: 19px;
+            font-size: 23px;
             font-weight: 900;
             line-height: 1;
+            color: #0f172a;
         }
         .remito-letter-box .code {
-            font-size: 6.5px;
+            font-size: 7px;
             font-weight: 700;
             letter-spacing: 0.04em;
+            color: #0f172a;
         }
         .doc-type-badge {
             font-size: 6.5px;
-            font-weight: 700;
+            font-weight: 800;
             margin-top: 3px;
-            background: #f0ede1;
-            padding: 1px 4px;
-            border-radius: 2px;
-            border: 1px solid #d4cbb3;
+            background: #f1f5f9;
+            padding: 2px 5px;
+            border-radius: 3px;
+            border: 1px solid #cbd5e1;
             white-space: nowrap;
+            color: #334155;
         }
+
+        /* DATOS NUMERACIÓN */
         .remito-header-right {
             text-align: right;
             display: flex;
@@ -211,167 +230,187 @@ function getPrintCss() {
             align-items: flex-end;
         }
         .remito-num-box {
-            background: #faf8f2;
-            border: 1.5px solid #1a1a1a;
-            padding: 3px 8px;
-            border-radius: 3px;
-            margin-bottom: 3px;
+            background: #f8fafc;
+            border: 1.5px solid #0f172a;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-bottom: 4px;
             text-align: right;
             width: 100%;
         }
         .remito-title {
-            font-size: 12.5px;
+            font-size: 13.5px;
             font-weight: 800;
             letter-spacing: 0.08em;
-            color: #1a1a1a;
+            color: #0f172a;
             line-height: 1.1;
         }
         .remito-number {
-            font-size: 12px;
-            font-weight: 700;
+            font-size: 13.5px;
+            font-weight: 800;
             color: #1a382b;
             font-family: monospace;
             line-height: 1.2;
         }
         .remito-meta-list {
-            font-size: 8.5px;
-            color: #333;
-            line-height: 1.25;
+            font-size: 9.5px;
+            color: #334155;
+            line-height: 1.35;
         }
         .remito-meta-list p {
             margin: 1px 0;
         }
+
+        /* CUADRO CLIENTE Y ENTREGA */
         .remito-info-grid {
             display: grid;
-            grid-template-columns: 1.1fr 1fr;
-            gap: 10px;
-            background: #fdfbf7;
-            border: 1px solid #e2dac9;
-            border-radius: 4px;
-            padding: 4px 8px;
-            margin: 5px 0;
-            font-size: 9px;
-            line-height: 1.25;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 12px;
+            background: #fafaf9;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 5px;
+            padding: 6px 12px;
+            margin: 6px 0 8px 0;
+            font-size: 10.5px;
+            line-height: 1.4;
         }
         .remito-info-col p {
-            margin: 1px 0;
+            margin: 2px 0;
         }
+
+        /* TABLA DE MERCADERÍA */
         .remito-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 5px;
-            font-size: 9px;
+            font-size: 10.5px;
         }
         .remito-table th {
-            background: #1a382b !important;
-            color: #ffffff !important;
-            font-weight: 700;
-            font-size: 8px;
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            font-weight: 800;
+            font-size: 9.5px;
             letter-spacing: 0.03em;
-            padding: 3px 5px;
-            border: 1px solid #1a382b;
+            padding: 5px 7px;
+            border: 1.5px solid #0f172a;
             text-transform: uppercase;
+            text-align: left;
+        }
+        .remito-table th.text-right {
+            text-align: right;
         }
         .remito-table td {
-            padding: 2.5px 5px;
-            border: 1px solid #e1dcc9;
+            padding: 5.5px 7px;
+            border: 1px solid #cbd5e1;
             vertical-align: middle;
-            line-height: 1.2;
+            line-height: 1.3;
         }
         .remito-table tbody tr:nth-child(even) {
-            background: #faf8f2;
+            background: #fbfbfb;
+        }
+        .remito-table tbody tr.remito-row-fill td {
+            padding: 5px 7px;
+            color: #cbd5e1;
+            border: 1px solid #e2e8f0;
         }
         .remito-item-desc {
-            font-size: 8px;
-            color: #666;
+            font-size: 9px;
+            color: #64748b;
             font-style: italic;
         }
-        .remito-continuation-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px dashed #c4b99f;
-            padding-top: 4px;
-            font-size: 8.5px;
-            color: #555;
-            font-weight: 600;
-            margin-top: auto;
-        }
+
+        /* PAGOS Y TOTALES */
         .remito-payment-qr-box {
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: #fdfbf7;
-            border: 1px solid #d4cbb3;
-            border-radius: 4px;
-            padding: 3px 6px;
-            max-width: 290px;
+            gap: 10px;
+            background: #fafaf9;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 5px;
+            padding: 6px 10px;
+            max-width: 330px;
         }
         .remito-qr-img {
-            width: 48px;
-            height: 48px;
-            border: 1px solid #e1dcc9;
-            border-radius: 3px;
-            background: #fff;
+            width: 58px;
+            height: 58px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            background: #ffffff;
         }
         .remito-totals-box {
-            background: #f7f3eb;
-            border: 1.5px solid #d4cbb3;
-            border-radius: 4px;
-            padding: 4px 8px;
+            background: #f8fafc;
+            border: 2px solid #0f172a;
+            border-radius: 5px;
+            padding: 6px 14px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            min-width: 290px;
         }
         .remito-total-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 11.5px;
-            font-weight: 800;
+            font-size: 13px;
+            font-weight: 900;
             color: #1a382b;
         }
         .remito-total-num {
-            font-size: 13.5px;
+            font-size: 18px;
+            font-weight: 900;
             color: #1a382b;
             font-family: monospace;
         }
+
+        /* FIRMAS */
         .remito-signatures-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-top: 6px;
-            padding-top: 4px;
+            gap: 40px;
+            margin-top: 12px;
+            padding: 0 10px;
         }
         .signature-box {
             text-align: center;
         }
         .sig-line {
-            border-top: 1px dashed #555;
-            margin-bottom: 3px;
+            border-top: 1.5px dashed #4b5563;
+            margin-top: 30px;
+            margin-bottom: 4px;
             height: 1px;
         }
         .sig-label {
-            font-size: 8px;
+            font-size: 9.5px;
             font-weight: 700;
-            letter-spacing: 0.03em;
-            color: #1a1a1a;
+            letter-spacing: 0.04em;
+            color: #0f172a;
             margin: 0;
         }
         .sig-sub {
-            font-size: 7px;
-            color: #777;
-            margin-top: 1px;
+            font-size: 8px;
+            color: #64748b;
+            margin-top: 2px;
         }
+
+        /* PIE LEGAL */
         .remito-legal-footer {
-            border-top: 1px solid #e1dcc9;
-            margin-top: 6px;
-            padding-top: 3px;
-            font-size: 7.5px;
-            color: #888;
+            border-top: 1px solid #cbd5e1;
+            margin-top: 8px;
+            padding-top: 4px;
+            font-size: 8px;
+            color: #94a3b8;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        .remito-continuation-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1.5px dashed #64748b;
+            padding-top: 6px;
+            font-size: 10px;
+            color: #334155;
+            font-weight: 700;
         }
         .mono {
             font-family: monospace;
@@ -380,133 +419,61 @@ function getPrintCss() {
             text-align: right;
         }
         .text-sm {
-            font-size: 8.5px;
+            font-size: 9.5px;
         }
         .muted {
-            color: #666;
+            color: #64748b;
         }
 
         /* ========================================================
-           MODO COMPACTO INTELIGENTE (AHORRO MÁXIMO DE ESPACIO / 1 HOJA)
+           MODO COMPACTO (SÓLO CUANDO HAY MUCHOS ÍTEMS: > 12 ÍTEMS)
            ======================================================== */
-        .remito-page-a4.compact-mode {
-            padding: 4.5mm 8mm 4mm 8mm !important;
-        }
         .remito-page-a4.compact-mode .remito-header {
-            padding-bottom: 2px !important;
-            gap: 6px !important;
+            padding-bottom: 4px !important;
+            gap: 8px !important;
         }
         .remito-page-a4.compact-mode .remito-logo {
-            width: 30px !important;
-            height: 30px !important;
+            width: 38px !important;
+            height: 38px !important;
         }
         .remito-page-a4.compact-mode .remito-brand-title {
-            font-size: 12.5px !important;
-            line-height: 1.1 !important;
-        }
-        .remito-page-a4.compact-mode .remito-brand-sub {
-            font-size: 6.5px !important;
-            margin: 0 !important;
-        }
-        .remito-page-a4.compact-mode .remito-brand-web {
-            display: none !important;
+            font-size: 15px !important;
         }
         .remito-page-a4.compact-mode .remito-company-data {
-            font-size: 7px !important;
-            line-height: 1.15 !important;
-        }
-        .remito-page-a4.compact-mode .remito-company-data p {
-            margin: 0.5px 0 !important;
-        }
-        .remito-page-a4.compact-mode .remito-letter-box {
-            width: 28px !important;
-            height: 28px !important;
-        }
-        .remito-page-a4.compact-mode .remito-letter-box .letter {
-            font-size: 14px !important;
-        }
-        .remito-page-a4.compact-mode .doc-type-badge {
-            font-size: 5.5px !important;
-            padding: 1px 3px !important;
-            margin-top: 1px !important;
-        }
-        .remito-page-a4.compact-mode .remito-num-box {
-            padding: 2px 6px !important;
-            margin-bottom: 1px !important;
-        }
-        .remito-page-a4.compact-mode .remito-title {
-            font-size: 10px !important;
-        }
-        .remito-page-a4.compact-mode .remito-number {
-            font-size: 10.5px !important;
-        }
-        .remito-page-a4.compact-mode .remito-meta-list {
-            font-size: 7px !important;
-            line-height: 1.15 !important;
-        }
-        .remito-page-a4.compact-mode .remito-meta-list p {
-            margin: 0.5px 0 !important;
+            font-size: 8.5px !important;
+            line-height: 1.25 !important;
         }
         .remito-page-a4.compact-mode .remito-info-grid {
-            padding: 2px 6px !important;
-            margin: 2px 0 2px 0 !important;
-            font-size: 7.5px !important;
-            line-height: 1.15 !important;
-            gap: 6px !important;
-        }
-        .remito-page-a4.compact-mode .remito-info-col p {
-            margin: 0.5px 0 !important;
+            padding: 4px 8px !important;
+            margin: 4px 0 !important;
+            font-size: 9.5px !important;
+            line-height: 1.25 !important;
         }
         .remito-page-a4.compact-mode .remito-table {
-            margin-bottom: 2px !important;
-            font-size: 7.5px !important;
+            font-size: 9.5px !important;
         }
         .remito-page-a4.compact-mode .remito-table th {
-            padding: 1.5px 4px !important;
-            font-size: 7px !important;
+            padding: 3.5px 5px !important;
+            font-size: 8.5px !important;
         }
         .remito-page-a4.compact-mode .remito-table td {
-            padding: 1px 4px !important;
-            line-height: 1.1 !important;
-            font-size: 7.5px !important;
-        }
-        .remito-page-a4.compact-mode .remito-payment-qr-box {
-            padding: 2px 5px !important;
-            gap: 5px !important;
-            max-width: 240px !important;
+            padding: 3px 5px !important;
+            font-size: 9.5px !important;
+            line-height: 1.2 !important;
         }
         .remito-page-a4.compact-mode .remito-qr-img {
-            width: 32px !important;
-            height: 32px !important;
-        }
-        .remito-page-a4.compact-mode .remito-totals-box {
-            padding: 2px 6px !important;
-            min-width: 230px !important;
-        }
-        .remito-page-a4.compact-mode .remito-total-row {
-            font-size: 10px !important;
+            width: 46px !important;
+            height: 46px !important;
         }
         .remito-page-a4.compact-mode .remito-total-num {
-            font-size: 11.5px !important;
-        }
-        .remito-page-a4.compact-mode .remito-signatures-grid {
-            gap: 16px !important;
-            margin-top: 2px !important;
-            padding-top: 2px !important;
+            font-size: 15px !important;
         }
         .remito-page-a4.compact-mode .sig-line {
-            margin-bottom: 2px !important;
+            margin-top: 18px !important;
         }
-        .remito-page-a4.compact-mode .sig-label {
-            font-size: 6.5px !important;
-        }
-        .remito-page-a4.compact-mode .sig-sub {
-            font-size: 5.5px !important;
-        }
-        .remito-page-a4.compact-mode .remito-legal-footer {
-            margin-top: 2px !important;
-            padding-top: 2px !important;
-            font-size: 6px !important;
+        .remito-page-a4.compact-mode .remito-signatures-grid {
+            margin-top: 8px !important;
+            gap: 24px !important;
         }
     `;
 }
@@ -608,7 +575,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
     if (!remito) return null;
 
     const totalItems = remito.items?.length || 0;
-    const isCompact = densidad === 'compacto' || (densidad === 'auto' && totalItems >= 10);
+    const isCompact = densidad === 'compacto' || (densidad === 'auto' && totalItems > 12);
     const pages = chunkItems(remito.items || [], densidad);
     const fechaFormateada = formatearFecha(remito.fecha || new Date());
 
@@ -1002,8 +969,8 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                         HOJA {pageNumber} DE {totalPages}
                                     </div>
 
-                            {/* CONTENIDO SUPERIOR */}
-                            <div>
+                            {/* 1. SECCIÓN SUPERIOR: ENCABEZADO Y DATOS DE CLIENTE */}
+                            <div className="remito-top-block">
                                 {isFirstPage ? (
                                     /* ENCABEZADO COMPLETO (HOJA 1) */
                                     <>
@@ -1056,13 +1023,13 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                         {/* DATOS DEL CLIENTE Y ENTREGA */}
                                         <div className="remito-info-grid">
                                             <div className="remito-info-col">
-                                                <p><strong>Señor(es) / Razón Social:</strong> {remito.cliente_nombre || 'Consumidor Final'}</p>
+                                                <p><strong>Señor(es) / Razón Social:</strong> <strong style={{ color: '#0f172a' }}>{remito.cliente_nombre || 'Consumidor Final'}</strong></p>
                                                 <p><strong>CUIT / DNI:</strong> {remito.cliente_cuit || '—'}</p>
                                                 <p><strong>Condición IVA:</strong> {remito.cliente_condicion_iva || 'Consumidor Final'}</p>
                                                 <p><strong>Teléfono / WhatsApp:</strong> {remito.cliente_telefono || '—'}</p>
                                             </div>
                                             <div className="remito-info-col">
-                                                <p><strong>Dirección de Entrega:</strong> {remito.direccion_entrega || remito.cliente_direccion || 'Retira en depósito'}</p>
+                                                <p><strong>Dirección de Entrega:</strong> <strong>{remito.direccion_entrega || remito.cliente_direccion || 'Retira en depósito'}</strong></p>
                                                 <p><strong>Transporte / Chofer:</strong> {remito.transportista || 'Distribución propia'}</p>
                                                 <p><strong>Condición de Venta:</strong> Cuenta Corriente / Venta Mayorista</p>
                                             </div>
@@ -1075,11 +1042,11 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                             <img
                                                 src="/logo-mixpoint.png"
                                                 alt="Mix Point"
-                                                style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
+                                                style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover' }}
                                                 onError={(e) => { e.target.style.display = 'none'; }}
                                             />
                                             <div>
-                                                <strong style={{ fontSize: 12, color: '#1a382b' }}>DISTRIBUIDORA MIX POINT</strong>
+                                                <strong style={{ fontSize: 13, color: '#1a382b' }}>DISTRIBUIDORA MIX POINT</strong>
                                                 <span className="muted" style={{ fontSize: 11, marginLeft: 8 }}>· Remito {remito.numero}</span>
                                             </div>
                                         </div>
@@ -1093,18 +1060,20 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                         </div>
                                     </div>
                                 )}
+                            </div>
 
-                                {/* TABLA DE MERCADERÍA DE ESTA PÁGINA */}
+                            {/* 2. SECCIÓN MEDIA: TABLA DE MERCADERÍA */}
+                            <div className="remito-middle-block">
                                 <table className="remito-table">
                                     <thead>
                                         <tr>
-                                            <th style={{ width: '75px' }}>CÓDIGO</th>
+                                            <th style={{ width: '80px' }}>CÓDIGO</th>
                                             <th>DESCRIPCIÓN DE LA MERCADERÍA</th>
-                                            <th style={{ width: '100px' }}>LOTE / VTO.</th>
-                                            <th style={{ width: '80px' }} className="text-right">CANTIDAD</th>
+                                            <th style={{ width: '105px' }}>LOTE / VTO.</th>
+                                            <th style={{ width: '85px' }} className="text-right">CANTIDAD</th>
                                             <th style={{ width: '50px' }}>UNID.</th>
-                                            <th style={{ width: '100px' }} className="text-right">P. UNITARIO</th>
-                                            <th style={{ width: '110px' }} className="text-right">SUBTOTAL</th>
+                                            <th style={{ width: '105px' }} className="text-right">P. UNITARIO</th>
+                                            <th style={{ width: '115px' }} className="text-right">SUBTOTAL</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1119,34 +1088,47 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                                     {it.numero_lote || 'L-GENERAL'}
                                                     {it.fecha_vencimiento && <div className="muted text-xs">Vto: {it.fecha_vencimiento.slice(0, 10)}</div>}
                                                 </td>
-                                                <td className="mono text-right" style={{ fontWeight: 600 }}>{it.cantidad}</td>
+                                                <td className="mono text-right" style={{ fontWeight: 700 }}>{it.cantidad}</td>
                                                 <td>{it.unidad_medida || 'kg'}</td>
                                                 <td className="mono text-right">{fmtMoney(it.precio_unitario)}</td>
-                                                <td className="mono text-right" style={{ fontWeight: 600 }}>{fmtMoney(it.subtotal || (it.cantidad * it.precio_unitario))}</td>
+                                                <td className="mono text-right" style={{ fontWeight: 700 }}>{fmtMoney(it.subtotal || (it.cantidad * it.precio_unitario))}</td>
+                                            </tr>
+                                        ))}
+
+                                        {/* Filas de relleno estético si hay pocos productos para que el remito no quede vacío */}
+                                        {isLastPage && pageItems.length < 7 && Array.from({ length: 7 - pageItems.length }).map((_, fIdx) => (
+                                            <tr key={`fill-${fIdx}`} className="remito-row-fill">
+                                                <td className="mono text-sm" style={{ color: '#cbd5e1' }}>—</td>
+                                                <td style={{ color: '#cbd5e1' }}>&nbsp;</td>
+                                                <td className="mono text-sm" style={{ color: '#cbd5e1' }}>—</td>
+                                                <td className="mono text-right" style={{ color: '#cbd5e1' }}>—</td>
+                                                <td style={{ color: '#cbd5e1' }}>—</td>
+                                                <td className="mono text-right" style={{ color: '#cbd5e1' }}>—</td>
+                                                <td className="mono text-right" style={{ color: '#cbd5e1' }}>—</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* CONTENIDO INFERIOR */}
-                            <div>
+                            {/* 3. SECCIÓN INFERIOR: TOTALES, PAGOS, FIRMAS Y PIE LEGAL */}
+                            <div className="remito-bottom-block">
                                 {isLastPage ? (
                                     /* TOTALES Y FIRMAS EN LA ÚLTIMA HOJA */
                                     <>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6, gap: 10 }}>
                                             <div className="remito-payment-qr-box">
                                                 {qrDataUrl && <img src={qrDataUrl} alt="QR Pago" className="remito-qr-img" />}
-                                                <div style={{ fontSize: 9, lineHeight: 1.35 }}>
-                                                    <div style={{ fontWeight: 800, color: '#1a382b', fontSize: 10 }}>PAGO POR TRANSFERENCIA</div>
-                                                    <div><strong>Alias:</strong> <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '1px 5px', borderRadius: 3 }}>mixpoint2026</span></div>
+                                                <div style={{ fontSize: 9.5, lineHeight: 1.35 }}>
+                                                    <div style={{ fontWeight: 800, color: '#1a382b', fontSize: 10.5 }}>PAGO POR TRANSFERENCIA</div>
+                                                    <div><strong>Alias:</strong> <span className="mono" style={{ fontSize: 11.5, fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '1px 5px', borderRadius: 3, border: '1px solid #FDE68A' }}>mixpoint2026</span></div>
                                                     <div><strong>Titular:</strong> Mix Point Mayorista</div>
                                                     <div><strong>WhatsApp:</strong> 1167873243</div>
-                                                    <div style={{ color: '#555', fontStyle: 'italic', marginTop: 2, fontSize: 8.5 }}>🔍 Trazabilidad de lotes bajo norma FEFO</div>
+                                                    <div style={{ color: '#475569', fontStyle: 'italic', marginTop: 2, fontSize: 8.5 }}>🔍 Trazabilidad de lotes bajo norma FEFO</div>
                                                 </div>
                                             </div>
 
-                                            <div className="remito-totals-box" style={{ minWidth: 280 }}>
+                                            <div className="remito-totals-box">
                                                 {Number(remito.descuento_porcentaje) > 0 && (
                                                     <>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#555', marginBottom: 2 }}>
