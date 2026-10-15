@@ -7,7 +7,7 @@ import HojaDeRutaModal from '../components/HojaDeRutaModal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import EtiquetaDespachoModal from '../components/EtiquetaDespachoModal';
 import { IconPlus, IconBuscar } from '../components/Icons';
-import { getFechaHoyLocal, formatearFecha } from '../utils/fechas';
+import { getFechaHoyLocal, formatearFecha, esFechaDeHoy } from '../utils/fechas';
 import { exportarRemitoAWord } from '../utils/remitoWordExport';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
@@ -63,6 +63,8 @@ export default function Remitos() {
     const [q, setQ] = useState('');
     const [estadoFiltro, setEstadoFiltro] = useState('');
     const [estadoPagoFiltro, setEstadoPagoFiltro] = useState('');
+    const [filtroPeriodo, setFiltroPeriodo] = useState('hoy'); // 'hoy' | 'pendientes' | 'preparacion' | 'camino' | 'entregados' | 'todos'
+    const [modoVista, setModoVista] = useState('tarjetas'); // 'tarjetas' | 'tabla'
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [clienteRapidoOpen, setClienteRapidoOpen] = useState(false);
@@ -156,9 +158,30 @@ export default function Remitos() {
         cargar();
     }, [estadoFiltro, estadoPagoFiltro]);
 
+    // Métricas y filtrado inteligente de pedidos de hoy
+    const remitosHoy = remitos.filter(r => esFechaDeHoy(r.fecha));
+    const pendientesHoy = remitosHoy.filter(r => r.estado === 'pendiente');
+    const preparacionHoy = remitosHoy.filter(r => r.estado === 'en_preparacion');
+    const caminoHoy = remitosHoy.filter(r => r.estado === 'en_camino');
+    const entregadosHoy = remitosHoy.filter(r => r.estado === 'entregado');
+    const totalMontoHoy = remitosHoy.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
+
+    let remitosFiltradosPorPeriodo = remitos;
+    if (filtroPeriodo === 'hoy') {
+        remitosFiltradosPorPeriodo = remitosHoy;
+    } else if (filtroPeriodo === 'pendientes') {
+        remitosFiltradosPorPeriodo = remitosHoy.filter(r => r.estado === 'pendiente');
+    } else if (filtroPeriodo === 'preparacion') {
+        remitosFiltradosPorPeriodo = remitosHoy.filter(r => r.estado === 'en_preparacion');
+    } else if (filtroPeriodo === 'camino') {
+        remitosFiltradosPorPeriodo = remitosHoy.filter(r => r.estado === 'en_camino');
+    } else if (filtroPeriodo === 'entregados') {
+        remitosFiltradosPorPeriodo = remitosHoy.filter(r => r.estado === 'entregado');
+    }
+
     const remitosFiltrados = q
-        ? remitos.filter(r => (r.cliente_nombre && r.cliente_nombre.toLowerCase().includes(q.toLowerCase())) || (r.numero && r.numero.toLowerCase().includes(q.toLowerCase())))
-        : remitos;
+        ? remitosFiltradosPorPeriodo.filter(r => (r.cliente_nombre && r.cliente_nombre.toLowerCase().includes(q.toLowerCase())) || (r.numero && r.numero.toLowerCase().includes(q.toLowerCase())))
+        : remitosFiltradosPorPeriodo;
 
     function abrirNuevo() {
         setClienteId('');
@@ -445,14 +468,17 @@ export default function Remitos() {
 
     return (
         <div className="stack gap-lg">
-            <div className="spread page-header">
+            {/* CABECERA PRINCIPAL */}
+            <div className="spread page-header" style={{ flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                    <h1 style={{ fontSize: 26 }}>Remitos comerciales</h1>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-primary-dark)' }}>
+                        Pedidos y Remitos
+                    </h1>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>
-                        {remitos.length} pedidos y remitos · Pipeline de 7 estados · Mix Point Mayorista
+                        Monitoreo logístico y comercial · Mix Point Mayorista
                     </p>
                 </div>
-                <div className="row gap-sm">
+                <div className="row gap-sm" style={{ flexWrap: 'wrap' }}>
                     {seleccionados.length > 0 && (
                         <>
                             <button
@@ -473,9 +499,207 @@ export default function Remitos() {
                             )}
                         </>
                     )}
-                    <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14 }}>
+                    <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14, fontWeight: 700, padding: '9px 18px' }}>
                         <IconPlus /> Generar nuevo remito
                     </button>
+                </div>
+            </div>
+
+            {/* PANEL DESTACADO: PEDIDOS DEL DÍA Y KPIs GRANDES */}
+            <div className="card" style={{ padding: '20px 22px', background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 14 }}>
+                <div className="spread" style={{ alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: 28 }}>📦</span>
+                            <div>
+                                <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--color-text)' }}>
+                                    {filtroPeriodo === 'todos' ? 'Histórico General de Remitos' : 'Pedidos del Día (Hoy)'}
+                                </h2>
+                                <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+                                    {filtroPeriodo === 'todos'
+                                        ? `Mostrando los ${remitos.length} remitos históricos registrados`
+                                        : `Resumen de hoy: ${remitosHoy.length} pedidos emitidos (${fmtMoney(totalMontoHoy)})`}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SELECTOR DE VISTA: TARJETAS GRANDES VS TABLA DETALLADA */}
+                    <div style={{ background: 'var(--color-bg)', padding: 4, borderRadius: 10, border: '1.5px solid var(--color-border)', display: 'inline-flex', gap: 4 }}>
+                        <button
+                            type="button"
+                            className={`btn btn-sm ${modoVista === 'tarjetas' ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={() => setModoVista('tarjetas')}
+                            style={{ padding: '6px 14px', fontSize: 13, fontWeight: 700 }}
+                        >
+                            🎴 Tarjetas Grandes
+                        </button>
+                        <button
+                            type="button"
+                            className={`btn btn-sm ${modoVista === 'tabla' ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={() => setModoVista('tabla')}
+                            style={{ padding: '6px 14px', fontSize: 13, fontWeight: 700 }}
+                        >
+                            📋 Tabla Clásica
+                        </button>
+                    </div>
+                </div>
+
+                {/* BOTONES / TARJETAS KPI GRANDES DE ESTADO */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: 12
+                }}>
+                    {/* TOTAL HOY */}
+                    <div
+                        onClick={() => setFiltroPeriodo('hoy')}
+                        style={{
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            background: filtroPeriodo === 'hoy' ? '#1A382B' : '#FAF9F4',
+                            color: filtroPeriodo === 'hoy' ? '#FFFFFF' : '#1A382B',
+                            border: `2px solid ${filtroPeriodo === 'hoy' ? '#1A382B' : '#E2DAC9'}`,
+                            boxShadow: filtroPeriodo === 'hoy' ? '0 4px 12px rgba(26,56,43,0.25)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }}
+                    >
+                        <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.85 }}>
+                            🌟 Total Hoy
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4 }}>
+                            {remitosHoy.length}
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4, opacity: 0.9 }}>
+                            {fmtMoney(totalMontoHoy)}
+                        </div>
+                    </div>
+
+                    {/* PENDIENTES */}
+                    <div
+                        onClick={() => setFiltroPeriodo('pendientes')}
+                        style={{
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            background: filtroPeriodo === 'pendientes' ? '#FEF3C7' : '#FFFDF7',
+                            border: `2px solid ${filtroPeriodo === 'pendientes' ? '#D97706' : '#FDE68A'}`,
+                            color: '#92400E',
+                            boxShadow: filtroPeriodo === 'pendientes' ? '0 4px 12px rgba(217,119,6,0.2)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }}
+                    >
+                        <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            🟡 Pendientes
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4, color: '#B45309' }}>
+                            {pendientesHoy.length}
+                        </div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4, color: '#92400E' }}>
+                            Por preparar
+                        </div>
+                    </div>
+
+                    {/* EN PREPARACIÓN */}
+                    <div
+                        onClick={() => setFiltroPeriodo('preparacion')}
+                        style={{
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            background: filtroPeriodo === 'preparacion' ? '#DBEAFE' : '#F8FAFF',
+                            border: `2px solid ${filtroPeriodo === 'preparacion' ? '#2563EB' : '#BFDBFE'}`,
+                            color: '#1E40AF',
+                            boxShadow: filtroPeriodo === 'preparacion' ? '0 4px 12px rgba(37,99,235,0.2)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }}
+                    >
+                        <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            🔵 En Prep.
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4, color: '#1D4ED8' }}>
+                            {preparacionHoy.length}
+                        </div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4, color: '#1E40AF' }}>
+                            En depósito
+                        </div>
+                    </div>
+
+                    {/* EN CAMINO */}
+                    <div
+                        onClick={() => setFiltroPeriodo('camino')}
+                        style={{
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            background: filtroPeriodo === 'camino' ? '#FFEDD5' : '#FFFBF7',
+                            border: `2px solid ${filtroPeriodo === 'camino' ? '#EA580C' : '#FED7AA'}`,
+                            color: '#9A3412',
+                            boxShadow: filtroPeriodo === 'camino' ? '0 4px 12px rgba(234,88,12,0.2)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }}
+                    >
+                        <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            🟠 En Camino
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4, color: '#C2410C' }}>
+                            {caminoHoy.length}
+                        </div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4, color: '#9A3412' }}>
+                            En reparto
+                        </div>
+                    </div>
+
+                    {/* ENTREGADOS */}
+                    <div
+                        onClick={() => setFiltroPeriodo('entregados')}
+                        style={{
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            background: filtroPeriodo === 'entregados' ? '#D1FAE5' : '#F6FDF9',
+                            border: `2px solid ${filtroPeriodo === 'entregados' ? '#059669' : '#A7F3D0'}`,
+                            color: '#065F46',
+                            boxShadow: filtroPeriodo === 'entregados' ? '0 4px 12px rgba(5,150,105,0.2)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }}
+                    >
+                        <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            🟢 Entregados
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4, color: '#047857' }}>
+                            {entregadosHoy.length}
+                        </div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4, color: '#065F46' }}>
+                            Completados
+                        </div>
+                    </div>
+
+                    {/* HISTÓRICO COMPLETO */}
+                    <div
+                        onClick={() => setFiltroPeriodo('todos')}
+                        style={{
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            background: filtroPeriodo === 'todos' ? '#475569' : '#F8FAFC',
+                            color: filtroPeriodo === 'todos' ? '#FFFFFF' : '#334155',
+                            border: `2px solid ${filtroPeriodo === 'todos' ? '#475569' : '#E2E8F0'}`,
+                            boxShadow: filtroPeriodo === 'todos' ? '0 4px 12px rgba(71,85,105,0.2)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }}
+                    >
+                        <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            📑 Histórico
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4 }}>
+                            {remitos.length}
+                        </div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4 }}>
+                            Ver todos
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -515,321 +739,584 @@ export default function Remitos() {
                         <option value="pendiente">⏳ Pago Pendiente</option>
                         <option value="pagado">✓ Pagado / Validado</option>
                         <option value="parcial">🌓 Pago Parcial</option>
-                        <option value="en_revision">🔍 En Revisión</option>
-                        <option value="cuenta_corriente">📑 A Cuenta Cte.</option>
+                        <option value="cuenta_corriente">📑 A Cuenta Corriente</option>
                         <option value="bonificado">🎁 Bonificado</option>
                     </select>
                 </div>
 
-                {/* VISTA TABLA PARA ESCRITORIO */}
-                <div className="desktop-only-table table-wrap">
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th style={{ width: 36, textAlign: 'center' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={remitosFiltrados.length > 0 && seleccionados.length === remitosFiltrados.length}
-                                        onChange={(e) => {
-                                            if (e.target.checked) setSeleccionados(remitosFiltrados.map(r => r.id));
-                                            else setSeleccionados([]);
-                                        }}
-                                        style={{ cursor: 'pointer', width: 16, height: 16 }}
-                                        title="Seleccionar todos"
-                                    />
-                                </th>
-                                <th style={{ minWidth: 85, whiteSpace: 'nowrap' }}>Número</th>
-                                <th style={{ minWidth: 150 }}>Cliente</th>
-                                <th style={{ minWidth: 90, whiteSpace: 'nowrap' }}>Fecha</th>
-                                <th style={{ minWidth: 140, whiteSpace: 'nowrap' }}>Estado Tracker</th>
-                                <th style={{ minWidth: 130, whiteSpace: 'nowrap' }}>Validación Pago</th>
-                                <th className="text-right" style={{ minWidth: 100, whiteSpace: 'nowrap' }}>Total</th>
-                                <th className="text-right" style={{ minWidth: 260, whiteSpace: 'nowrap' }}>Acciones Rápidas</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                {modoVista === 'tarjetas' ? (
+                    /* VISTA DE TARJETAS GRANDES Y LEGIBLES */
+                    <div style={{ padding: '16px 18px' }}>
+                        {remitosFiltrados.length === 0 ? (
+                            <div style={{ padding: 48, textAlign: 'center' }}>
+                                <div style={{ fontSize: 44 }}>📦</div>
+                                <h3 style={{ fontSize: 19, color: 'var(--color-text)', marginTop: 10, fontWeight: 700 }}>
+                                    No hay pedidos en esta selección
+                                </h3>
+                                <p className="text-sm muted" style={{ marginTop: 4 }}>
+                                    Probá seleccionando "🌟 Total Hoy" o "📑 Histórico" para ver otros pedidos.
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+                                gap: 16
+                            }}>
+                                {remitosFiltrados.map(r => {
+                                    const estadoInfo = ESTADOS[r.estado] || { label: r.estado, badgeClass: 'badge-neutral', icon: '⚪' };
+                                    const estadoPagoKey = r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente');
+                                    const infoPago = ESTADOS_PAGO[estadoPagoKey] || ESTADOS_PAGO.pendiente;
+                                    const isCambiando = cambiandoEstadoId === r.id;
+
+                                    const colorBordeEstado =
+                                        r.estado === 'pendiente' ? '#F59E0B' :
+                                        r.estado === 'en_preparacion' ? '#3B82F6' :
+                                        r.estado === 'esperando_pago' ? '#8B5CF6' :
+                                        r.estado === 'en_camino' ? '#F97316' :
+                                        r.estado === 'entregado' ? '#10B981' :
+                                        r.estado === 'facturado' ? '#0284C7' : '#EF4444';
+
+                                    return (
+                                        <div
+                                            key={r.id}
+                                            className="card-hover-gold"
+                                            style={{
+                                                padding: '18px 20px',
+                                                borderRadius: 14,
+                                                border: '1.5px solid var(--color-border)',
+                                                borderLeft: `7px solid ${colorBordeEstado}`,
+                                                background: '#FFFFFF',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between',
+                                                gap: 14,
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                                            }}
+                                        >
+                                            {/* CABECERA DE LA TARJETA */}
+                                            <div className="spread" style={{ alignItems: 'flex-start' }}>
+                                                <div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <span
+                                                            className="mono"
+                                                            style={{ fontSize: 17, fontWeight: 900, color: 'var(--color-primary-dark)', cursor: 'pointer' }}
+                                                            onClick={() => verDetalle(r)}
+                                                            title="Clic para ver detalle completo"
+                                                        >
+                                                            {r.numero}
+                                                        </span>
+                                                        <span className="mono muted text-xs" style={{ background: '#F1F5F9', padding: '2px 6px', borderRadius: 4 }}>
+                                                            {formatearFecha(r.fecha)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* BADGES GRANDES DE ESTADO LOGÍSTICO Y PAGO */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                                                    <select
+                                                        value={r.estado}
+                                                        disabled={isCambiando}
+                                                        onChange={(e) => cambiarEstado(r.id, e.target.value)}
+                                                        className={`badge ${estadoInfo.badgeClass}`}
+                                                        style={{
+                                                            fontSize: 12.5,
+                                                            fontWeight: 800,
+                                                            padding: '4px 10px',
+                                                            borderRadius: 8,
+                                                            cursor: 'pointer',
+                                                            border: 'none'
+                                                        }}
+                                                        title="Clic para cambiar el estado logístico del pedido"
+                                                    >
+                                                        <option value="pendiente">🟡 PENDIENTE</option>
+                                                        <option value="en_preparacion">🔵 EN PREPARACIÓN</option>
+                                                        <option value="esperando_pago">🟣 ESPERANDO PAGO</option>
+                                                        <option value="en_camino">🟠 EN CAMINO</option>
+                                                        <option value="entregado">🟢 ENTREGADO</option>
+                                                        <option value="facturado">🔷 FACTURADO</option>
+                                                        <option value="cancelado">🔴 CANCELADO</option>
+                                                    </select>
+
+                                                    <span style={{
+                                                        fontSize: 11,
+                                                        fontWeight: 700,
+                                                        padding: '2px 8px',
+                                                        borderRadius: 6,
+                                                        background: infoPago.bg,
+                                                        color: infoPago.color,
+                                                        border: `1px solid ${infoPago.border}`
+                                                    }}>
+                                                        {infoPago.label}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* CUERPO: CLIENTE, TELÉFONO, DIRECCIÓN Y TRANSPORTE */}
+                                            <div style={{ cursor: 'pointer' }} onClick={() => verDetalle(r)}>
+                                                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.25 }}>
+                                                    {r.cliente_nombre}
+                                                </div>
+
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 8, fontSize: 12.5, color: 'var(--color-text-muted)' }}>
+                                                    {r.cliente_telefono && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                            <span>📞 {r.cliente_telefono}</span>
+                                                            <a
+                                                                href={buildWhatsAppLink(r)}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                style={{
+                                                                    fontSize: 11,
+                                                                    color: '#047857',
+                                                                    background: '#ECFDF5',
+                                                                    border: '1px solid #A7F3D0',
+                                                                    borderRadius: 5,
+                                                                    padding: '2px 7px',
+                                                                    textDecoration: 'none',
+                                                                    fontWeight: 700
+                                                                }}
+                                                                title="Abrir chat de WhatsApp con el cliente"
+                                                            >
+                                                                💬 WhatsApp
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                    {(r.direccion_entrega || r.cliente_direccion) && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                            <span>📍</span>
+                                                            <span>{r.direccion_entrega || r.cliente_direccion}</span>
+                                                        </div>
+                                                    )}
+                                                    {r.transportista && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                            <span>🚚 Chofer:</span>
+                                                            <strong style={{ color: 'var(--color-text)' }}>{r.transportista}</strong>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* PIE DE TARJETA: TOTAL Y BOTÓN DE AVANCE RÁPIDO */}
+                                            <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 12 }}>
+                                                <div className="spread" style={{ alignItems: 'center', marginBottom: 10 }}>
+                                                    <div>
+                                                        <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                            Total Pedido
+                                                        </div>
+                                                        <div className="mono" style={{ fontSize: 24, fontWeight: 900, color: 'var(--color-primary-dark)' }}>
+                                                            {fmtMoney(r.total)}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* BOTÓN RÁPIDO 1-CLIC PARA AVANZAR EL ESTADO */}
+                                                    <div>
+                                                        {r.estado === 'pendiente' && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm"
+                                                                onClick={() => cambiarEstado(r.id, 'en_preparacion')}
+                                                                style={{ background: '#DBEAFE', color: '#1D4ED8', border: '1.5px solid #3B82F6', fontWeight: 800, padding: '7px 14px', fontSize: 12.5, borderRadius: 8 }}
+                                                                title="Pasar a preparación en depósito"
+                                                            >
+                                                                🔵 Preparar ➔
+                                                            </button>
+                                                        )}
+                                                        {r.estado === 'en_preparacion' && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm"
+                                                                onClick={() => cambiarEstado(r.id, 'en_camino')}
+                                                                style={{ background: '#FFEDD5', color: '#C2410C', border: '1.5px solid #F97316', fontWeight: 800, padding: '7px 14px', fontSize: 12.5, borderRadius: 8 }}
+                                                                title="Marcar que salió en reparto"
+                                                            >
+                                                                🟠 Despachar ➔
+                                                            </button>
+                                                        )}
+                                                        {r.estado === 'en_camino' && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm"
+                                                                onClick={() => cambiarEstado(r.id, 'entregado')}
+                                                                style={{ background: '#D1FAE5', color: '#047857', border: '1.5px solid #10B981', fontWeight: 800, padding: '7px 14px', fontSize: 12.5, borderRadius: 8 }}
+                                                                title="Confirmar entrega al cliente"
+                                                            >
+                                                                🟢 Entregado ✓
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* ACCIONES DE DOCUMENTO Y EDICIÓN */}
+                                                <div className="row gap-xs" style={{ flexWrap: 'wrap', paddingTop: 4 }}>
+                                                    <button
+                                                        className="btn btn-primary btn-sm"
+                                                        onClick={() => imprimirRemito(r.id)}
+                                                        style={{ padding: '5px 11px', fontSize: 12, fontWeight: 700 }}
+                                                        title="Imprimir remito comercial en A4 o PDF"
+                                                    >
+                                                        🖨️ Remito A4
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-secondary btn-sm"
+                                                        onClick={() => exportarRemitoAWord(r)}
+                                                        style={{ padding: '5px 11px', fontSize: 12, borderColor: '#93C5FD', color: '#1E40AF', background: '#EFF6FF', fontWeight: 700 }}
+                                                        title="Descargar en Word (.doc) para editarlo a mano"
+                                                    >
+                                                        📄 Word
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-secondary btn-sm"
+                                                        onClick={() => abrirEtiquetas(r)}
+                                                        style={{ padding: '5px 10px', fontSize: 12, borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600 }}
+                                                        title="Etiquetas de despacho para bultos"
+                                                    >
+                                                        🏷️ Etiqueta
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => abrirEditarRemito(r)}
+                                                        style={{ padding: '5px 9px', fontSize: 12, color: '#B45309', fontWeight: 600 }}
+                                                        title="Editar cantidades o productos"
+                                                    >
+                                                        ✏️ Editar
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => verDetalle(r)}
+                                                        style={{ padding: '5px 9px', fontSize: 12 }}
+                                                        title="Ver detalle del remito"
+                                                    >
+                                                        👁️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <>
+                        {/* VISTA TABLA PARA ESCRITORIO */}
+                        <div className="desktop-only-table table-wrap">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: 36, textAlign: 'center' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={remitosFiltrados.length > 0 && seleccionados.length === remitosFiltrados.length}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) setSeleccionados(remitosFiltrados.map(r => r.id));
+                                                    else setSeleccionados([]);
+                                                }}
+                                                style={{ cursor: 'pointer', width: 16, height: 16 }}
+                                                title="Seleccionar todos"
+                                            />
+                                        </th>
+                                        <th style={{ minWidth: 85, whiteSpace: 'nowrap' }}>Número</th>
+                                        <th style={{ minWidth: 150 }}>Cliente</th>
+                                        <th style={{ minWidth: 90, whiteSpace: 'nowrap' }}>Fecha</th>
+                                        <th style={{ minWidth: 140, whiteSpace: 'nowrap' }}>Estado Tracker</th>
+                                        <th style={{ minWidth: 130, whiteSpace: 'nowrap' }}>Validación Pago</th>
+                                        <th className="text-right" style={{ minWidth: 100, whiteSpace: 'nowrap' }}>Total</th>
+                                        <th className="text-right" style={{ minWidth: 260, whiteSpace: 'nowrap' }}>Acciones Rápidas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {remitosFiltrados.map(r => {
+                                        const estadoInfo = ESTADOS[r.estado] || { label: r.estado, badgeClass: 'badge-neutral', icon: '⚪' };
+                                        const isCambiando = cambiandoEstadoId === r.id;
+
+                                        return (
+                                            <tr key={r.id}>
+                                                <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={seleccionados.includes(r.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSeleccionados([...seleccionados, r.id]);
+                                                            else setSeleccionados(seleccionados.filter(id => id !== r.id));
+                                                        }}
+                                                        style={{ cursor: 'pointer', width: 16, height: 16 }}
+                                                    />
+                                                </td>
+                                                <td className="mono" style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--color-primary-dark)', whiteSpace: 'nowrap' }} onClick={() => verDetalle(r)}>
+                                                    {r.numero}
+                                                </td>
+                                                <td style={{ fontWeight: 600, cursor: 'pointer' }} onClick={() => verDetalle(r)}>
+                                                    <div>{r.cliente_nombre}</div>
+                                                    {r.cliente_telefono && (
+                                                        <div style={{ marginTop: 2 }}>
+                                                            <a
+                                                                href={buildWhatsAppLink(r)}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                style={{
+                                                                    fontSize: 11,
+                                                                    color: '#059669',
+                                                                    textDecoration: 'none',
+                                                                    fontWeight: 600,
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 4
+                                                                }}
+                                                                title="Abrir chat de WhatsApp con el cliente"
+                                                            >
+                                                                💬 {r.cliente_telefono}
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="mono" style={{ whiteSpace: 'nowrap' }}>{formatearFecha(r.fecha)}</td>
+                                                <td style={{ whiteSpace: 'nowrap' }}>
+                                                    <div className="row gap-xs">
+                                                        <select
+                                                            value={r.estado}
+                                                            disabled={isCambiando}
+                                                            onChange={(e) => cambiarEstado(r.id, e.target.value)}
+                                                            className={`badge ${estadoInfo.badgeClass}`}
+                                                            style={{ border: 'none', cursor: 'pointer', padding: '4px 8px', fontWeight: 600, appearance: 'none', WebkitAppearance: 'none' }}
+                                                            title="Hacé clic para cambiar estado del pedido"
+                                                        >
+                                                            <option value="pendiente">🟡 Pendiente</option>
+                                                            <option value="en_preparacion">🔵 En Preparación</option>
+                                                            <option value="esperando_pago">🟣 Esperando Pago</option>
+                                                            <option value="en_camino">🟠 En Camino</option>
+                                                            <option value="entregado">🟢 Entregado</option>
+                                                            <option value="facturado">🔷 Facturado</option>
+                                                            <option value="cancelado">🔴 Cancelado</option>
+                                                        </select>
+                                                    </div>
+                                                </td>
+                                                <td style={{ whiteSpace: 'nowrap' }}>
+                                                    {(() => {
+                                                        const estadoPagoKey = r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente');
+                                                        const infoPago = ESTADOS_PAGO[estadoPagoKey] || ESTADOS_PAGO.pendiente;
+                                                        const isCambiandoPago = cambiandoEstadoId === `pago-${r.id}`;
+
+                                                        return (
+                                                            <select
+                                                                value={estadoPagoKey}
+                                                                disabled={isCambiandoPago}
+                                                                onChange={(e) => cambiarEstadoPago(r.id, e.target.value)}
+                                                                className={`badge ${infoPago.badgeClass}`}
+                                                                style={{
+                                                                    border: `1px solid ${infoPago.border}`,
+                                                                    background: infoPago.bg,
+                                                                    color: infoPago.color,
+                                                                    cursor: 'pointer',
+                                                                    padding: '4px 8px',
+                                                                    fontWeight: 600,
+                                                                    appearance: 'none',
+                                                                    WebkitAppearance: 'none'
+                                                                }}
+                                                                title="Clic para cambiar el estado de pago del pedido"
+                                                            >
+                                                                <option value="pendiente">⏳ Pago Pendiente</option>
+                                                                <option value="pagado">✓ Pagado / Validado</option>
+                                                                <option value="parcial">🌓 Pago Parcial</option>
+                                                                <option value="en_revision">🔍 En Revisión</option>
+                                                                <option value="cuenta_corriente">📑 A Cuenta Cte.</option>
+                                                                <option value="bonificado">🎁 Bonificado</option>
+                                                            </select>
+                                                        );
+                                                    })()}
+                                                </td>
+                                                <td className="text-right mono" style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                    {fmtMoney(r.total)}
+                                                    {Number(r.descuento_porcentaje) > 0 && (
+                                                        <div className="text-xs" style={{ color: '#B23A3A' }}>
+                                                            (-{r.descuento_porcentaje}%)
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
+                                                    <div className="row gap-xs" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                                                        <a
+                                                            href={buildWhatsAppLink(r)}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="btn btn-secondary btn-sm"
+                                                            style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5', padding: '5px 8px', fontSize: 12 }}
+                                                            title="Enviar estado y datos de pago por WhatsApp (1167873243)"
+                                                        >
+                                                            📲 WA
+                                                        </a>
+                                                        <button
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => abrirEditarRemito(r)}
+                                                            title="Editar remito y rebalancear stock (ACID)"
+                                                            style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
+                                                        >
+                                                            ✏️ Editar
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => imprimirRemito(r.id)}
+                                                            title="Imprimir remito con QR mixpoint2026"
+                                                            style={{ padding: '5px 8px', fontSize: 12 }}
+                                                        >
+                                                            🖨️ QR
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => exportarRemitoAWord(r)}
+                                                            title="Descargar en Word (.doc)"
+                                                            style={{ borderColor: '#93C5FD', color: '#1E40AF', background: '#EFF6FF', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
+                                                        >
+                                                            📄 Word
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => abrirEtiquetas(r)}
+                                                            title="Generar etiquetas de despacho con transporte, bultos y peso"
+                                                            style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
+                                                        >
+                                                            🏷️ Etiqueta
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-sm"
+                                                            onClick={() => verDetalle(r)}
+                                                            style={{ padding: '5px 8px', fontSize: 12 }}
+                                                            title="Ver detalle del remito"
+                                                        >
+                                                            👁️
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* VISTA DE CARDS OPTIMIZADA PARA CELULARES */}
+                        <div className="mobile-only-cards">
                             {remitosFiltrados.map(r => {
                                 const estadoInfo = ESTADOS[r.estado] || { label: r.estado, badgeClass: 'badge-neutral', icon: '⚪' };
                                 const isCambiando = cambiandoEstadoId === r.id;
+                                const estaSel = seleccionados.includes(r.id);
 
                                 return (
-                                    <tr key={r.id}>
-                                        <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                            <input
-                                                type="checkbox"
-                                                checked={seleccionados.includes(r.id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) setSeleccionados([...seleccionados, r.id]);
-                                                    else setSeleccionados(seleccionados.filter(id => id !== r.id));
-                                                }}
-                                                style={{ cursor: 'pointer', width: 16, height: 16 }}
-                                            />
-                                        </td>
-                                        <td className="mono" style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--color-primary-dark)', whiteSpace: 'nowrap' }} onClick={() => verDetalle(r)}>
-                                            {r.numero}
-                                        </td>
-                                        <td style={{ fontWeight: 600, cursor: 'pointer' }} onClick={() => verDetalle(r)}>
-                                            <div>{r.cliente_nombre}</div>
+                                    <div key={`mob-${r.id}`} className="remito-mobile-card" style={{ borderLeft: `4px solid ${r.pago_validado ? '#10B981' : '#F59E0B'}` }}>
+                                        <div className="remito-mobile-header">
+                                            <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={estaSel}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) setSeleccionados([...seleccionados, r.id]);
+                                                        else setSeleccionados(seleccionados.filter(id => id !== r.id));
+                                                    }}
+                                                    style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
+                                                />
+                                                <strong className="mono" style={{ fontSize: 15, color: 'var(--color-primary-dark)', cursor: 'pointer' }} onClick={() => verDetalle(r)}>
+                                                    {r.numero}
+                                                </strong>
+                                            </div>
+                                            <span className="mono muted text-xs">
+                                                📅 {formatearFecha(r.fecha)}
+                                            </span>
+                                        </div>
+
+                                        <div className="remito-mobile-body" onClick={() => verDetalle(r)} style={{ cursor: 'pointer' }}>
+                                            <div style={{ fontWeight: 700, fontSize: 14 }}>
+                                                {r.cliente_nombre}
+                                            </div>
                                             {r.cliente_telefono && (
-                                                <div style={{ marginTop: 2 }}>
-                                                    <a
-                                                        href={buildWhatsAppLink(r)}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        style={{
-                                                            fontSize: 11,
-                                                            color: '#059669',
-                                                            textDecoration: 'none',
-                                                            fontWeight: 600,
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: 4
-                                                        }}
-                                                        title="Abrir chat de WhatsApp con el cliente"
-                                                    >
-                                                        💬 {r.cliente_telefono}
-                                                    </a>
+                                                <div className="text-xs" style={{ color: '#059669', fontWeight: 600 }}>
+                                                    💬 {r.cliente_telefono}
                                                 </div>
                                             )}
-                                        </td>
-                                        <td className="mono" style={{ whiteSpace: 'nowrap' }}>{formatearFecha(r.fecha)}</td>
-                                        <td style={{ whiteSpace: 'nowrap' }}>
-                                            <div className="row gap-xs">
+                                        </div>
+
+                                        <div className="spread" style={{ alignItems: 'center', marginTop: 2 }}>
+                                            <div className="row gap-xs" style={{ alignItems: 'center' }}>
                                                 <select
                                                     value={r.estado}
                                                     disabled={isCambiando}
                                                     onChange={(e) => cambiarEstado(r.id, e.target.value)}
                                                     className={`badge ${estadoInfo.badgeClass}`}
-                                                    style={{ border: 'none', cursor: 'pointer', padding: '4px 8px', fontWeight: 600, appearance: 'none', WebkitAppearance: 'none' }}
-                                                    title="Hacé clic para cambiar estado del pedido"
+                                                    style={{ border: 'none', cursor: 'pointer', padding: '4px 8px', fontWeight: 600, fontSize: 11 }}
                                                 >
                                                     <option value="pendiente">🟡 Pendiente</option>
-                                                    <option value="en_preparacion">🔵 En Preparación</option>
-                                                    <option value="esperando_pago">🟣 Esperando Pago</option>
+                                                    <option value="en_preparacion">🔵 En Prep.</option>
+                                                    <option value="esperando_pago">🟣 Esp. Pago</option>
                                                     <option value="en_camino">🟠 En Camino</option>
                                                     <option value="entregado">🟢 Entregado</option>
                                                     <option value="facturado">🔷 Facturado</option>
                                                     <option value="cancelado">🔴 Cancelado</option>
                                                 </select>
+                                                <select
+                                                    value={r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente')}
+                                                    disabled={cambiandoEstadoId === `pago-${r.id}`}
+                                                    onChange={(e) => cambiarEstadoPago(r.id, e.target.value)}
+                                                    className={`badge ${ESTADOS_PAGO[r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente')]?.badgeClass || 'badge-pago-pendiente'}`}
+                                                    style={{ border: 'none', cursor: 'pointer', padding: '4px 6px', fontWeight: 600, fontSize: 10.5 }}
+                                                    title="Cambiar estado de pago"
+                                                >
+                                                    <option value="pendiente">⏳ Pendiente</option>
+                                                    <option value="pagado">✓ Pagado</option>
+                                                    <option value="parcial">🌓 Parcial</option>
+                                                    <option value="en_revision">🔍 Revisión</option>
+                                                    <option value="cuenta_corriente">📑 Cta. Cte.</option>
+                                                    <option value="bonificado">🎁 Bonif.</option>
+                                                </select>
                                             </div>
-                                        </td>
-                                        <td style={{ whiteSpace: 'nowrap' }}>
-                                            {(() => {
-                                                const estadoPagoKey = r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente');
-                                                const infoPago = ESTADOS_PAGO[estadoPagoKey] || ESTADOS_PAGO.pendiente;
-                                                const isCambiandoPago = cambiandoEstadoId === `pago-${r.id}`;
+                                            <div className="text-right mono" style={{ fontWeight: 800, fontSize: 15, color: 'var(--color-text)' }}>
+                                                {fmtMoney(r.total)}
+                                            </div>
+                                        </div>
 
-                                                return (
-                                                    <select
-                                                        value={estadoPagoKey}
-                                                        disabled={isCambiandoPago}
-                                                        onChange={(e) => cambiarEstadoPago(r.id, e.target.value)}
-                                                        className={`badge ${infoPago.badgeClass}`}
-                                                        style={{
-                                                            border: `1px solid ${infoPago.border}`,
-                                                            background: infoPago.bg,
-                                                            color: infoPago.color,
-                                                            cursor: 'pointer',
-                                                            padding: '4px 8px',
-                                                            fontWeight: 600,
-                                                            appearance: 'none',
-                                                            WebkitAppearance: 'none'
-                                                        }}
-                                                        title="Clic para cambiar el estado de pago del pedido"
-                                                    >
-                                                        <option value="pendiente">⏳ Pago Pendiente</option>
-                                                        <option value="pagado">✓ Pagado / Validado</option>
-                                                        <option value="parcial">🌓 Pago Parcial</option>
-                                                        <option value="en_revision">🔍 En Revisión</option>
-                                                        <option value="cuenta_corriente">📑 A Cuenta Cte.</option>
-                                                        <option value="bonificado">🎁 Bonificado</option>
-                                                    </select>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="text-right mono" style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                            {fmtMoney(r.total)}
-                                            {Number(r.descuento_porcentaje) > 0 && (
-                                                <div className="text-xs" style={{ color: '#B23A3A' }}>
-                                                    (-{r.descuento_porcentaje}%)
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
-                                            <div className="row gap-xs" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
-                                                {/* Botón WhatsApp de 1 toque */}
-                                                <a
-                                                    href={buildWhatsAppLink(r)}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="btn btn-secondary btn-sm"
-                                                    style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5', padding: '5px 8px', fontSize: 12 }}
-                                                    title="Enviar estado y datos de pago por WhatsApp (1167873243)"
-                                                >
-                                                    📲 WA
-                                                </a>
-                                                <button
-                                                    className="btn btn-secondary btn-sm"
-                                                    onClick={() => abrirEditarRemito(r)}
-                                                    title="Editar remito y rebalancear stock (ACID)"
-                                                    style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
-                                                >
-                                                    ✏️ Editar
-                                                </button>
-                                                <button
-                                                    className="btn btn-secondary btn-sm"
-                                                    onClick={() => imprimirRemito(r.id)}
-                                                    title="Imprimir remito con QR mixpoint2026"
-                                                    style={{ padding: '5px 8px', fontSize: 12 }}
-                                                >
-                                                    🖨️ QR
-                                                </button>
-                                                <button
-                                                    className="btn btn-secondary btn-sm"
-                                                    onClick={() => abrirEtiquetas(r)}
-                                                    title="Generar etiquetas de despacho con transporte, bultos y peso"
-                                                    style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
-                                                >
-                                                    🏷️ Etiqueta
-                                                </button>
-                                                <button
-                                                    className="btn btn-ghost btn-sm"
-                                                    onClick={() => verDetalle(r)}
-                                                    style={{ padding: '5px 8px', fontSize: 12 }}
-                                                    title="Ver detalle del remito"
-                                                >
-                                                    👁️
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                        <div className="remito-mobile-actions">
+                                            <a
+                                                href={buildWhatsAppLink(r)}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="btn btn-secondary btn-sm"
+                                                style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5' }}
+                                            >
+                                                📲 WhatsApp
+                                            </a>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => abrirEditarRemito(r)}
+                                                style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
+                                            >
+                                                ✏️ Editar
+                                            </button>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => imprimirRemito(r.id)}
+                                            >
+                                                🖨️ Remito QR
+                                            </button>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => abrirEtiquetas(r)}
+                                                style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600 }}
+                                            >
+                                                🏷️ Etiqueta
+                                            </button>
+                                        </div>
+                                    </div>
                                 );
                             })}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
 
-                {/* VISTA DE CARDS OPTIMIZADA PARA CELULARES */}
-                <div className="mobile-only-cards">
-                    {remitosFiltrados.map(r => {
-                        const estadoInfo = ESTADOS[r.estado] || { label: r.estado, badgeClass: 'badge-neutral', icon: '⚪' };
-                        const isCambiando = cambiandoEstadoId === r.id;
-                        const estaSel = seleccionados.includes(r.id);
-
-                        return (
-                            <div key={`mob-${r.id}`} className="remito-mobile-card" style={{ borderLeft: `4px solid ${r.pago_validado ? '#10B981' : '#F59E0B'}` }}>
-                                <div className="remito-mobile-header">
-                                    <div className="row gap-xs" style={{ alignItems: 'center' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={estaSel}
-                                            onChange={(e) => {
-                                                if (e.target.checked) setSeleccionados([...seleccionados, r.id]);
-                                                else setSeleccionados(seleccionados.filter(id => id !== r.id));
-                                            }}
-                                            style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
-                                        />
-                                        <strong className="mono" style={{ fontSize: 15, color: 'var(--color-primary-dark)', cursor: 'pointer' }} onClick={() => verDetalle(r)}>
-                                            {r.numero}
-                                        </strong>
-                                    </div>
-                                    <span className="mono muted text-xs">
-                                        📅 {formatearFecha(r.fecha)}
-                                    </span>
-                                </div>
-
-                                <div className="remito-mobile-body" onClick={() => verDetalle(r)} style={{ cursor: 'pointer' }}>
-                                    <div style={{ fontWeight: 700, fontSize: 14 }}>
-                                        {r.cliente_nombre}
-                                    </div>
-                                    {r.cliente_telefono && (
-                                        <div className="text-xs" style={{ color: '#059669', fontWeight: 600 }}>
-                                            💬 {r.cliente_telefono}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="spread" style={{ alignItems: 'center', marginTop: 2 }}>
-                                    <div className="row gap-xs" style={{ alignItems: 'center' }}>
-                                        <select
-                                            value={r.estado}
-                                            disabled={isCambiando}
-                                            onChange={(e) => cambiarEstado(r.id, e.target.value)}
-                                            className={`badge ${estadoInfo.badgeClass}`}
-                                            style={{ border: 'none', cursor: 'pointer', padding: '4px 8px', fontWeight: 600, fontSize: 11 }}
-                                        >
-                                            <option value="pendiente">🟡 Pendiente</option>
-                                            <option value="en_preparacion">🔵 En Prep.</option>
-                                            <option value="esperando_pago">🟣 Esp. Pago</option>
-                                            <option value="en_camino">🟠 En Camino</option>
-                                            <option value="entregado">🟢 Entregado</option>
-                                            <option value="facturado">🔷 Facturado</option>
-                                            <option value="cancelado">🔴 Cancelado</option>
-                                        </select>
-                                        <select
-                                            value={r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente')}
-                                            disabled={cambiandoEstadoId === `pago-${r.id}`}
-                                            onChange={(e) => cambiarEstadoPago(r.id, e.target.value)}
-                                            className={`badge ${ESTADOS_PAGO[r.estado_pago || (r.pago_validado ? 'pagado' : 'pendiente')]?.badgeClass || 'badge-pago-pendiente'}`}
-                                            style={{ border: 'none', cursor: 'pointer', padding: '4px 6px', fontWeight: 600, fontSize: 10.5 }}
-                                            title="Cambiar estado de pago"
-                                        >
-                                            <option value="pendiente">⏳ Pendiente</option>
-                                            <option value="pagado">✓ Pagado</option>
-                                            <option value="parcial">🌓 Parcial</option>
-                                            <option value="en_revision">🔍 Revisión</option>
-                                            <option value="cuenta_corriente">📑 Cta. Cte.</option>
-                                            <option value="bonificado">🎁 Bonif.</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="text-right mono" style={{ fontWeight: 800, fontSize: 15, color: 'var(--color-text)' }}>
-                                        {fmtMoney(r.total)}
-                                    </div>
-                                </div>
-
-                                <div className="remito-mobile-actions">
-                                    <a
-                                        href={buildWhatsAppLink(r)}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="btn btn-secondary btn-sm"
-                                        style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5' }}
-                                    >
-                                        📲 WhatsApp
-                                    </a>
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={() => abrirEditarRemito(r)}
-                                        style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
-                                    >
-                                        ✏️ Editar
-                                    </button>
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={() => imprimirRemito(r.id)}
-                                    >
-                                        🖨️ Remito QR
-                                    </button>
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={() => abrirEtiquetas(r)}
-                                        style={{ borderColor: 'var(--color-primary-dark)', color: 'var(--color-primary-dark)', fontWeight: 600 }}
-                                    >
-                                        🏷️ Etiqueta
-                                    </button>
-                                </div>
+                        {!loading && remitosFiltrados.length === 0 && (
+                            <div className="empty-state">
+                                <div className="icon">🧾</div>
+                                <p>No hay remitos registrados que coincidan.</p>
                             </div>
-                        );
-                    })}
-                </div>
-
-                {!loading && remitosFiltrados.length === 0 && (
-                    <div className="empty-state">
-                        <div className="icon">🧾</div>
-                        <p>No hay remitos registrados que coincidan.</p>
-                    </div>
+                        )}
+                    </>
                 )}
             </div>
 
