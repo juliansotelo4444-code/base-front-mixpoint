@@ -47,3 +47,30 @@ export function esFechaDeHoy(f) {
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}` === getFechaHoyLocal();
 }
+
+/**
+ * Retorna true si la fecha corresponde al mes actual en hora local argentina.
+ */
+export function esFechaDeEsteMes(f) {
+    if (!f) return false;
+    const str = String(f).trim();
+    const match = str.match(/^(\d{4})-(\d{2})/);
+    const d = new Date();
+    const currentYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (match) {
+        return `${match[1]}-${match[2]}` === currentYM;
+    }
+    const dateObj = new Date(str);
+    if (isNaN(dateObj.getTime())) return false;
+    return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` === currentYM;
+}
+
+/**
+ * Retorna el nombre en español del mes actual con su año (ej: "Octubre 2026")
+ */
+export function getNombreMesActual() {
+    const d = new Date();
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return `${meses[d.getMonth()]} ${d.getFullYear()}`;
+}
+

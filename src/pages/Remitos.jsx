@@ -7,7 +7,7 @@ import HojaDeRutaModal from '../components/HojaDeRutaModal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import EtiquetaDespachoModal from '../components/EtiquetaDespachoModal';
 import { IconPlus, IconBuscar } from '../components/Icons';
-import { getFechaHoyLocal, formatearFecha, esFechaDeHoy } from '../utils/fechas';
+import { getFechaHoyLocal, formatearFecha, esFechaDeHoy, esFechaDeEsteMes, getNombreMesActual } from '../utils/fechas';
 import { exportarRemitoAWord } from '../utils/remitoWordExport';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
@@ -63,7 +63,7 @@ export default function Remitos() {
     const [q, setQ] = useState('');
     const [estadoFiltro, setEstadoFiltro] = useState('');
     const [estadoPagoFiltro, setEstadoPagoFiltro] = useState('');
-    const [filtroPeriodo, setFiltroPeriodo] = useState('hoy'); // 'hoy' | 'pendientes' | 'preparacion' | 'camino' | 'entregados' | 'todos'
+    const [filtroPeriodo, setFiltroPeriodo] = useState('mes'); // 'mes' | 'pendientes' | 'preparacion' | 'camino' | 'entregados' | 'hoy' | 'todos'
     const [modoVista, setModoVista] = useState('tarjetas'); // 'tarjetas' | 'tabla'
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
@@ -158,7 +158,15 @@ export default function Remitos() {
         cargar();
     }, [estadoFiltro, estadoPagoFiltro]);
 
-    // Métricas y filtrado inteligente de pedidos de hoy
+    // Métricas del Mes Actual (por defecto muestra todo lo del mes en curso)
+    const remitosMes = remitos.filter(r => esFechaDeEsteMes(r.fecha));
+    const pendientesMes = remitosMes.filter(r => r.estado === 'pendiente');
+    const preparacionMes = remitosMes.filter(r => r.estado === 'en_preparacion');
+    const caminoMes = remitosMes.filter(r => r.estado === 'en_camino');
+    const entregadosMes = remitosMes.filter(r => r.estado === 'entregado');
+    const totalMontoMes = remitosMes.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
+
+    // Métricas del Día (Hoy)
     const remitosHoy = remitos.filter(r => esFechaDeHoy(r.fecha));
     const pendientesHoy = remitosHoy.filter(r => r.estado === 'pendiente');
     const preparacionHoy = remitosHoy.filter(r => r.estado === 'en_preparacion');
@@ -166,17 +174,21 @@ export default function Remitos() {
     const entregadosHoy = remitosHoy.filter(r => r.estado === 'entregado');
     const totalMontoHoy = remitosHoy.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
 
-    let remitosFiltradosPorPeriodo = remitos;
-    if (filtroPeriodo === 'hoy') {
-        remitosFiltradosPorPeriodo = remitosHoy;
+    let remitosFiltradosPorPeriodo = remitosMes;
+    if (filtroPeriodo === 'mes') {
+        remitosFiltradosPorPeriodo = remitosMes;
     } else if (filtroPeriodo === 'pendientes') {
-        remitosFiltradosPorPeriodo = remitosHoy.filter(r => r.estado === 'pendiente');
+        remitosFiltradosPorPeriodo = remitosMes.filter(r => r.estado === 'pendiente');
     } else if (filtroPeriodo === 'preparacion') {
-        remitosFiltradosPorPeriodo = remitosHoy.filter(r => r.estado === 'en_preparacion');
+        remitosFiltradosPorPeriodo = remitosMes.filter(r => r.estado === 'en_preparacion');
     } else if (filtroPeriodo === 'camino') {
-        remitosFiltradosPorPeriodo = remitosHoy.filter(r => r.estado === 'en_camino');
+        remitosFiltradosPorPeriodo = remitosMes.filter(r => r.estado === 'en_camino');
     } else if (filtroPeriodo === 'entregados') {
-        remitosFiltradosPorPeriodo = remitosHoy.filter(r => r.estado === 'entregado');
+        remitosFiltradosPorPeriodo = remitosMes.filter(r => r.estado === 'entregado');
+    } else if (filtroPeriodo === 'hoy') {
+        remitosFiltradosPorPeriodo = remitosHoy;
+    } else if (filtroPeriodo === 'todos') {
+        remitosFiltradosPorPeriodo = remitos;
     }
 
     const remitosFiltrados = q
@@ -505,7 +517,7 @@ export default function Remitos() {
                 </div>
             </div>
 
-            {/* PANEL DESTACADO: PEDIDOS DEL DÍA Y KPIs GRANDES */}
+            {/* PANEL DESTACADO: PEDIDOS DEL MES Y KPIs GRANDES */}
             <div className="card" style={{ padding: '20px 22px', background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 14 }}>
                 <div className="spread" style={{ alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
                     <div>
@@ -513,35 +525,72 @@ export default function Remitos() {
                             <span style={{ fontSize: 28 }}>📦</span>
                             <div>
                                 <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--color-text)' }}>
-                                    {filtroPeriodo === 'todos' ? 'Histórico General de Remitos' : 'Pedidos del Día (Hoy)'}
+                                    {filtroPeriodo === 'todos'
+                                        ? 'Histórico General de Remitos'
+                                        : (filtroPeriodo === 'hoy'
+                                            ? 'Pedidos del Día (Hoy)'
+                                            : `Pedidos del Mes (${getNombreMesActual()})`)}
                                 </h2>
                                 <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
                                     {filtroPeriodo === 'todos'
                                         ? `Mostrando los ${remitos.length} remitos históricos registrados`
-                                        : `Resumen de hoy: ${remitosHoy.length} pedidos emitidos (${fmtMoney(totalMontoHoy)})`}
+                                        : (filtroPeriodo === 'hoy'
+                                            ? `Resumen de hoy: ${remitosHoy.length} pedidos emitidos (${fmtMoney(totalMontoHoy)})`
+                                            : `Resumen de ${getNombreMesActual()}: ${remitosMes.length} pedidos emitidos (${fmtMoney(totalMontoMes)})`)}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* SELECTOR DE VISTA: TARJETAS GRANDES VS TABLA DETALLADA */}
-                    <div style={{ background: 'var(--color-bg)', padding: 4, borderRadius: 10, border: '1.5px solid var(--color-border)', display: 'inline-flex', gap: 4 }}>
-                        <button
-                            type="button"
-                            className={`btn btn-sm ${modoVista === 'tarjetas' ? 'btn-primary' : 'btn-ghost'}`}
-                            onClick={() => setModoVista('tarjetas')}
-                            style={{ padding: '6px 14px', fontSize: 13, fontWeight: 700 }}
-                        >
-                            🎴 Tarjetas Grandes
-                        </button>
-                        <button
-                            type="button"
-                            className={`btn btn-sm ${modoVista === 'tabla' ? 'btn-primary' : 'btn-ghost'}`}
-                            onClick={() => setModoVista('tabla')}
-                            style={{ padding: '6px 14px', fontSize: 13, fontWeight: 700 }}
-                        >
-                            📋 Tabla Clásica
-                        </button>
+                    {/* SELECTORES DE RANGO Y VISTA */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        {/* Selector de Rango Temporal */}
+                        <div style={{ background: 'var(--color-bg)', padding: 3, borderRadius: 10, border: '1.5px solid var(--color-border)', display: 'inline-flex', gap: 3 }}>
+                            <button
+                                type="button"
+                                className={`btn btn-sm ${['mes', 'pendientes', 'preparacion', 'camino', 'entregados'].includes(filtroPeriodo) ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setFiltroPeriodo('mes')}
+                                style={{ padding: '6px 13px', fontSize: 12.5, fontWeight: 700 }}
+                            >
+                                📅 Este Mes ({remitosMes.length})
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn btn-sm ${filtroPeriodo === 'hoy' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setFiltroPeriodo('hoy')}
+                                style={{ padding: '6px 13px', fontSize: 12.5, fontWeight: 700 }}
+                            >
+                                ☀️ Hoy ({remitosHoy.length})
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn btn-sm ${filtroPeriodo === 'todos' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setFiltroPeriodo('todos')}
+                                style={{ padding: '6px 13px', fontSize: 12.5, fontWeight: 700 }}
+                            >
+                                📑 Histórico ({remitos.length})
+                            </button>
+                        </div>
+
+                        {/* Selector Tarjetas vs Tabla */}
+                        <div style={{ background: 'var(--color-bg)', padding: 3, borderRadius: 10, border: '1.5px solid var(--color-border)', display: 'inline-flex', gap: 3 }}>
+                            <button
+                                type="button"
+                                className={`btn btn-sm ${modoVista === 'tarjetas' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setModoVista('tarjetas')}
+                                style={{ padding: '6px 14px', fontSize: 13, fontWeight: 700 }}
+                            >
+                                🎴 Tarjetas Grandes
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn btn-sm ${modoVista === 'tabla' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setModoVista('tabla')}
+                                style={{ padding: '6px 14px', fontSize: 13, fontWeight: 700 }}
+                            >
+                                📋 Tabla Clásica
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -551,28 +600,28 @@ export default function Remitos() {
                     gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                     gap: 12
                 }}>
-                    {/* TOTAL HOY */}
+                    {/* TOTAL MES / TOTAL HOY */}
                     <div
-                        onClick={() => setFiltroPeriodo('hoy')}
+                        onClick={() => setFiltroPeriodo(filtroPeriodo === 'hoy' ? 'hoy' : 'mes')}
                         style={{
                             padding: '14px 16px',
                             borderRadius: 12,
                             cursor: 'pointer',
-                            background: filtroPeriodo === 'hoy' ? '#1A382B' : '#FAF9F4',
-                            color: filtroPeriodo === 'hoy' ? '#FFFFFF' : '#1A382B',
-                            border: `2px solid ${filtroPeriodo === 'hoy' ? '#1A382B' : '#E2DAC9'}`,
-                            boxShadow: filtroPeriodo === 'hoy' ? '0 4px 12px rgba(26,56,43,0.25)' : 'none',
+                            background: (filtroPeriodo === 'mes' || filtroPeriodo === 'hoy') ? '#1A382B' : '#FAF9F4',
+                            color: (filtroPeriodo === 'mes' || filtroPeriodo === 'hoy') ? '#FFFFFF' : '#1A382B',
+                            border: `2px solid ${(filtroPeriodo === 'mes' || filtroPeriodo === 'hoy') ? '#1A382B' : '#E2DAC9'}`,
+                            boxShadow: (filtroPeriodo === 'mes' || filtroPeriodo === 'hoy') ? '0 4px 12px rgba(26,56,43,0.25)' : 'none',
                             transition: 'all 0.15s ease'
                         }}
                     >
                         <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.85 }}>
-                            🌟 Total Hoy
+                            {filtroPeriodo === 'hoy' ? '🌟 Total Hoy' : '🌟 Total Mes'}
                         </div>
                         <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4 }}>
-                            {remitosHoy.length}
+                            {filtroPeriodo === 'hoy' ? remitosHoy.length : remitosMes.length}
                         </div>
                         <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4, opacity: 0.9 }}>
-                            {fmtMoney(totalMontoHoy)}
+                            {fmtMoney(filtroPeriodo === 'hoy' ? totalMontoHoy : totalMontoMes)}
                         </div>
                     </div>
 
@@ -594,7 +643,7 @@ export default function Remitos() {
                             🟡 Pendientes
                         </div>
                         <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4, color: '#B45309' }}>
-                            {pendientesHoy.length}
+                            {pendientesMes.length}
                         </div>
                         <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4, color: '#92400E' }}>
                             Por preparar
@@ -619,7 +668,7 @@ export default function Remitos() {
                             🔵 En Prep.
                         </div>
                         <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4, color: '#1D4ED8' }}>
-                            {preparacionHoy.length}
+                            {preparacionMes.length}
                         </div>
                         <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4, color: '#1E40AF' }}>
                             En depósito
@@ -644,7 +693,7 @@ export default function Remitos() {
                             🟠 En Camino
                         </div>
                         <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4, color: '#C2410C' }}>
-                            {caminoHoy.length}
+                            {caminoMes.length}
                         </div>
                         <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4, color: '#9A3412' }}>
                             En reparto
@@ -669,7 +718,7 @@ export default function Remitos() {
                             🟢 Entregados
                         </div>
                         <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4, color: '#047857' }}>
-                            {entregadosHoy.length}
+                            {entregadosMes.length}
                         </div>
                         <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4, color: '#065F46' }}>
                             Completados
@@ -754,7 +803,7 @@ export default function Remitos() {
                                     No hay pedidos en esta selección
                                 </h3>
                                 <p className="text-sm muted" style={{ marginTop: 4 }}>
-                                    Probá seleccionando "🌟 Total Hoy" o "📑 Histórico" para ver otros pedidos.
+                                    Probá seleccionando "🌟 Total Mes" o "📑 Histórico" para ver otros pedidos.
                                 </p>
                             </div>
                         ) : (
