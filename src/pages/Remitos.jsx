@@ -419,7 +419,7 @@ export default function Remitos() {
     }
 
     function agregarEditItem() {
-        setEditItems([...editItems, { producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
+        setEditItems([...editItems, { producto_id: '', cantidad: '1', precio_unitario: '', unidad_medida: 'kg' }]);
     }
 
     function quitarEditItem(i) {
@@ -429,10 +429,27 @@ export default function Remitos() {
 
     function handleSelectProductoEdit(index, prodId, prod) {
         const nuevos = [...editItems];
+        const clienteActual = clientes.find(c => c.id === Number(editForm.cliente_id || remitoParaEditar?.cliente_id));
+        const prodObj = prod || productos.find(p => p.id === Number(prodId));
+        const cant = Number(nuevos[index].cantidad) || 1;
         nuevos[index].producto_id = String(prodId);
-        nuevos[index].unidad_medida = prod?.unidad_medida || 'kg';
-        nuevos[index].precio_unitario = prod ? (prod.precio_mayorista || prod.precio_costo || 0) : '';
+        nuevos[index].cantidad = nuevos[index].cantidad || '1';
+        nuevos[index].unidad_medida = prodObj?.unidad_medida || 'kg';
+        const sugerido = calcularPrecioSugerido(prodObj, cant, clienteActual);
+        nuevos[index].precio_unitario = String(sugerido || prodObj?.precio_venta || prodObj?.precio_compra || '');
         setEditItems(nuevos);
+    }
+
+    function actualizarCantidadEdit(index, cant) {
+        const copy = [...editItems];
+        const prod = productos.find(p => p.id === Number(copy[index].producto_id));
+        const clienteActual = clientes.find(c => c.id === Number(editForm.cliente_id || remitoParaEditar?.cliente_id));
+        copy[index].cantidad = cant;
+        if (prod && (!copy[index].precio_unitario || copy[index].precio_unitario === '0' || copy[index].precio_unitario === 0)) {
+            const sugerido = calcularPrecioSugerido(prod, cant, clienteActual);
+            copy[index].precio_unitario = String(sugerido || prod.precio_venta || prod.precio_compra || '');
+        }
+        setEditItems(copy);
     }
 
     async function guardarEdicion(e) {
@@ -2073,11 +2090,7 @@ export default function Remitos() {
                                                         step="0.01"
                                                         placeholder="Cantidad"
                                                         value={it.cantidad}
-                                                        onChange={e => {
-                                                            const copy = [...editItems];
-                                                            copy[i].cantidad = e.target.value;
-                                                            setEditItems(copy);
-                                                        }}
+                                                        onChange={e => actualizarCantidadEdit(i, e.target.value)}
                                                         style={{ width: '100%', padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
                                                         required
                                                     />
@@ -2097,6 +2110,41 @@ export default function Remitos() {
                                                         style={{ width: '100%', padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
                                                         required
                                                     />
+                                                    {prod && (
+                                                        <div style={{ marginTop: 4, fontSize: 11, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                                            <span style={{ color: 'var(--color-text-muted)' }}>
+                                                                Costo: <strong style={{ color: 'var(--color-primary-dark)' }}>${fmtMoney(prod.precio_compra || 0)}</strong>
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-ghost btn-xs"
+                                                                style={{ padding: '1px 5px', fontSize: 10, height: 18, background: 'var(--color-surface-sunken)', border: '1px solid var(--color-border)' }}
+                                                                onClick={() => {
+                                                                    const copy = [...editItems];
+                                                                    copy[i].precio_unitario = String(prod.precio_compra || 0);
+                                                                    setEditItems(copy);
+                                                                }}
+                                                                title="Establecer al costo de compra"
+                                                            >
+                                                                Usar Costo
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-ghost btn-xs"
+                                                                style={{ padding: '1px 5px', fontSize: 10, height: 18, background: 'var(--color-surface-sunken)', border: '1px solid var(--color-border)' }}
+                                                                onClick={() => {
+                                                                    const copy = [...editItems];
+                                                                    const clienteActual = clientes.find(c => c.id === Number(editForm.cliente_id || remitoParaEditar?.cliente_id));
+                                                                    const sugerido = calcularPrecioSugerido(prod, copy[i].cantidad || 1, clienteActual) || prod.precio_venta || 0;
+                                                                    copy[i].precio_unitario = String(sugerido);
+                                                                    setEditItems(copy);
+                                                                }}
+                                                                title="Establecer precio de venta"
+                                                            >
+                                                                Usar Venta
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="item-col-subtotal">
                                                     <label className="text-xs muted" style={{ display: 'block', fontWeight: 400 }}>Subtotal</label>

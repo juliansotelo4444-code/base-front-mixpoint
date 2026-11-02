@@ -1,12 +1,23 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { IconBuscar } from './Icons';
 
-export default function ProductPicker({ productos, value, onChange, placeholder = 'Buscar y seleccionar producto…' }) {
+export default function ProductPicker({ productos = [], value, onChange, placeholder = 'Buscar y seleccionar producto…' }) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const containerRef = useRef(null);
 
-    const selectedProduct = productos.find(p => p.id === Number(value));
+    // Filtrar inactivos y asegurar no repetidos por ID
+    const uniqueProducts = useMemo(() => {
+        const seen = new Set();
+        return (productos || []).filter(p => {
+            if (p.activo === false) return false;
+            if (seen.has(p.id)) return false;
+            seen.add(p.id);
+            return true;
+        });
+    }, [productos]);
+
+    const selectedProduct = uniqueProducts.find(p => p.id === Number(value)) || (productos || []).find(p => p.id === Number(value));
 
     useEffect(() => {
         function handleClickOutside(e) {
@@ -18,11 +29,11 @@ export default function ProductPicker({ productos, value, onChange, placeholder 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filtered = productos.filter(p => {
+    const filtered = uniqueProducts.filter(p => {
         if (!search) return true;
         const s = search.toLowerCase();
         return (
-            p.nombre.toLowerCase().includes(s) ||
+            (p.nombre && p.nombre.toLowerCase().includes(s)) ||
             (p.codigo && p.codigo.toLowerCase().includes(s)) ||
             (p.categoria_nombre && p.categoria_nombre.toLowerCase().includes(s))
         );
@@ -52,7 +63,7 @@ export default function ProductPicker({ productos, value, onChange, placeholder 
                 }}
             >
                 {selectedProduct ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden', flexWrap: 'wrap' }}>
                         <span className="mono" style={{ fontSize: 11, background: 'var(--color-surface-sunken)', padding: '2px 5px', borderRadius: 4 }}>
                             {selectedProduct.codigo || `MP-${selectedProduct.id}`}
                         </span>
@@ -62,11 +73,17 @@ export default function ProductPicker({ productos, value, onChange, placeholder 
                         <span className="muted text-xs">
                             ({selectedProduct.stock_actual} {selectedProduct.unidad_medida} disp.)
                         </span>
+                        <span style={{ fontSize: 11, color: 'var(--color-primary-dark)', fontWeight: 600 }}>
+                            Venta: ${new Intl.NumberFormat('es-AR').format(selectedProduct.precio_venta || 0)}
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                            | Costo: ${new Intl.NumberFormat('es-AR').format(selectedProduct.precio_compra || 0)}
+                        </span>
                     </div>
                 ) : (
                     <span className="muted">{placeholder}</span>
                 )}
-                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginLeft: 6 }}>▼</span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginLeft: 6 }}>▾</span>
             </div>
 
             {open && (
@@ -97,10 +114,10 @@ export default function ProductPicker({ productos, value, onChange, placeholder 
                             </button>
                         )}
                     </div>
-                    <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+                    <div style={{ maxHeight: 240, overflowY: 'auto' }}>
                         {filtered.length === 0 ? (
                             <div style={{ padding: '12px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 12.5 }}>
-                                No se encontraron productos.
+                                No se encontraron productos activos.
                             </div>
                         ) : (
                             filtered.map(p => {
@@ -111,24 +128,27 @@ export default function ProductPicker({ productos, value, onChange, placeholder 
                                         className={`product-picker-item ${isSelected ? 'selected' : ''}`}
                                         onClick={() => select(p)}
                                     >
-                                        <div>
-                                            <div style={{ fontWeight: isSelected ? 700 : 500 }}>
+                                        <div style={{ minWidth: 0, flex: 1, paddingRight: 8 }}>
+                                            <div style={{ fontWeight: isSelected ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {p.nombre}
                                             </div>
                                             <div className="row gap-xs" style={{ marginTop: 2, fontSize: 11 }}>
                                                 <span className="mono muted">{p.codigo || `MP-${p.id}`}</span>
                                                 {p.categoria_nombre && (
                                                     <span style={{ color: 'var(--color-primary-dark)', fontWeight: 500 }}>
-                                                        · {p.categoria_nombre}
+                                                        • {p.categoria_nombre}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
                                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                            <div className="mono" style={{ fontWeight: 600, color: 'var(--color-primary-dark)' }}>
-                                                ${new Intl.NumberFormat('es-AR').format(p.precio_venta)}
+                                            <div className="mono" style={{ fontWeight: 600, color: 'var(--color-primary-dark)', fontSize: 12 }}>
+                                                Venta: ${new Intl.NumberFormat('es-AR').format(p.precio_venta || 0)}
                                             </div>
-                                            <span className={`badge ${p.stock_actual <= 0 ? 'badge-danger' : 'badge-neutral'}`} style={{ fontSize: 10, padding: '1px 6px' }}>
+                                            <div className="mono text-xs" style={{ color: 'var(--color-text-muted)', fontSize: 10.5 }}>
+                                                Costo: ${new Intl.NumberFormat('es-AR').format(p.precio_compra || 0)}
+                                            </div>
+                                            <span className={`badge ${p.stock_actual <= 0 ? 'badge-danger' : 'badge-neutral'}`} style={{ fontSize: 10, padding: '1px 6px', marginTop: 2 }}>
                                                 {p.stock_actual} {p.unidad_medida}
                                             </span>
                                         </div>
