@@ -385,6 +385,19 @@ export default function Remitos() {
         }
     }
 
+    async function exportarRemitoAWordConDatos(r) {
+        try {
+            if (!r.items || r.items.length === 0) {
+                const { data } = await client.get(`/remitos/${r.id}`);
+                exportarRemitoAWord(data);
+            } else {
+                exportarRemitoAWordConDatos(r);
+            }
+        } catch (e) {
+            exportarRemitoAWordConDatos(r);
+        }
+    }
+
     async function abrirEditarRemito(r) {
         setErrorEdicion('');
         try {
@@ -904,17 +917,30 @@ export default function Remitos() {
                                                         <option value="cancelado">🔴 CANCELADO</option>
                                                     </select>
 
-                                                    <span style={{
-                                                        fontSize: 11,
-                                                        fontWeight: 700,
-                                                        padding: '2px 8px',
-                                                        borderRadius: 6,
-                                                        background: infoPago.bg,
-                                                        color: infoPago.color,
-                                                        border: `1px solid ${infoPago.border}`
-                                                    }}>
-                                                        {infoPago.label}
-                                                    </span>
+                                                    <select
+                                                        value={estadoPagoKey}
+                                                        disabled={cambiandoEstadoId === `pago-${r.id}`}
+                                                        onChange={(e) => cambiarEstadoPago(r.id, e.target.value)}
+                                                        style={{
+                                                            fontSize: 11,
+                                                            fontWeight: 700,
+                                                            padding: '3px 8px',
+                                                            borderRadius: 6,
+                                                            background: infoPago.bg,
+                                                            color: infoPago.color,
+                                                            border: `1px solid ${infoPago.border}`,
+                                                            cursor: 'pointer',
+                                                            outline: 'none'
+                                                        }}
+                                                        title="Clic para cambiar el estado de pago del remito"
+                                                    >
+                                                        <option value="pendiente">⏳ Pago Pendiente</option>
+                                                        <option value="pagado">✓ Pagado / Validado</option>
+                                                        <option value="parcial">🟡 Pago Parcial</option>
+                                                        <option value="en_revision">🔍 En Revisión</option>
+                                                        <option value="cuenta_corriente">📑 A Cuenta Cte.</option>
+                                                        <option value="bonificado">🎁 Bonificado</option>
+                                                    </select>
                                                 </div>
                                             </div>
 
@@ -1026,7 +1052,7 @@ export default function Remitos() {
                                                     </button>
                                                     <button
                                                         className="btn btn-secondary btn-sm"
-                                                        onClick={() => exportarRemitoAWord(r)}
+                                                        onClick={() => exportarRemitoAWordConDatos(r)}
                                                         style={{ padding: '5px 11px', fontSize: 12, borderColor: '#93C5FD', color: '#1E40AF', background: '#EFF6FF', fontWeight: 700 }}
                                                         title="Descargar en Word (.doc) para editarlo a mano"
                                                     >
@@ -1231,7 +1257,7 @@ export default function Remitos() {
                                                         </button>
                                                         <button
                                                             className="btn btn-secondary btn-sm"
-                                                            onClick={() => exportarRemitoAWord(r)}
+                                                            onClick={() => exportarRemitoAWordConDatos(r)}
                                                             title="Descargar en Word (.doc)"
                                                             style={{ borderColor: '#93C5FD', color: '#1E40AF', background: '#EFF6FF', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
                                                         >
