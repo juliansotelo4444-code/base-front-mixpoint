@@ -4,10 +4,17 @@ import Modal from '../components/Modal';
 import RemitoImprimible from '../components/RemitoImprimible';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconBuscar } from '../components/Icons';
-import { formatearFecha } from '../utils/fechas';
+import { formatearFecha, formatearHora } from '../utils/fechas';
 import useKanbanSocket from '../hooks/useKanbanSocket';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);
+
+function extraerHorarioEntrega(notas) {
+    if (!notas) return '';
+    const m = String(notas).match(/\[Horario preferido:\s*([^\]]+)\]/i) || String(notas).match(/Horario preferido:\s*([^|\]]+)/i);
+    return m ? m[1].trim() : '';
+}
+
 
 export default function PedidosWeb() {
     const [pedidos, setPedidos] = useState([]);
@@ -93,13 +100,23 @@ export default function PedidosWeb() {
         setGenerandoId(pedido.numero);
         setError('');
         try {
+            const horario = pedido.horario_entrega || extraerHorarioEntrega(pedido.notas);
+            const obsPartes = [
+                pedido.numero ? `Pedido Web ${pedido.numero}` : '',
+                pedido.hora ? `Hora llegada: ${pedido.hora} hs` : '',
+                horario ? `Horario entrega: ${horario}` : '',
+                pedido.notas ? `Notas: ${pedido.notas}` : ''
+            ].filter(Boolean);
+
             const { data: remito } = await client.post('/integraciones/crear-remito-desde-pedido', {
                 pedido_numero: pedido.numero,
                 fecha: pedido.fecha,
                 nombre: pedido.nombre,
                 telefono: pedido.telefono,
                 direccion_completa: pedido.direccion_completa,
-                items: pedido.items
+                items: pedido.items,
+                horario_entrega: horario,
+                observaciones: obsPartes.join(' | ')
             });
 
             // Actualizar lista local de pedidos para marcarlo como emitido
@@ -125,7 +142,7 @@ export default function PedidosWeb() {
     }
 
     const pedidosFiltrados = pedidos.filter(p => {
-        const matchesQ = !q || [p.numero, p.nombre, p.telefono, p.direccion, p.zona, p.productos_str]
+        const matchesQ = !q || [p.numero, p.nombre, p.telefono, p.direccion, p.zona, p.productos_str, p.hora, p.horario_entrega]
             .some(v => String(v || '').toLowerCase().includes(q.toLowerCase()));
 
         if (!matchesQ) return false;
@@ -210,7 +227,7 @@ export default function PedidosWeb() {
                             <thead>
                                 <tr>
                                     <th>N° Pedido</th>
-                                    <th>Fecha</th>
+                                    <th>Fecha / Hora</th>
                                     <th>Cliente y Contacto</th>
                                     <th>Destino / Entrega</th>
                                     <th>Productos solicitados</th>
@@ -229,8 +246,28 @@ export default function PedidosWeb() {
                                             <td className="mono" style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
                                                 {p.numero}
                                             </td>
-                                            <td className="mono text-xs muted" style={{ whiteSpace: 'nowrap' }}>
-                                                {formatearFecha(p.fecha)}
+                                            <td className="mono text-xs" style={{ whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontWeight: 600, color: 'var(--color-text-main, #1e293b)' }}>
+                                                    {formatearFecha(p.fecha)}
+                                                </div>
+                                                {(p.hora || p.created_at) && (
+                                                    <div style={{
+                                                        marginTop: 4,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 4,
+                                                        background: 'rgba(238, 117, 36, 0.1)',
+                                                        color: '#C25E16',
+                                                        border: '1px solid rgba(238, 117, 36, 0.25)',
+                                                        padding: '1px 6px',
+                                                        borderRadius: 4,
+                                                        fontSize: 11,
+                                                        fontWeight: 600
+                                                    }}>
+                                                        <span>🕒</span>
+                                                        <span>{p.hora || formatearHora(p.created_at)} hs</span>
+                                                    </div>
+                                                )}
                                             </td>
                                             <td>
                                                 <div style={{ fontWeight: 600 }}>{p.nombre}</div>
@@ -262,12 +299,23 @@ export default function PedidosWeb() {
                                             </td>
                                             <td>
                                                 <div>{p.direccion || '—'}</div>
-                                                {p.zona && <span className="badge badge-neutral" style={{ fontSize: 10, marginTop: 3 }}>{p.zona}</span>}
-                                                {p.notas && (
-                                                    <div className="muted text-xs" style={{ marginTop: 3, fontStyle: 'italic', maxWidth: 220 }}>
-                                                        📝 {p.notas}
-                                                    </div>
-                                                )}
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                                                    {p.zona && <span className="badge badge-neutral" style={{ fontSize: 10 }}>{p.zona}</span>}
+                                                    {(p.horario_entrega || extraerHorarioEntrega(p.notas)) && (
+                                                        <span className="badge" style={{ fontSize: 10, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' }}>
+                                                            🚚 Franja: {p.horario_entrega || extraerHorarioEntrega(p.notas)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {p.notas && (() => {
+                                                    const notasLimpias = String(p.notas).replace(/\[Horario preferido:[^\]]+\]/gi, '').trim();
+                                                    if (!notasLimpias) return null;
+                                                    return (
+                                                        <div className="muted text-xs" style={{ marginTop: 4, fontStyle: 'italic', maxWidth: 220 }}>
+                                                            📝 {notasLimpias}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </td>
                                             <td style={{ maxWidth: 320 }}>
                                                 <div style={{ fontSize: 12, lineHeight: 1.4 }}>

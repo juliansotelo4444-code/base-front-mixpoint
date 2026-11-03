@@ -74,3 +74,31 @@ export function getNombreMesActual() {
     return `${meses[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/**
+ * Extrae y formatea la hora en zona horaria de Argentina (HH:mm)
+ */
+export function formatearHora(f) {
+    if (!f) return '';
+    try {
+        const d = new Date(f);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleTimeString('es-AR', {
+            timeZone: 'America/Argentina/Buenos_Aires',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+    } catch {
+        return '';
+    }
+}
+
+/**
+ * Formatea fecha y hora juntas (ej: "02/11/2026 14:41 hs")
+ */
+export function formatearFechaYHora(f) {
+    if (!f) return '';
+    const fecha = formatearFecha(f);
+    const hora = formatearHora(f);
+    return hora ? `${fecha} ${hora} hs` : fecha;
+}
