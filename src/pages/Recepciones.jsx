@@ -25,6 +25,19 @@ export default function Recepciones() {
     const [observaciones, setObservaciones] = useState('');
     const [items, setItems] = useState([{ producto_id: '', cantidad: '', precio_unitario: '', numero_lote: '', fecha_vencimiento: '' }]);
 
+    // Estado para edición transaccional de recepción
+    const [recepcionParaEditar, setRecepcionParaEditar] = useState(null);
+    const [editRecepcionForm, setEditRecepcionForm] = useState({
+        proveedor_id: '',
+        fecha: '',
+        numero_remito_proveedor: '',
+        numero_factura: '',
+        observaciones: ''
+    });
+    const [editRecepcionItems, setEditRecepcionItems] = useState([]);
+    const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+    const [errorEdicion, setErrorEdicion] = useState('');
+
     // Estado para la pestaña de Consulta por Producto con Costo Pagado
     const [prodFiltroId, setProdFiltroId] = useState('');
     const [qHistorial, setQHistorial] = useState('');
@@ -151,6 +164,82 @@ export default function Recepciones() {
             setDetalle(null);
         } catch (err) {
             alert(err.response?.data?.error || 'Error al anular la recepción.');
+        }
+    }
+
+    async function abrirEditarRecepcion(r) {
+        const id = r.recepcion_id || r.id;
+        setErrorEdicion('');
+        try {
+            const { data } = await client.get(`/recepciones/${id}`);
+            if (data.estado === 'anulada') {
+                alert('No se puede editar una recepción anulada.');
+                return;
+            }
+            setRecepcionParaEditar(data);
+            setEditRecepcionForm({
+                proveedor_id: String(data.proveedor_id || ''),
+                fecha: data.fecha ? String(data.fecha).slice(0, 10) : new Date().toISOString().slice(0, 10),
+                numero_remito_proveedor: data.numero_remito_proveedor || '',
+                numero_factura: data.numero_factura || '',
+                observaciones: data.observaciones || ''
+            });
+            setEditRecepcionItems((data.items || []).map(it => ({
+                id: it.id,
+                producto_id: it.producto_id,
+                lote_id: it.lote_id,
+                producto_nombre: it.producto_nombre,
+                unidad_medida: it.unidad_medida,
+                cantidad: it.cantidad,
+                precio_unitario: it.precio_unitario,
+                numero_lote: it.numero_lote || '',
+                fecha_vencimiento: it.fecha_vencimiento ? String(it.fecha_vencimiento).slice(0, 10) : '',
+                cantidad_actual: it.cantidad_actual,
+                cantidad_inicial: it.cantidad_inicial
+            })));
+        } catch (err) {
+            alert(err.response?.data?.error || 'Error al cargar los datos de la recepción.');
+        }
+    }
+
+    function actualizarEditRecepcionItem(index, campo, valor) {
+        const copy = [...editRecepcionItems];
+        copy[index] = { ...copy[index], [campo]: valor };
+        setEditRecepcionItems(copy);
+    }
+
+    async function guardarEdicionRecepcion(e) {
+        e.preventDefault();
+        if (!recepcionParaEditar) return;
+        setErrorEdicion('');
+        setGuardandoEdicion(true);
+        try {
+            await client.put(`/recepciones/${recepcionParaEditar.id}`, {
+                proveedor_id: Number(editRecepcionForm.proveedor_id),
+                fecha: editRecepcionForm.fecha,
+                numero_remito_proveedor: editRecepcionForm.numero_remito_proveedor,
+                numero_factura: editRecepcionForm.numero_factura,
+                observaciones: editRecepcionForm.observaciones,
+                items: editRecepcionItems.map(it => ({
+                    id: it.id,
+                    producto_id: Number(it.producto_id),
+                    lote_id: it.lote_id,
+                    cantidad: Number(it.cantidad) || 0,
+                    precio_unitario: Number(it.precio_unitario) || 0,
+                    numero_lote: it.numero_lote || null,
+                    fecha_vencimiento: it.fecha_vencimiento || null
+                }))
+            });
+
+            setRecepcionParaEditar(null);
+            setDetalle(null);
+            cargarRecepciones();
+            cargarHistorialProductos();
+            client.get('/productos', { params: { activo: 1 } }).then(r => setProductos(r.data)).catch(console.error);
+        } catch (err) {
+            setErrorEdicion(err.response?.data?.error || err.message || 'Error al guardar la edición.');
+        } finally {
+            setGuardandoEdicion(false);
         }
     }
 
@@ -502,44 +591,55 @@ export default function Recepciones() {
                     ) : filtradas.length === 0 ? (
                         <div style={{ padding: '40px', textAlign: 'center' }} className="muted">No hay recepciones registradas.</div>
                     ) : (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Número</th>
-                                    <th>Proveedor</th>
-                                    <th>Fecha</th>
-                                    <th>Factura / Remito Prov.</th>
-                                    <th className="text-right">Total ($)</th>
-                                    <th>Estado</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtradas.map(r => (
-                                    <tr key={r.id}>
-                                        <td className="mono" style={{ fontWeight: 600 }}>{r.numero}</td>
-                                        <td>{r.proveedor_nombre}</td>
-                                        <td className="mono text-sm">{r.fecha ? String(r.fecha).slice(0, 10) : ''}</td>
-                                        <td className="muted text-sm">
-                                            {r.numero_factura ? `Fac: ${r.numero_factura}` : ''}
-                                            {r.numero_remito_proveedor ? ` Rem: ${r.numero_remito_proveedor}` : ''}
-                                            {!r.numero_factura && !r.numero_remito_proveedor && '-'}
-                                        </td>
-                                        <td className="text-right mono" style={{ fontWeight: 600 }}>{fmtMoney(r.total)}</td>
-                                        <td>
-                                            <span className={`badge ${r.estado === 'anulada' ? 'badge-danger' : 'badge-success'}`}>
-                                                {r.estado}
-                                            </span>
-                                        </td>
-                                        <td className="text-right">
-                                            <button className="btn btn-ghost btn-sm" onClick={() => verDetalle(r)}>
-                                                Ver detalle
-                                            </button>
-                                        </td>
+                        <div className="table-wrap">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Proveedor</th>
+                                        <th>Fecha</th>
+                                        <th>Factura / Remito Prov.</th>
+                                        <th className="text-right">Total ($)</th>
+                                        <th>Estado</th>
+                                        <th></th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filtradas.map(r => (
+                                        <tr key={r.id}>
+                                            <td className="mono" style={{ fontWeight: 600 }}>{r.numero}</td>
+                                            <td>{r.proveedor_nombre}</td>
+                                            <td className="mono text-sm">{r.fecha ? String(r.fecha).slice(0, 10) : ''}</td>
+                                            <td className="muted text-sm">
+                                                {r.numero_factura ? `Fac: ${r.numero_factura}` : ''}
+                                                {r.numero_remito_proveedor ? ` Rem: ${r.numero_remito_proveedor}` : ''}
+                                                {!r.numero_factura && !r.numero_remito_proveedor && '-'}
+                                            </td>
+                                            <td className="text-right mono" style={{ fontWeight: 600 }}>{fmtMoney(r.total)}</td>
+                                            <td>
+                                                <span className={`badge ${r.estado === 'anulada' ? 'badge-danger' : 'badge-success'}`}>
+                                                    {r.estado}
+                                                </span>
+                                            </td>
+                                            <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
+                                                <button
+                                                    className="btn btn-ghost btn-sm"
+                                                    onClick={() => abrirEditarRecepcion(r)}
+                                                    disabled={r.estado === 'anulada'}
+                                                    style={{ color: r.estado === 'anulada' ? 'var(--color-text-muted)' : '#B45309', fontWeight: 600, marginRight: 6, opacity: r.estado === 'anulada' ? 0.4 : 1 }}
+                                                    title={r.estado === 'anulada' ? 'No se puede editar una recepción anulada' : 'Editar comprobante y lotes (ACID)'}
+                                                >
+                                                    ✏️ Editar
+                                                </button>
+                                                <button className="btn btn-ghost btn-sm" onClick={() => verDetalle(r)}>
+                                                    Ver detalle
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             )}
@@ -695,31 +795,33 @@ export default function Recepciones() {
                             </span>
                         </div>
 
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th className="text-right">Cant.</th>
-                                    <th className="text-right" style={{ color: 'var(--color-primary-dark)' }}>Costo Pagado</th>
-                                    <th className="text-right">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(detalle.items || []).map(it => (
-                                    <tr key={it.id}>
-                                        <td>
-                                            <div style={{ fontWeight: 600 }}>{it.producto_nombre}</div>
-                                            {it.numero_lote && <span className="mono text-xs muted">Lote: {it.numero_lote}</span>}
-                                        </td>
-                                        <td className="text-right mono">{it.cantidad} {it.unidad_medida}</td>
-                                        <td className="text-right mono" style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                                            {fmtMoney(it.precio_unitario)}
-                                        </td>
-                                        <td className="text-right mono" style={{ fontWeight: 600 }}>{fmtMoney(it.subtotal)}</td>
+                        <div className="table-wrap">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th className="text-right">Cant.</th>
+                                        <th className="text-right" style={{ color: 'var(--color-primary-dark)' }}>Costo Pagado</th>
+                                        <th className="text-right">Subtotal</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {(detalle.items || []).map(it => (
+                                        <tr key={it.id}>
+                                            <td>
+                                                <div style={{ fontWeight: 600 }}>{it.producto_nombre}</div>
+                                                {it.numero_lote && <span className="mono text-xs muted">Lote: {it.numero_lote}</span>}
+                                            </td>
+                                            <td className="text-right mono">{it.cantidad} {it.unidad_medida}</td>
+                                            <td className="text-right mono" style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+                                                {fmtMoney(it.precio_unitario)}
+                                            </td>
+                                            <td className="text-right mono" style={{ fontWeight: 600 }}>{fmtMoney(it.subtotal)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
                         <div className="spread" style={{ borderTop: '1px solid var(--color-border)', paddingTop: 10 }}>
                             <span className="muted">Total comprobante</span>
@@ -730,13 +832,204 @@ export default function Recepciones() {
 
                         {detalle.estado !== 'anulada' && (
                             <div className="spread" style={{ borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
-                                <span className="text-xs muted">¿Hubo un error en la carga de este comprobante?</span>
-                                <button className="btn btn-danger btn-sm" onClick={() => anular(detalle.id)}>
-                                    Anular recepción y revertir stock
-                                </button>
+                                <span className="text-xs muted">Gestión de este comprobante:</span>
+                                <div className="row gap-xs">
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => {
+                                            const r = detalle;
+                                            setDetalle(null);
+                                            abrirEditarRecepcion(r);
+                                        }}
+                                        style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
+                                    >
+                                        ✏️ Editar Recepción
+                                    </button>
+                                    <button className="btn btn-danger btn-sm" onClick={() => anular(detalle.id)}>
+                                        Anular recepción y revertir stock
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
+                </Modal>
+            )}
+
+            {/* MODAL EDITAR RECEPCIÓN (TRANSACCIONAL ACID CON REBALANCEO DE LOTES Y CUENTA CORRIENTE) */}
+            {recepcionParaEditar && (
+                <Modal title={`✏️ Editar Recepción #${recepcionParaEditar.numero}`} onClose={() => setRecepcionParaEditar(null)} width={780}>
+                    <form onSubmit={guardarEdicionRecepcion} className="stack gap-md">
+                        {errorEdicion && <div className="alert-banner error">{errorEdicion}</div>}
+
+                        <div className="alert-banner info" style={{ fontSize: 13, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF' }}>
+                            ℹ️ <strong>Edición Transaccional ACID:</strong> Podés corregir datos de factura/remito, vencimientos de lotes, costos y cantidades. El sistema rebalancea el stock y ajusta la cuenta corriente del proveedor automáticamente.
+                        </div>
+
+                        <div className="form-grid">
+                            <div className="field">
+                                <label>Proveedor *</label>
+                                <select
+                                    value={editRecepcionForm.proveedor_id}
+                                    onChange={e => setEditRecepcionForm({ ...editRecepcionForm, proveedor_id: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Seleccionar proveedor…</option>
+                                    {proveedores.map(p => (
+                                        <option key={p.id} value={p.id}>{p.razon_social}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="field">
+                                <label>Fecha de ingreso *</label>
+                                <input
+                                    type="date"
+                                    value={editRecepcionForm.fecha}
+                                    onChange={e => setEditRecepcionForm({ ...editRecepcionForm, fecha: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label>N° Remito Proveedor</label>
+                                <input
+                                    placeholder="Ej: R-0001-00004523"
+                                    value={editRecepcionForm.numero_remito_proveedor}
+                                    onChange={e => setEditRecepcionForm({ ...editRecepcionForm, numero_remito_proveedor: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label>N° Factura de Compra</label>
+                                <input
+                                    placeholder="Ej: FC A 0005-00012899"
+                                    value={editRecepcionForm.numero_factura}
+                                    onChange={e => setEditRecepcionForm({ ...editRecepcionForm, numero_factura: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="field">
+                            <label>Observaciones de recepción</label>
+                            <input
+                                placeholder="Ej: Control de calidad aprobado / Ingreso en depósito principal"
+                                value={editRecepcionForm.observaciones}
+                                onChange={e => setEditRecepcionForm({ ...editRecepcionForm, observaciones: e.target.value })}
+                            />
+                        </div>
+
+                        {/* TABLA DE ÍTEMS EDITABLES */}
+                        <div className="stack gap-xs">
+                            <label style={{ fontWeight: 700 }}>Mercadería Recibida y Lotes</label>
+                            <div className="stack gap-sm">
+                                {editRecepcionItems.map((it, idx) => (
+                                    <div key={idx} className="item-row-card" style={{ padding: '12px 14px', background: 'var(--color-surface-sunken)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-primary-dark)' }}>
+                                                {it.producto_nombre}
+                                            </span>
+                                            {it.cantidad_actual !== undefined && (
+                                                <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+                                                    Stock actual remanente en lote: <strong>{it.cantidad_actual} {it.unidad_medida}</strong>
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+                                            <div>
+                                                <label className="text-xs muted">Cantidad ({it.unidad_medida || 'kg'}) *</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0.01"
+                                                    value={it.cantidad}
+                                                    onChange={e => actualizarEditRecepcionItem(idx, 'cantidad', e.target.value)}
+                                                    style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="text-xs muted">Costo Unitario ($) *</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    value={it.precio_unitario}
+                                                    onChange={e => actualizarEditRecepcionItem(idx, 'precio_unitario', e.target.value)}
+                                                    style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="text-xs muted">N° de Lote</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ej: L-2026-04"
+                                                    value={it.numero_lote}
+                                                    onChange={e => actualizarEditRecepcionItem(idx, 'numero_lote', e.target.value)}
+                                                    style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="text-xs muted">Fecha Vencimiento</label>
+                                                <input
+                                                    type="date"
+                                                    value={it.fecha_vencimiento}
+                                                    onChange={e => actualizarEditRecepcionItem(idx, 'fecha_vencimiento', e.target.value)}
+                                                    style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                                />
+                                            </div>
+
+                                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                <span className="text-xs muted">Subtotal</span>
+                                                <span className="mono" style={{ fontWeight: 700, fontSize: 14 }}>
+                                                    {fmtMoney((Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0))}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* RESUMEN ECONÓMICO */}
+                        {(() => {
+                            const nuevoTotal = editRecepcionItems.reduce((acc, it) => acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0);
+                            const totalPrevio = Number(recepcionParaEditar.total) || 0;
+                            const diff = nuevoTotal - totalPrevio;
+
+                            return (
+                                <div className="spread" style={{ background: '#FAF9F4', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--color-border)', alignItems: 'center' }}>
+                                    <div>
+                                        <div className="text-xs muted">Total anterior: <strong>{fmtMoney(totalPrevio)}</strong></div>
+                                        {diff !== 0 && (
+                                            <div className="text-xs" style={{ color: diff > 0 ? '#B45309' : '#047857' }}>
+                                                Ajuste a cuenta de proveedor: <strong>{diff > 0 ? `+${fmtMoney(diff)}` : `-${fmtMoney(Math.abs(diff))}`}</strong>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div className="text-xs muted">Nuevo Total Compra:</div>
+                                        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-primary-dark)' }}>
+                                            {fmtMoney(nuevoTotal)}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        <div className="spread" style={{ borderTop: '1px solid var(--color-border)', paddingTop: 12 }}>
+                            <button type="button" className="btn btn-ghost" onClick={() => setRecepcionParaEditar(null)}>
+                                Cancelar
+                            </button>
+                            <button type="submit" className="btn btn-primary" disabled={guardandoEdicion}>
+                                {guardandoEdicion ? 'Guardando cambios (ACID)...' : '💾 Guardar Cambios y Actualizar Lotes'}
+                            </button>
+                        </div>
+                    </form>
                 </Modal>
             )}
         </div>

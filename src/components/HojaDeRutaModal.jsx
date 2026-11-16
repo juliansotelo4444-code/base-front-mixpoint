@@ -120,32 +120,34 @@ export default function HojaDeRutaModal({ remitoIds, onClose }) {
                                 </div>
                             </div>
 
-                            <table className="data-table" style={{ fontSize: 12 }}>
-                                <thead>
-                                    <tr style={{ background: '#f8fafc' }}>
-                                        <th style={{ width: 40 }}>OK</th>
-                                        <th>Código</th>
-                                        <th>Producto</th>
-                                        <th className="text-center">En Pedidos</th>
-                                        <th className="text-right">Cantidad Total a Subir</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {picking.map(p => (
-                                        <tr key={p.producto_id}>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <input type="checkbox" style={{ width: 16, height: 16, cursor: 'pointer' }} />
-                                            </td>
-                                            <td className="mono muted">{p.codigo || '—'}</td>
-                                            <td style={{ fontWeight: 600 }}>{p.producto_nombre}</td>
-                                            <td className="text-center mono">{p.cantidad_pedidos}</td>
-                                            <td className="text-right mono" style={{ fontWeight: 700, fontSize: 13, color: '#1a382b' }}>
-                                                {p.total_cantidad} {p.unidad_medida}
-                                            </td>
+                            <div className="table-wrap">
+                                <table className="data-table" style={{ fontSize: 12 }}>
+                                    <thead>
+                                        <tr style={{ background: '#f8fafc' }}>
+                                            <th style={{ width: 40 }}>OK</th>
+                                            <th>Código</th>
+                                            <th>Producto</th>
+                                            <th className="text-center">En Pedidos</th>
+                                            <th className="text-right">Cantidad Total a Subir</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {picking.map(p => (
+                                            <tr key={p.producto_id}>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <input type="checkbox" style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                                                </td>
+                                                <td className="mono muted">{p.codigo || '—'}</td>
+                                                <td style={{ fontWeight: 600 }}>{p.producto_nombre}</td>
+                                                <td className="text-center mono">{p.cantidad_pedidos}</td>
+                                                <td className="text-right mono" style={{ fontWeight: 700, fontSize: 13, color: '#1a382b' }}>
+                                                    {p.total_cantidad} {p.unidad_medida}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
 
@@ -164,46 +166,48 @@ export default function HojaDeRutaModal({ remitoIds, onClose }) {
                                 </div>
                             </div>
 
-                            <table className="data-table" style={{ fontSize: 11.5 }}>
-                                <thead>
-                                    <tr style={{ background: '#f8fafc' }}>
-                                        <th style={{ width: 30 }}>#</th>
-                                        <th>Remito</th>
-                                        <th>Cliente & Teléfono</th>
-                                        <th>Dirección / Localidad</th>
-                                        <th>Resumen de Mercadería</th>
-                                        <th className="text-right">Cobrar ($)</th>
-                                        <th style={{ width: 100 }}>Firma / Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {remitos.map((r, idx) => (
-                                        <tr key={r.id}>
-                                            <td className="mono muted text-center">{idx + 1}</td>
-                                            <td className="mono" style={{ fontWeight: 700 }}>{r.numero}</td>
-                                            <td>
-                                                <div style={{ fontWeight: 600 }}>{r.cliente_nombre}</div>
-                                                {r.cliente_telefono && <div className="muted text-xs mono">📞 {r.cliente_telefono}</div>}
-                                            </td>
-                                            <td>
-                                                <div>{r.direccion_entrega || r.cliente_direccion_base || 'Retiro en depósito'}</div>
-                                                {r.cliente_localidad && <span className="muted text-xs">({r.cliente_localidad})</span>}
-                                            </td>
-                                            <td>
-                                                <div style={{ maxWidth: 240, fontSize: 11, lineHeight: 1.2 }}>
-                                                    {r.items?.map(it => `${it.producto_nombre} x${it.cantidad}${it.unidad_medida}`).join(', ')}
-                                                </div>
-                                            </td>
-                                            <td className="text-right mono" style={{ fontWeight: 700, fontSize: 12.5, color: '#15803d' }}>
-                                                {fmtMoney(r.total)}
-                                            </td>
-                                            <td style={{ borderBottom: '1px dashed #cbd5e1' }}>
-                                                <div style={{ height: 26 }}></div>
-                                            </td>
+                            <div className="table-wrap">
+                                <table className="data-table" style={{ fontSize: 11.5 }}>
+                                    <thead>
+                                        <tr style={{ background: '#f8fafc' }}>
+                                            <th style={{ width: 30 }}>#</th>
+                                            <th>Remito</th>
+                                            <th>Cliente & Teléfono</th>
+                                            <th>Dirección / Localidad</th>
+                                            <th>Resumen de Mercadería</th>
+                                            <th className="text-right">Cobrar ($)</th>
+                                            <th style={{ width: 100 }}>Firma / Estado</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {remitos.map((r, idx) => (
+                                            <tr key={r.id}>
+                                                <td className="mono muted text-center">{idx + 1}</td>
+                                                <td className="mono" style={{ fontWeight: 700 }}>{r.numero}</td>
+                                                <td>
+                                                    <div style={{ fontWeight: 600 }}>{r.cliente_nombre}</div>
+                                                    {r.cliente_telefono && <div className="muted text-xs mono">📞 {r.cliente_telefono}</div>}
+                                                </td>
+                                                <td>
+                                                    <div>{r.direccion_entrega || r.cliente_direccion_base || 'Retiro en depósito'}</div>
+                                                    {r.cliente_localidad && <span className="muted text-xs">({r.cliente_localidad})</span>}
+                                                </td>
+                                                <td>
+                                                    <div style={{ maxWidth: 240, fontSize: 11, lineHeight: 1.2 }}>
+                                                        {r.items?.map(it => `${it.producto_nombre} x${it.cantidad}${it.unidad_medida}`).join(', ')}
+                                                    </div>
+                                                </td>
+                                                <td className="text-right mono" style={{ fontWeight: 700, fontSize: 12.5, color: '#15803d' }}>
+                                                    {fmtMoney(r.total)}
+                                                </td>
+                                                <td style={{ borderBottom: '1px dashed #cbd5e1' }}>
+                                                    <div style={{ height: 26 }}></div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
                 </div>

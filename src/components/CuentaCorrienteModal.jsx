@@ -72,10 +72,21 @@ export default function CuentaCorrienteModal({ entidadTipo, entidad, onClose, on
         setGuardando(true);
         setError('');
         try {
+            let tipoFinal = tipo;
+            let subtipoFinal = null;
+            if (tipo === 'ajuste_credito') {
+                tipoFinal = 'ajuste';
+                subtipoFinal = 'credito';
+            } else if (tipo === 'ajuste_debito') {
+                tipoFinal = 'ajuste';
+                subtipoFinal = 'debito';
+            }
+
             await client.post('/cuenta-corriente', {
                 entidad_tipo: entidadTipo,
                 entidad_id: entidad.id,
-                tipo,
+                tipo: tipoFinal,
+                subtipo: subtipoFinal,
                 monto: numMonto,
                 medio_pago: medioPago,
                 observaciones
@@ -181,13 +192,15 @@ export default function CuentaCorrienteModal({ entidadTipo, entidad, onClose, on
                                         <>
                                             <option value="cobro">Cobro (disminuye deuda)</option>
                                             <option value="cargo">Cargo / Facturación (aumenta deuda)</option>
-                                            <option value="ajuste">Ajuste manual</option>
+                                            <option value="ajuste_credito">Ajuste / Bonificación / Nota de crédito (disminuye deuda)</option>
+                                            <option value="ajuste_debito">Ajuste / Recargo (aumenta deuda)</option>
                                         </>
                                     ) : (
                                         <>
                                             <option value="pago">Pago emitido (disminuye deuda)</option>
                                             <option value="cargo">Cargo / Factura proveedor (aumenta deuda)</option>
-                                            <option value="ajuste">Ajuste manual</option>
+                                            <option value="ajuste_credito">Ajuste / Descuento proveedor (disminuye deuda)</option>
+                                            <option value="ajuste_debito">Ajuste manual (aumenta deuda)</option>
                                         </>
                                     )}
                                 </select>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { IconSync, IconCheck, IconCopy, IconAlerta } from '../components/Icons';
+import { IconSync, IconCheck, IconCopy } from '../components/Icons';
 
 export default function SincronizacionSheets() {
     const [config, setConfig] = useState({
@@ -14,6 +14,7 @@ export default function SincronizacionSheets() {
     const [logs, setLogs] = useState([]);
     const [cargando, setCargando] = useState(false);
     const [sincronizando, setSincronizando] = useState(false);
+    const [enviandoPush, setEnviandoPush] = useState(false);
     const [mensajeFeedback, setMensajeFeedback] = useState(null);
     const [copiado, setCopiado] = useState(false);
 
@@ -71,6 +72,36 @@ export default function SincronizacionSheets() {
         }
     }
 
+    async function ejecutarPushASheets() {
+        if (!config.script_url) {
+            setMensajeFeedback({
+                tipo: 'error',
+                texto: 'Para enviar datos a Google Sheets necesitas configurar la URL de Webhook Apps Script abajo.'
+            });
+            return;
+        }
+        setEnviandoPush(true);
+        setMensajeFeedback(null);
+        try {
+            const res = await api.post('/integraciones/push-a-sheets', {
+                script_url: config.script_url
+            });
+            if (res.ok) {
+                setMensajeFeedback({ tipo: 'exito', texto: res.mensaje || 'Catálogo enviado con éxito a Google Sheets.' });
+            } else {
+                setMensajeFeedback({ tipo: 'error', texto: res.mensaje || res.error || 'No se pudo enviar a Google Sheets.' });
+            }
+        } catch (err) {
+            setMensajeFeedback({ tipo: 'error', texto: 'Error al enviar a Google Sheets: ' + (err.message || '') });
+        } finally {
+            setEnviandoPush(false);
+        }
+    }
+
+    function descargarCSV() {
+        window.open('/api/integraciones/exportar-catalogo-csv', '_blank');
+    }
+
     function copiarCodigo() {
         if (!appsScriptCode) return;
         navigator.clipboard.writeText(appsScriptCode);
@@ -87,14 +118,64 @@ export default function SincronizacionSheets() {
                         Mantené tu hoja de cálculo habitual como panel de carga sincronizada en tiempo real con Mix Point.
                     </p>
                 </div>
-                <button
-                    className="btn btn-primary"
-                    onClick={ejecutarSyncBidireccional}
-                    disabled={sincronizando}
-                >
-                    <IconSync className={sincronizando ? 'spinner' : ''} />
-                    {sincronizando ? 'Sincronizando...' : 'Sincronizar Todo Ahora'}
-                </button>
+                <div className="row gap-xs" style={{ flexWrap: 'wrap' }}>
+                    <button
+                        type="button"
+                        onClick={descargarCSV}
+                        className="btn btn-secondary"
+                        style={{ fontSize: 13 }}
+                        title="Descargar copia del catálogo en formato CSV compatible directo con Google Sheets"
+                    >
+                        📥 Descargar Catálogo CSV
+                    </button>
+                    <button
+                        className="btn btn-primary"
+                        onClick={ejecutarSyncBidireccional}
+                        disabled={sincronizando}
+                    >
+                        <IconSync className={sincronizando ? 'spinner' : ''} />
+                        {sincronizando ? 'Sincronizando...' : 'Sincronizar Seguro Ahora'}
+                    </button>
+                </div>
+            </div>
+
+            {/* ESTADO DE PROTECCIÓN DE DATOS LOCALES */}
+            <div className="card" style={{
+                marginBottom: 20,
+                padding: '14px 18px',
+                background: 'linear-gradient(135deg, rgba(201, 162, 39, 0.08) 0%, rgba(30, 41, 59, 0.03) 100%)',
+                border: '1px solid rgba(201, 162, 39, 0.35)',
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ fontSize: 26 }}>🛡️</div>
+                    <div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-primary-dark)' }}>
+                            Protección Activa de la Base de Gestión
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                            Los cambios que generás en Mix Point (precios, productos, descripciones, stock y pedidos web) tienen máxima prioridad y están blindados contra sobrescrituras accidentales al sincronizar con Google Sheets.
+                        </div>
+                    </div>
+                </div>
+                <div className="row gap-xs">
+                    {config.script_url && (
+                        <button
+                            type="button"
+                            onClick={ejecutarPushASheets}
+                            disabled={enviandoPush}
+                            className="btn btn-secondary btn-sm"
+                            style={{ fontWeight: 600 }}
+                        >
+                            {enviandoPush ? 'Enviando...' : '📤 Enviar Catálogo a Sheets'}
+                        </button>
+                    )}
+                </div>
             </div>
 
             {mensajeFeedback && (
@@ -228,7 +309,7 @@ export default function SincronizacionSheets() {
                 {logs.length === 0 ? (
                     <div style={{ color: 'var(--color-text-muted)', fontSize: 13, padding: '16px 0' }}>No hay registros de sincronización recientes.</div>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-wrap">
                         <table className="data-table" style={{ width: '100%', fontSize: 12.5 }}>
                             <thead>
                                 <tr>

@@ -87,6 +87,8 @@ export default function Remitos() {
     const [observaciones, setObservaciones] = useState('');
     const [permitirSinStock, setPermitirSinStock] = useState(true);
     const [descuentoPorcentaje, setDescuentoPorcentaje] = useState(0);
+    const [tipoDescuento, setTipoDescuento] = useState('porcentaje'); // 'porcentaje' | 'monto'
+    const [descuentoMonto, setDescuentoMonto] = useState('');
     const [items, setItems] = useState([{ producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
 
     // Formulario de Edición de Remito (Transaccional ACID)
@@ -205,21 +207,34 @@ export default function Remitos() {
         setObservaciones('');
         setPermitirSinStock(true);
         setDescuentoPorcentaje(0);
+        setTipoDescuento('porcentaje');
+        setDescuentoMonto('');
         setItems([{ producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
         setError('');
         setModalOpen(true);
     }
 
-    // Sugiere el precio unitario según cliente o cantidad por escala mayorista
+    // Sugiere el precio unitario según cliente o cantidad por escala mayorista respetando el Excel base
     function calcularPrecioSugerido(prod, cant, clienteObj) {
         if (!prod) return 0;
         const c = Number(cant) || 0;
         const lista = clienteObj?.lista_precio;
 
-        if (lista === 'treintaKg' && Number(prod.precio_30kg) > 0) return Number(prod.precio_30kg);
-        if (lista === 'veinticincoKg' && Number(prod.precio_25kg) > 0) return Number(prod.precio_25kg);
-        if (lista === 'diezKg' && Number(prod.precio_10kg) > 0) return Number(prod.precio_10kg);
-        if (lista === 'cincoKg' && Number(prod.precio_5kg) > 0) return Number(prod.precio_5kg);
+        if (lista === 'treintaKg') {
+            if (Number(prod.precio_30kg) > 0) return Number(prod.precio_30kg);
+            if (Number(prod.precio_25kg) > 0) return Number(prod.precio_25kg);
+            if (Number(prod.precio_10kg) > 0) return Number(prod.precio_10kg);
+            if (Number(prod.precio_5kg) > 0) return Number(prod.precio_5kg);
+        } else if (lista === 'veinticincoKg') {
+            if (Number(prod.precio_25kg) > 0) return Number(prod.precio_25kg);
+            if (Number(prod.precio_10kg) > 0) return Number(prod.precio_10kg);
+            if (Number(prod.precio_5kg) > 0) return Number(prod.precio_5kg);
+        } else if (lista === 'diezKg') {
+            if (Number(prod.precio_10kg) > 0) return Number(prod.precio_10kg);
+            if (Number(prod.precio_5kg) > 0) return Number(prod.precio_5kg);
+        } else if (lista === 'cincoKg') {
+            if (Number(prod.precio_5kg) > 0) return Number(prod.precio_5kg);
+        }
 
         // Por volumen si no está forzado por lista
         if (c >= 30 && Number(prod.precio_30kg) > 0) return Number(prod.precio_30kg);
@@ -227,7 +242,7 @@ export default function Remitos() {
         if (c >= 10 && Number(prod.precio_10kg) > 0) return Number(prod.precio_10kg);
         if (c >= 5 && Number(prod.precio_5kg) > 0) return Number(prod.precio_5kg);
 
-        return Number(prod.precio_venta) || 0;
+        return Number(prod.precio_venta) || Number(prod.precio_5kg) || 0;
     }
 
     function handleSelectProducto(index, prodId, prod) {
@@ -267,9 +282,11 @@ export default function Remitos() {
         setItems(items.filter((_, idx) => idx !== i));
     }
 
-    // Cálculos de totales con descuento
+    // Cálculos de totales con soporte para % y monto fijo en $
     const subtotalBruto = items.reduce((acc, it) => acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0);
-    const montoDescuento = subtotalBruto * (Number(descuentoPorcentaje) / 100);
+    const montoDescuento = tipoDescuento === 'monto'
+        ? Math.min(subtotalBruto, Math.max(0, Number(descuentoMonto) || 0))
+        : Math.round((subtotalBruto * (Math.max(0, Math.min(100, Number(descuentoPorcentaje) || 0)) / 100)) * 100) / 100;
     const totalFinal = Math.max(0, subtotalBruto - montoDescuento);
 
     async function guardar(e) {
@@ -291,7 +308,8 @@ export default function Remitos() {
                 peso_kg: pesoKgForm ? Number(pesoKgForm) : undefined,
                 observaciones,
                 permitir_sin_stock: permitirSinStock,
-                descuento_porcentaje: Number(descuentoPorcentaje) || 0,
+                descuento_porcentaje: tipoDescuento === 'porcentaje' ? (Number(descuentoPorcentaje) || 0) : 0,
+                descuento_monto: tipoDescuento === 'monto' ? (Number(descuentoMonto) || 0) : 0,
                 items: itemsValidos.map(it => ({
                     producto_id: Number(it.producto_id),
                     cantidad: Number(it.cantidad),
@@ -399,6 +417,10 @@ export default function Remitos() {
     }
 
     async function abrirEditarRemito(r) {
+        if (['anulado', 'cancelado'].includes(r.estado)) {
+            alert(`No se puede editar el remito #${r.numero} porque está ${r.estado}.`);
+            return;
+        }
         setErrorEdicion('');
         try {
             const { data } = await client.get(`/remitos/${r.id}`);
@@ -413,6 +435,8 @@ export default function Remitos() {
                 valor_declarado: data.valor_declarado !== null && data.valor_declarado !== undefined ? String(data.valor_declarado) : '',
                 observaciones: data.observaciones || '',
                 descuento_porcentaje: data.descuento_porcentaje || 0,
+                tipo_descuento: 'porcentaje',
+                descuento_monto: '',
                 permitir_sin_stock: true,
                 motivo_edicion: ''
             });
@@ -481,7 +505,8 @@ export default function Remitos() {
                 peso_kg: editForm.peso_kg !== '' ? Number(editForm.peso_kg) : undefined,
                 valor_declarado: editForm.valor_declarado !== '' ? Number(editForm.valor_declarado) : undefined,
                 observaciones: editForm.observaciones,
-                descuento_porcentaje: Number(editForm.descuento_porcentaje) || 0,
+                descuento_porcentaje: editForm.tipo_descuento === 'porcentaje' ? (Number(editForm.descuento_porcentaje) || 0) : 0,
+                descuento_monto: editForm.tipo_descuento === 'monto' ? (Number(editForm.descuento_monto) || 0) : 0,
                 permitir_sin_stock: editForm.permitir_sin_stock,
                 motivo_edicion: editForm.motivo_edicion,
                 items: editItems.map(it => ({
@@ -1069,8 +1094,9 @@ export default function Remitos() {
                                                     <button
                                                         className="btn btn-ghost btn-sm"
                                                         onClick={() => abrirEditarRemito(r)}
-                                                        style={{ padding: '5px 9px', fontSize: 12, color: '#B45309', fontWeight: 600 }}
-                                                        title="Editar cantidades o productos"
+                                                        disabled={['anulado', 'cancelado'].includes(r.estado)}
+                                                        style={{ padding: '5px 9px', fontSize: 12, color: ['anulado', 'cancelado'].includes(r.estado) ? 'var(--color-text-muted)' : '#B45309', fontWeight: 600, opacity: ['anulado', 'cancelado'].includes(r.estado) ? 0.4 : 1 }}
+                                                        title={['anulado', 'cancelado'].includes(r.estado) ? 'No se puede editar un remito anulado o cancelado' : 'Editar cantidades o productos'}
                                                     >
                                                         ✏️ Editar
                                                     </button>
@@ -1242,8 +1268,9 @@ export default function Remitos() {
                                                         <button
                                                             className="btn btn-secondary btn-sm"
                                                             onClick={() => abrirEditarRemito(r)}
-                                                            title="Editar remito y rebalancear stock (ACID)"
-                                                            style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600, padding: '5px 8px', fontSize: 12 }}
+                                                            disabled={['anulado', 'cancelado'].includes(r.estado)}
+                                                            title={['anulado', 'cancelado'].includes(r.estado) ? 'No se puede editar un remito anulado o cancelado' : 'Editar remito y rebalancear stock (ACID)'}
+                                                            style={{ borderColor: '#F59E0B', color: ['anulado', 'cancelado'].includes(r.estado) ? 'var(--color-text-muted)' : '#B45309', fontWeight: 600, padding: '5px 8px', fontSize: 12, opacity: ['anulado', 'cancelado'].includes(r.estado) ? 0.4 : 1 }}
                                                         >
                                                             ✏️ Editar
                                                         </button>
@@ -1379,7 +1406,9 @@ export default function Remitos() {
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => abrirEditarRemito(r)}
-                                                style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
+                                                disabled={['anulado', 'cancelado'].includes(r.estado)}
+                                                style={{ borderColor: '#F59E0B', color: ['anulado', 'cancelado'].includes(r.estado) ? 'var(--color-text-muted)' : '#B45309', fontWeight: 600, opacity: ['anulado', 'cancelado'].includes(r.estado) ? 0.4 : 1 }}
+                                                title={['anulado', 'cancelado'].includes(r.estado) ? 'No se puede editar un remito anulado o cancelado' : 'Editar remito'}
                                             >
                                                 ✏️ Editar
                                             </button>
@@ -1570,23 +1599,75 @@ export default function Remitos() {
                         </div>
 
                         {/* DESCUENTOS Y AJUSTES */}
-                        <div className="spread" style={{ background: '#FAF9F4', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--color-border)' }}>
-                            <div className="row gap-sm">
-                                <label style={{ fontSize: 13, fontWeight: 600 }}>🏷️ Descuento general al remito (%):</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    value={descuentoPorcentaje}
-                                    onChange={e => setDescuentoPorcentaje(e.target.value)}
-                                    style={{ width: 80, padding: '5px 8px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
-                                />
+                        <div className="spread" style={{ background: '#FAF9F4', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--color-border)', alignItems: 'center' }}>
+                            <div className="row gap-sm" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                                <label style={{ fontSize: 13, fontWeight: 600 }}>🏷️ Descuento al remito:</label>
+                                <div style={{ display: 'inline-flex', borderRadius: 6, overflow: 'hidden', border: '1px solid var(--color-border-strong)' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTipoDescuento('porcentaje')}
+                                        style={{
+                                            padding: '4px 10px',
+                                            border: 'none',
+                                            background: tipoDescuento === 'porcentaje' ? 'var(--color-primary)' : 'var(--color-surface)',
+                                            color: tipoDescuento === 'porcentaje' ? '#FFFFFF' : 'var(--color-text)',
+                                            fontWeight: 600,
+                                            fontSize: 12,
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        % Porcentaje
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTipoDescuento('monto')}
+                                        style={{
+                                            padding: '4px 10px',
+                                            border: 'none',
+                                            borderLeft: '1px solid var(--color-border-strong)',
+                                            background: tipoDescuento === 'monto' ? 'var(--color-primary)' : 'var(--color-surface)',
+                                            color: tipoDescuento === 'monto' ? '#FFFFFF' : 'var(--color-text)',
+                                            fontWeight: 600,
+                                            fontSize: 12,
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        $ Monto Fijo
+                                    </button>
+                                </div>
+
+                                {tipoDescuento === 'porcentaje' ? (
+                                    <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.5"
+                                            placeholder="0%"
+                                            value={descuentoPorcentaje}
+                                            onChange={e => setDescuentoPorcentaje(e.target.value)}
+                                            style={{ width: 80, padding: '5px 8px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                        />
+                                        <span className="text-xs muted">%</span>
+                                    </div>
+                                ) : (
+                                    <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="100"
+                                            placeholder="$ Monto"
+                                            value={descuentoMonto}
+                                            onChange={e => setDescuentoMonto(e.target.value)}
+                                            style={{ width: 110, padding: '5px 8px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                {Number(descuentoPorcentaje) > 0 && (
+                                {montoDescuento > 0 && (
                                     <div className="text-sm" style={{ color: '#B23A3A', marginBottom: 2 }}>
-                                        Descuento ({descuentoPorcentaje}%): -{fmtMoney(montoDescuento)}
+                                        Descuento {tipoDescuento === 'porcentaje' ? `(${descuentoPorcentaje}%)` : 'fijo'}: -{fmtMoney(montoDescuento)}
                                     </div>
                                 )}
                                 <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-primary-dark)' }}>
@@ -1785,30 +1866,32 @@ export default function Remitos() {
                             </div>
                         </div>
 
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Producto</th>
-                                    <th>Lote FEFO</th>
-                                    <th className="text-right">Cant.</th>
-                                    <th className="text-right">Precio</th>
-                                    <th className="text-right">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {detalle.items.map(it => (
-                                    <tr key={it.id}>
-                                        <td className="mono text-sm">{it.producto_codigo || `MP-${it.producto_id}`}</td>
-                                        <td><strong>{it.producto_nombre}</strong></td>
-                                        <td className="mono text-xs muted">{it.numero_lote || 'L-GENERAL'}</td>
-                                        <td className="text-right mono">{it.cantidad} {it.unidad_medida}</td>
-                                        <td className="text-right mono">{fmtMoney(it.precio_unitario)}</td>
-                                        <td className="text-right mono" style={{ fontWeight: 600 }}>{fmtMoney(it.subtotal)}</td>
+                        <div className="table-wrap">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Producto</th>
+                                        <th>Lote FEFO</th>
+                                        <th className="text-right">Cant.</th>
+                                        <th className="text-right">Precio</th>
+                                        <th className="text-right">Subtotal</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {detalle.items.map(it => (
+                                        <tr key={it.id}>
+                                            <td className="mono text-sm">{it.producto_codigo || `MP-${it.producto_id}`}</td>
+                                            <td><strong>{it.producto_nombre}</strong></td>
+                                            <td className="mono text-xs muted">{it.numero_lote || 'L-GENERAL'}</td>
+                                            <td className="text-right mono">{it.cantidad} {it.unidad_medida}</td>
+                                            <td className="text-right mono">{fmtMoney(it.precio_unitario)}</td>
+                                            <td className="text-right mono" style={{ fontWeight: 600 }}>{fmtMoney(it.subtotal)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
                         <div className="spread" style={{ padding: '8px 0', borderTop: '1px solid var(--color-border)' }}>
                             <span className="muted">Total comprobante:</span>
@@ -1848,17 +1931,19 @@ export default function Remitos() {
                                 >
                                     🏷️ Etiqueta de Despacho
                                 </button>
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => {
-                                        const r = detalle;
-                                        setDetalle(null);
-                                        abrirEditarRemito(r);
-                                    }}
-                                    style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
-                                >
-                                    ✏️ Editar Remito
-                                </button>
+                                {detalle.estado !== 'anulado' && detalle.estado !== 'cancelado' && (
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => {
+                                            const r = detalle;
+                                            setDetalle(null);
+                                            abrirEditarRemito(r);
+                                        }}
+                                        style={{ borderColor: '#F59E0B', color: '#B45309', fontWeight: 600 }}
+                                    >
+                                        ✏️ Editar Remito
+                                    </button>
+                                )}
                                 <a
                                     href={buildWhatsAppLink(detalle)}
                                     target="_blank"
@@ -2049,15 +2134,61 @@ export default function Remitos() {
                             </div>
 
                             <div className="field">
-                                <label>Descuento comercial (%)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="0.5"
-                                    value={editForm.descuento_porcentaje}
-                                    onChange={e => setEditForm({ ...editForm, descuento_porcentaje: e.target.value })}
-                                />
+                                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>Descuento:</span>
+                                    <div style={{ display: 'inline-flex', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditForm({ ...editForm, tipo_descuento: 'porcentaje' })}
+                                            style={{
+                                                padding: '2px 7px',
+                                                border: 'none',
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                background: (editForm.tipo_descuento || 'porcentaje') === 'porcentaje' ? 'var(--color-primary)' : 'transparent',
+                                                color: (editForm.tipo_descuento || 'porcentaje') === 'porcentaje' ? '#FFFFFF' : 'inherit',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            %
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditForm({ ...editForm, tipo_descuento: 'monto' })}
+                                            style={{
+                                                padding: '2px 7px',
+                                                border: 'none',
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                background: editForm.tipo_descuento === 'monto' ? 'var(--color-primary)' : 'transparent',
+                                                color: editForm.tipo_descuento === 'monto' ? '#FFFFFF' : 'inherit',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            $
+                                        </button>
+                                    </div>
+                                </label>
+                                {(editForm.tipo_descuento || 'porcentaje') === 'porcentaje' ? (
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.5"
+                                        placeholder="0%"
+                                        value={editForm.descuento_porcentaje}
+                                        onChange={e => setEditForm({ ...editForm, descuento_porcentaje: e.target.value })}
+                                    />
+                                ) : (
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="100"
+                                        placeholder="$ Monto"
+                                        value={editForm.descuento_monto}
+                                        onChange={e => setEditForm({ ...editForm, descuento_monto: e.target.value })}
+                                    />
+                                )}
                             </div>
 
                             <div className="field">
@@ -2194,6 +2325,41 @@ export default function Remitos() {
                                 onChange={e => setEditForm({ ...editForm, observaciones: e.target.value })}
                             />
                         </div>
+
+                        {/* RESUMEN ECONÓMICO EN VIVO DE LA EDICIÓN */}
+                        {(() => {
+                            const subtotalBrutoEdit = editItems.reduce((acc, it) => acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0);
+                            const descPorc = Math.max(0, Math.min(100, Number(editForm.descuento_porcentaje) || 0));
+                            const montoDescEdit = editForm.tipo_descuento === 'monto'
+                                ? Math.min(subtotalBrutoEdit, Math.max(0, Number(editForm.descuento_monto) || 0))
+                                : Math.round((subtotalBrutoEdit * (descPorc / 100)) * 100) / 100;
+                            const nuevoTotalEdit = Math.max(0, subtotalBrutoEdit - montoDescEdit);
+                            const totalOriginal = Number(remitoParaEditar.total) || 0;
+                            const diffTotal = nuevoTotalEdit - totalOriginal;
+
+                            return (
+                                <div className="spread" style={{ background: '#FAF9F4', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--color-border)', alignItems: 'center' }}>
+                                    <div className="stack gap-xs">
+                                        <div className="text-xs muted">
+                                            Subtotal Bruto: <strong>{fmtMoney(subtotalBrutoEdit)}</strong>
+                                            {montoDescEdit > 0 && ` · Descuento: -${fmtMoney(montoDescEdit)}`}
+                                        </div>
+                                        <div className="text-xs" style={{ color: diffTotal > 0 ? '#B45309' : (diffTotal < 0 ? '#047857' : 'inherit') }}>
+                                            Total anterior: <strong>{fmtMoney(totalOriginal)}</strong>
+                                            {diffTotal !== 0 && (
+                                                <span> ({diffTotal > 0 ? `+${fmtMoney(diffTotal)}` : `-${fmtMoney(Math.abs(diffTotal))}`})</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div className="text-xs muted">Nuevo Total a facturar / cobrar:</div>
+                                        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-primary-dark)' }}>
+                                            {fmtMoney(nuevoTotalEdit)}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* RESUMEN Y BOTONES */}
                         <div className="spread" style={{ padding: '12px 0', borderTop: '2px solid var(--color-border)' }}>

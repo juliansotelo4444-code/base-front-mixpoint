@@ -39,11 +39,11 @@ const PAGINAS_REVISTA = [
 ];
 
 const CATEGORIAS_CON_ICONO = [
-    { nombre: 'Todas', icono: '🌰', total: 225 },
+    { nombre: 'Todas', icono: '🌰', total: 226 },
     { nombre: 'Frutos Secos', icono: '🥜', total: 20, pagina: 3 },
     { nombre: 'Mixes', icono: '🥣', total: 8, pagina: 5 },
     { nombre: 'Cereales', icono: '🌾', total: 16, pagina: 6 },
-    { nombre: 'Repostería', icono: '🍫', total: 11, pagina: 7 },
+    { nombre: 'Repostería', icono: '🍫', total: 12, pagina: 7 },
     { nombre: 'Snacks', icono: '🍿', total: 8, pagina: 8 },
     { nombre: 'Legumbres', icono: '🫘', total: 13, pagina: 9 },
     { nombre: 'Condimentos', icono: '🧂', total: 21, pagina: 10 },

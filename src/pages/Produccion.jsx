@@ -301,32 +301,34 @@ export default function Produccion() {
                             <p className="muted text-sm" style={{ padding: 20, textAlign: 'center' }}>Calculando disponibilidad...</p>
                         ) : simulacion ? (
                             <div className="stack gap-sm">
-                                <table className="data-table" style={{ fontSize: 12 }}>
-                                    <thead>
-                                        <tr>
-                                            <th>Ingrediente</th>
-                                            <th className="text-right">Requerido</th>
-                                            <th className="text-right">En Depósito</th>
-                                            <th>Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {simulacion.insumos.map(ing => (
-                                            <tr key={ing.producto_id}>
-                                                <td style={{ fontWeight: 600 }}>{ing.nombre}</td>
-                                                <td className="text-right mono" style={{ fontWeight: 700 }}>{ing.kg_necesarios} kg</td>
-                                                <td className="text-right mono muted">{ing.stock_actual} kg</td>
-                                                <td>
-                                                    {ing.suficiente ? (
-                                                        <span className="badge badge-success" style={{ fontSize: 10 }}>OK</span>
-                                                    ) : (
-                                                        <span className="badge badge-danger" style={{ fontSize: 10 }}>Falta stock</span>
-                                                    )}
-                                                </td>
+                                <div className="table-wrap">
+                                    <table className="data-table" style={{ fontSize: 12 }}>
+                                        <thead>
+                                            <tr>
+                                                <th>Ingrediente</th>
+                                                <th className="text-right">Requerido</th>
+                                                <th className="text-right">En Depósito</th>
+                                                <th>Estado</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {simulacion.insumos.map(ing => (
+                                                <tr key={ing.producto_id}>
+                                                    <td style={{ fontWeight: 600 }}>{ing.nombre}</td>
+                                                    <td className="text-right mono" style={{ fontWeight: 700 }}>{ing.kg_necesarios} kg</td>
+                                                    <td className="text-right mono muted">{ing.stock_actual} kg</td>
+                                                    <td>
+                                                        {ing.suficiente ? (
+                                                            <span className="badge badge-success" style={{ fontSize: 10 }}>OK</span>
+                                                        ) : (
+                                                            <span className="badge badge-danger" style={{ fontSize: 10 }}>Falta stock</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
 
                                 <div className="card" style={{ padding: 12, background: '#fff', marginTop: 10 }}>
                                     <div className="spread text-sm">

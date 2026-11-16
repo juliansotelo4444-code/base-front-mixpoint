@@ -11,6 +11,7 @@ const emptyForm = {
     codigo: '',
     nombre: '',
     descripcion: '',
+    imagen: '',
     categoria_id: '',
     unidad_medida: 'kg',
     precio_compra: 0,
@@ -21,6 +22,38 @@ const emptyForm = {
     precio_30kg: 0,
     stock_minimo: 20
 };
+
+// Comprime y redimensiona imágenes del lado del cliente para carga rápida y óptimo almacenamiento
+function comprimirImagen(file, maxWidth = 800, maxHeight = 800, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let { width, height } = img;
+                if (width > maxWidth || height > maxHeight) {
+                    if (width > height) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    } else {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = () => reject(new Error('No se pudo procesar la imagen seleccionada'));
+            img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('Error al leer el archivo'));
+        reader.readAsDataURL(file);
+    });
+}
 
 export default function Productos() {
     const [productos, setProductos] = useState([]);
@@ -40,6 +73,23 @@ export default function Productos() {
     const [ajusteLotesDisponibles, setAjusteLotesDisponibles] = useState([]);
     const [ajusteVencimiento, setAjusteVencimiento] = useState('');
     const [verPreciosId, setVerPreciosId] = useState(null);
+    const [subiendoImagen, setSubiendoImagen] = useState(false);
+
+    async function manejarArchivoImagen(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setSubiendoImagen(true);
+        setError('');
+        try {
+            const dataUrl = await comprimirImagen(file);
+            setForm(prev => ({ ...prev, imagen: dataUrl }));
+        } catch (err) {
+            setError(err.message || 'Error al procesar la imagen seleccionada');
+        } finally {
+            setSubiendoImagen(false);
+            e.target.value = '';
+        }
+    }
 
     async function cargar() {
         setLoading(true);
@@ -78,6 +128,7 @@ export default function Productos() {
         setForm({
             ...emptyForm,
             ...p,
+            imagen: p.imagen || '',
             categoria_id: p.categoria_id || '',
             precio_compra: Number(p.precio_compra) || 0,
             precio_venta: Number(p.precio_venta) || 0,
@@ -302,10 +353,10 @@ export default function Productos() {
                                             </button>
                                             {isVerPrecios && (
                                                 <div style={{ fontSize: 11, textAlign: 'right', marginTop: 4, lineHeight: 1.5 }} className="mono">
-                                                    <div>5kg: <strong>{fmtMoney(p.precio_5kg || p.precio_venta)}</strong></div>
-                                                    <div>10kg: <strong>{fmtMoney(p.precio_10kg || p.precio_5kg)}</strong></div>
-                                                    <div>25kg: <strong>{fmtMoney(p.precio_25kg || p.precio_10kg)}</strong></div>
-                                                    <div>30kg: <strong>{fmtMoney(p.precio_30kg || p.precio_25kg)}</strong></div>
+                                                    <div>5kg: <strong>{Number(p.precio_5kg) > 0 ? fmtMoney(p.precio_5kg) : '—'}</strong></div>
+                                                    <div>10kg: <strong>{Number(p.precio_10kg) > 0 ? fmtMoney(p.precio_10kg) : '—'}</strong></div>
+                                                    <div>25kg: <strong>{Number(p.precio_25kg) > 0 ? fmtMoney(p.precio_25kg) : '—'}</strong></div>
+                                                    <div>30kg: <strong>{Number(p.precio_30kg) > 0 ? fmtMoney(p.precio_30kg) : '—'}</strong></div>
                                                 </div>
                                             )}
                                         </td>
@@ -382,6 +433,76 @@ export default function Productos() {
                         <div className="field">
                             <label>Descripción / Ingredientes (ej: almendras, nuez, pasas)</label>
                             <input value={form.descripcion || ''} onChange={e => setForm({ ...form, descripcion: e.target.value })} />
+                        </div>
+
+                        {/* FOTO DE PORTADA DEL PRODUCTO */}
+                        <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 8, padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <label style={{ fontWeight: 600, fontSize: 13, color: '#1e293b' }}>
+                                    📸 Imagen de portada del producto
+                                </label>
+                                {form.imagen && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => setForm({ ...form, imagen: '' })}
+                                        style={{ color: '#ef4444', fontSize: 11 }}
+                                    >
+                                        Quitar imagen
+                                    </button>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                                <div style={{
+                                    width: 72,
+                                    height: 72,
+                                    borderRadius: 6,
+                                    border: '1px solid #e2e8f0',
+                                    background: '#ffffff',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    overflow: 'hidden',
+                                    flexShrink: 0
+                                }}>
+                                    {form.imagen ? (
+                                        <img
+                                            src={form.imagen}
+                                            alt="Portada"
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                            onError={(e) => { e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg'; }}
+                                        />
+                                    ) : (
+                                        <span style={{ fontSize: 26, opacity: 0.4 }}>🥜</span>
+                                    )}
+                                </div>
+
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
+                                            {subiendoImagen ? 'Procesando foto...' : (form.imagen ? 'Cambiar foto de portada' : 'Seleccionar foto desde PC / Celular')}
+                                            <input
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                                style={{ display: 'none' }}
+                                                onChange={manejarArchivoImagen}
+                                                disabled={subiendoImagen}
+                                            />
+                                        </label>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <span style={{ fontSize: 11, color: '#64748b' }}>O ingresar URL / nombre:</span>
+                                        <input
+                                            type="text"
+                                            placeholder="https://... o archivo.jpg"
+                                            value={form.imagen && !form.imagen.startsWith('data:image') ? form.imagen : ''}
+                                            onChange={e => setForm({ ...form, imagen: e.target.value })}
+                                            style={{ fontSize: 11, padding: '4px 8px', height: 26, flex: 1 }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* ESCALAS DE PRECIOS MIX POINT */}

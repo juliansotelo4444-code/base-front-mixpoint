@@ -18,6 +18,7 @@ export default function Gastos() {
     const [nuevaCategoriaOpen, setNuevaCategoriaOpen] = useState(false);
     const [nuevaCategoriaNombre, setNuevaCategoriaNombre] = useState('');
     const [form, setForm] = useState(emptyForm);
+    const [editando, setEditando] = useState(null);
     const [error, setError] = useState('');
 
     async function cargar() {
@@ -37,10 +38,30 @@ export default function Gastos() {
     }, []);
     useEffect(() => { cargar(); }, [categoriaFiltro]);
 
-    const filtrados = q ? gastos.filter(g => g.descripcion.toLowerCase().includes(q.toLowerCase()) || g.numero.toLowerCase().includes(q.toLowerCase())) : gastos;
-    const totalFiltrado = filtrados.reduce((acc, g) => acc + g.monto, 0);
+    const filtrados = q ? gastos.filter(g => (g.descripcion || '').toLowerCase().includes(q.toLowerCase()) || (g.numero || '').toLowerCase().includes(q.toLowerCase())) : gastos;
+    const totalFiltrado = filtrados.reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
 
-    function abrirNuevo() { setForm({ ...emptyForm, fecha: new Date().toISOString().slice(0, 10) }); setError(''); setModalOpen(true); }
+    function abrirNuevo() {
+        setEditando(null);
+        setForm({ ...emptyForm, fecha: new Date().toISOString().slice(0, 10) });
+        setError('');
+        setModalOpen(true);
+    }
+
+    function abrirEditar(g) {
+        setEditando(g);
+        setForm({
+            categoria_id: String(g.categoria_id || ''),
+            proveedor_id: g.proveedor_id ? String(g.proveedor_id) : '',
+            fecha: g.fecha ? String(g.fecha).slice(0, 10) : new Date().toISOString().slice(0, 10),
+            descripcion: g.descripcion || '',
+            monto: g.monto !== undefined && g.monto !== null ? String(g.monto) : '',
+            metodo_pago: g.metodo_pago || 'efectivo',
+            numero_comprobante: g.numero_comprobante || ''
+        });
+        setError('');
+        setModalOpen(true);
+    }
 
     async function guardar(e) {
         e.preventDefault();
@@ -50,7 +71,17 @@ export default function Gastos() {
             return;
         }
         try {
-            await client.post('/gastos', { ...form, categoria_id: Number(form.categoria_id), proveedor_id: form.proveedor_id || null, monto: Number(form.monto) });
+            const payload = {
+                ...form,
+                categoria_id: Number(form.categoria_id),
+                proveedor_id: form.proveedor_id ? Number(form.proveedor_id) : null,
+                monto: Number(form.monto)
+            };
+            if (editando) {
+                await client.put(`/gastos/${editando.id}`, payload);
+            } else {
+                await client.post('/gastos', payload);
+            }
             setModalOpen(false);
             cargar();
         } catch (err) {
@@ -110,7 +141,10 @@ export default function Gastos() {
                                     <td>{g.descripcion}{g.proveedor_nombre && <span className="muted text-sm"> · {g.proveedor_nombre}</span>}</td>
                                     <td className="text-sm muted" style={{ textTransform: 'capitalize' }}>{g.metodo_pago}</td>
                                     <td className="text-right mono">{fmtMoney(g.monto)}</td>
-                                    <td><button className="btn btn-ghost btn-sm" onClick={() => eliminar(g)}>✕</button></td>
+                                    <td style={{ whiteSpace: 'nowrap' }}>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => abrirEditar(g)} title="Editar gasto">✏️</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => eliminar(g)} title="Eliminar gasto" style={{ color: 'var(--color-danger)' }}>✕</button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -122,7 +156,7 @@ export default function Gastos() {
             </div>
 
             {modalOpen && (
-                <Modal title="Nuevo gasto" onClose={() => setModalOpen(false)} width={520}>
+                <Modal title={editando ? `Editar gasto #${editando.numero}` : "Nuevo gasto"} onClose={() => setModalOpen(false)} width={520}>
                     <form onSubmit={guardar} className="stack gap-md">
                         {error && <div className="alert-banner error">{error}</div>}
                         <div className="form-grid">

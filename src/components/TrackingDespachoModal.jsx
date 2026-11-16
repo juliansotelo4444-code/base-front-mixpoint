@@ -95,7 +95,7 @@ export default function TrackingDespachoModal({ pedido, onClose, onActualizado }
     const [direccionEntrega, setDireccionEntrega] = useState(pedido?.direccion_entrega || pedido?.cliente_direccion || '');
     const [bultos, setBultos] = useState(pedido?.bultos || 1);
     const [pesoKg, setPesoKg] = useState(pedido?.peso_kg || '');
-    const [franjaHoraria, setFranjaHoraria] = useState('');
+    const [franjaHoraria, setFranjaHoraria] = useState(pedido?.datos_despacho?.franja_horaria || '');
     const [plantillaSeleccionada, setPlantillaSeleccionada] = useState(
         pedido?.estado === 'entregado' ? 'entregado' :
         pedido?.estado === 'en_camino' ? 'en_camino' : 'en_preparacion'
@@ -144,10 +144,47 @@ export default function TrackingDespachoModal({ pedido, onClose, onActualizado }
         setTimeout(() => setNotifCopiado(false), 2500);
     };
 
+    // Guardar datos de despacho en la base de datos
+    const handleGuardarDespacho = async () => {
+        setGuardando(true);
+        try {
+            await api.put(`/remitos/${pedido.id}/despacho`, {
+                transportista,
+                direccion_entrega: direccionEntrega,
+                bultos: parseInt(bultos, 10) || 1,
+                peso_kg: parseFloat(pesoKg) || 0,
+                datos_despacho: {
+                    franja_horaria: franjaHoraria,
+                    ...(pedido.datos_despacho || {})
+                }
+            });
+            if (onActualizado) onActualizado();
+            return true;
+        } catch (err) {
+            console.error('Error al guardar datos de despacho:', err);
+            alert(err.response?.data?.error || 'No se pudieron guardar los datos de despacho');
+            return false;
+        } finally {
+            setGuardando(false);
+        }
+    };
+
     // Cambiar estado logístico y guardar datos
     const handleActualizarEstado = async (nuevoEstado) => {
         setGuardando(true);
         try {
+            // Guardar primero los datos editados de despacho
+            await api.put(`/remitos/${pedido.id}/despacho`, {
+                transportista,
+                direccion_entrega: direccionEntrega,
+                bultos: parseInt(bultos, 10) || 1,
+                peso_kg: parseFloat(pesoKg) || 0,
+                datos_despacho: {
+                    franja_horaria: franjaHoraria,
+                    ...(pedido.datos_despacho || {})
+                }
+            });
+
             // Actualizar columna kanban o estado en backend
             if (nuevoEstado === 'en_camino' || nuevoEstado === 'listo') {
                 await api.put(`/deposito/remitos/${pedido.id}/mover-columna`, { destino: 'listo' });
@@ -395,7 +432,7 @@ export default function TrackingDespachoModal({ pedido, onClose, onActualizado }
                             <strong style={{ fontSize: 13, color: '#334155', display: 'block', marginBottom: 8 }}>
                                 🚛 Transporte & Bultos
                             </strong>
-                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 8 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
                                 <div>
                                     <label style={{ fontSize: 11, color: '#64748B', display: 'block' }}>Chofer / Empresa</label>
                                     <input
@@ -430,6 +467,17 @@ export default function TrackingDespachoModal({ pedido, onClose, onActualizado }
                                         style={{ width: '100%', fontSize: 12 }}
                                     />
                                 </div>
+                            </div>
+                            <div style={{ marginTop: 8 }}>
+                                <label style={{ fontSize: 11, color: '#64748B', display: 'block' }}>⏰ Franja Horaria de Entrega</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={franjaHoraria}
+                                    onChange={(e) => setFranjaHoraria(e.target.value)}
+                                    placeholder="Ej: 14:00 a 18:00 hs / Turno Mañana"
+                                    style={{ width: '100%', fontSize: 12 }}
+                                />
                             </div>
                         </div>
                     </div>
@@ -598,7 +646,19 @@ export default function TrackingDespachoModal({ pedido, onClose, onActualizado }
                             </button>
                         </div>
 
-                        <div style={{ display: 'flex', gap: 10 }}>
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <button
+                                type="button"
+                                onClick={handleGuardarDespacho}
+                                disabled={guardando}
+                                className="btn btn-primary"
+                                style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                title="Guardar cambios de transportista, bultos, peso o dirección"
+                            >
+                                <span>💾</span>
+                                <span>{guardando ? 'Guardando...' : 'Guardar Datos'}</span>
+                            </button>
+
                             <button
                                 type="button"
                                 onClick={onClose}

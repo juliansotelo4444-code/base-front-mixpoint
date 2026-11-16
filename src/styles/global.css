@@ -361,7 +361,11 @@ a { color: inherit; }
 .card-pad { padding: 20px 22px; }
 
 /* ---------- Tablas ---------- */
-.table-wrap { overflow-x: auto; }
+.table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
 table.data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 table.data-table th {
     text-align: left;
@@ -495,6 +499,13 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
 .muted { color: var(--color-text-muted); }
 .text-sm { font-size: 12.5px; }
 .text-right { text-align: right; }
+
+/* Grids utilitarios responsivos */
+.grid { display: grid; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 
 .empty-state {
     padding: 48px 24px;
@@ -1145,6 +1156,13 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
    MEDIA QUERIES — TABLETS Y MÓVILES (<= 991px)
    ========================================================= */
 @media (max-width: 991px) {
+    .grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .grid-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .app-root-layout {
         display: block;
         min-height: 100vh;
@@ -1905,6 +1923,14 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
     gap: 12px;
 }
 
+/* Manual de usuario layout responsivo */
+.manual-layout-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
 /* Tablas desktop vs Cards mobile para Remitos */
 .desktop-only-table {
     display: block;
@@ -1987,9 +2013,32 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
     .tactical-hud-container {
         grid-template-columns: 1fr !important;
     }
+
+    .manual-layout-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .manual-usuario-page {
+        padding: 16px 12px !important;
+    }
 }
 
 @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .grid-2 > [style*="span 2"],
+    .grid-3 > [style*="span 2"], .grid-3 > [style*="span 3"],
+    .grid-4 > [style*="span 2"], .grid-4 > [style*="span 3"], .grid-4 > [style*="span 4"] {
+        grid-column: span 1 !important;
+    }
+
+    .spread {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
     .desktop-only-table {
         display: none !important;
     }

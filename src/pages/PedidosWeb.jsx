@@ -18,6 +18,7 @@ function extraerHorarioEntrega(notas) {
 
 export default function PedidosWeb() {
     const [pedidos, setPedidos] = useState([]);
+    const [productos, setProductos] = useState([]);
     const [pedidosUrl, setPedidosUrl] = useState('');
     const [configOpen, setConfigOpen] = useState(false);
     const [tempUrl, setTempUrl] = useState('');
@@ -30,6 +31,20 @@ export default function PedidosWeb() {
     const [mensaje, setMensaje] = useState('');
     const [q, setQ] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('todos');
+
+    // Estados para edición editable de Pedido Web
+    const [pedidoParaEditar, setPedidoParaEditar] = useState(null);
+    const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+    const [editForm, setEditForm] = useState({
+        cliente_nombre: '',
+        telefono: '',
+        direccion: '',
+        zona: '',
+        horario_entrega: '',
+        metodo_pago: '',
+        notas: ''
+    });
+    const [editItems, setEditItems] = useState([]);
 
     const handleEventoSocket = useCallback((evento, payload) => {
         if (evento === 'pedido_web_nuevo') {
@@ -47,13 +62,16 @@ export default function PedidosWeb() {
         setLoading(true);
         setError('');
         try {
-            const { data: cfg } = await client.get('/integraciones/config');
-            setPedidosUrl(cfg.pedidos_url || '');
-            setTempUrl(cfg.pedidos_url || '');
-
-            const { data } = await client.get('/integraciones/pedidos-web');
-            setPedidos(data.pedidos || []);
-            setOrigen(data.origen || 'base_de_datos');
+            const [cfgRes, pedidosRes, prodsRes] = await Promise.all([
+                client.get('/integraciones/config').catch(() => ({ data: {} })),
+                client.get('/integraciones/pedidos-web'),
+                client.get('/productos').catch(() => ({ data: [] }))
+            ]);
+            setPedidosUrl(cfgRes.data.pedidos_url || '');
+            setTempUrl(cfgRes.data.pedidos_url || '');
+            setPedidos(pedidosRes.data.pedidos || []);
+            setOrigen(pedidosRes.data.origen || 'base_de_datos');
+            setProductos(prodsRes.data || []);
         } catch (err) {
             setError(err.response?.data?.error || 'No se pudieron cargar los pedidos web.');
         } finally {
@@ -64,6 +82,126 @@ export default function PedidosWeb() {
     useEffect(() => {
         cargarConfigYPedidos();
     }, []);
+
+    function abrirModalEditar(p) {
+        setPedidoParaEditar(p);
+        setEditForm({
+            cliente_nombre: p.nombre || '',
+            telefono: p.telefono || '',
+            direccion: p.direccion || '',
+            zona: p.zona || '',
+            horario_entrega: p.horario_entrega || extraerHorarioEntrega(p.notas) || '',
+            metodo_pago: p.metodo_pago || 'No especificado',
+            notas: (p.notas || '').replace(/\[Horario preferido:[^\]]+\]/gi, '').trim()
+        });
+
+        const itemsClonados = (p.items || []).map(it => {
+            const cant = Number(it.cantidad) || 1;
+            const pu = Number(it.precio_unitario) || 0;
+            return {
+                producto_id: it.producto_id || '',
+                codigo: it.codigo || '',
+                nombre: it.nombre || '',
+                cantidad: cant,
+                unidad_medida: it.unidad_medida || 'kg',
+                precio_unitario: pu,
+                subtotal: it.subtotal !== undefined && it.subtotal !== null ? Number(it.subtotal) : cant * pu
+            };
+        });
+
+        setEditItems(itemsClonados.length > 0 ? itemsClonados : [
+            { producto_id: '', codigo: '', nombre: '', cantidad: 1, unidad_medida: 'kg', precio_unitario: 0, subtotal: 0 }
+        ]);
+    }
+
+    function cambiarProductoItem(idx, prodId) {
+        const prod = productos.find(p => p.id === Number(prodId));
+        const nuevos = [...editItems];
+        if (prod) {
+            const cant = Number(nuevos[idx].cantidad) || 1;
+            const pu = Number(prod.precio_venta) || 0;
+            nuevos[idx] = {
+                ...nuevos[idx],
+                producto_id: prod.id,
+                codigo: prod.codigo,
+                nombre: prod.nombre,
+                unidad_medida: prod.unidad_medida || 'kg',
+                precio_unitario: pu,
+                subtotal: cant * pu
+            };
+        } else {
+            nuevos[idx] = {
+                ...nuevos[idx],
+                producto_id: '',
+                codigo: '',
+                precio_unitario: 0,
+                subtotal: 0
+            };
+        }
+        setEditItems(nuevos);
+    }
+
+    function cambiarCantidadItem(idx, cant) {
+        const nuevos = [...editItems];
+        const nCant = parseFloat(cant) || 0;
+        nuevos[idx].cantidad = cant;
+        nuevos[idx].subtotal = nCant * (Number(nuevos[idx].precio_unitario) || 0);
+        setEditItems(nuevos);
+    }
+
+    function cambiarPrecioItem(idx, precio) {
+        const nuevos = [...editItems];
+        const nPrecio = parseFloat(precio) || 0;
+        nuevos[idx].precio_unitario = precio;
+        nuevos[idx].subtotal = (Number(nuevos[idx].cantidad) || 0) * nPrecio;
+        setEditItems(nuevos);
+    }
+
+    function agregarItem() {
+        setEditItems([...editItems, { producto_id: '', codigo: '', nombre: '', cantidad: 1, unidad_medida: 'kg', precio_unitario: 0, subtotal: 0 }]);
+    }
+
+    function eliminarItem(idx) {
+        if (editItems.length === 1) {
+            alert('El pedido debe tener al menos un producto.');
+            return;
+        }
+        setEditItems(editItems.filter((_, i) => i !== idx));
+    }
+
+    const totalEditado = editItems.reduce((acc, it) => acc + (Number(it.subtotal) || 0), 0);
+
+    async function guardarEdicionPedido(e) {
+        e.preventDefault();
+        if (!pedidoParaEditar) return;
+        setGuardandoEdicion(true);
+        setError('');
+        try {
+            const idParam = pedidoParaEditar.id || pedidoParaEditar.numero;
+            const payload = {
+                ...editForm,
+                items: editItems.map(it => ({
+                    producto_id: it.producto_id ? Number(it.producto_id) : null,
+                    codigo: it.codigo,
+                    nombre: it.nombre,
+                    cantidad: Number(it.cantidad) || 1,
+                    unidad_medida: it.unidad_medida || 'kg',
+                    precio_unitario: Number(it.precio_unitario) || 0,
+                    subtotal: Number(it.subtotal) || 0
+                })),
+                total: totalEditado
+            };
+            await client.put(`/integraciones/pedidos-web/${idParam}`, payload);
+            setMensaje(`✅ Pedido #${pedidoParaEditar.numero} actualizado correctamente.`);
+            setTimeout(() => setMensaje(''), 4000);
+            setPedidoParaEditar(null);
+            cargarConfigYPedidos();
+        } catch (err) {
+            setError(err.response?.data?.error || 'Error al actualizar el pedido web.');
+        } finally {
+            setGuardandoEdicion(false);
+        }
+    }
 
     async function importarHistoricoSheets() {
         if (!window.confirm('¿Deseas importar los pedidos registrados en tu Google Sheets histórico hacia la base de datos PostgreSQL?')) return;
@@ -349,13 +487,22 @@ export default function PedidosWeb() {
                                                         🖨️ Ver Remito
                                                     </button>
                                                 ) : (
-                                                    <button
-                                                        className="btn btn-primary btn-sm"
-                                                        onClick={() => emitirRemitoAutomatico(p)}
-                                                        disabled={esGenerando}
-                                                    >
-                                                        {esGenerando ? 'Generando...' : '⚡ Emitir Remito'}
-                                                    </button>
+                                                    <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
+                                                        <button
+                                                            className="btn btn-secondary btn-sm"
+                                                            onClick={() => abrirModalEditar(p)}
+                                                            title="Editar datos, entrega o productos antes de emitir remito"
+                                                        >
+                                                            ✏️ Editar
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-primary btn-sm"
+                                                            onClick={() => emitirRemitoAutomatico(p)}
+                                                            disabled={esGenerando}
+                                                        >
+                                                            {esGenerando ? 'Generando...' : '⚡ Emitir Remito'}
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>
@@ -366,6 +513,221 @@ export default function PedidosWeb() {
                     )}
                 </div>
             </div>
+
+            {/* MODAL EDICIÓN DE PEDIDO WEB */}
+            {pedidoParaEditar && (
+                <Modal
+                    title={`✏️ Editar Pedido Web #${pedidoParaEditar.numero}`}
+                    onClose={() => setPedidoParaEditar(null)}
+                    width={850}
+                >
+                    <form onSubmit={guardarEdicionPedido} className="stack gap-md">
+                        <div className="grid grid-2 gap-md">
+                            <div className="field">
+                                <label>Cliente / Contacto</label>
+                                <input
+                                    required
+                                    value={editForm.cliente_nombre}
+                                    onChange={e => setEditForm({ ...editForm, cliente_nombre: e.target.value })}
+                                    placeholder="Nombre completo del cliente"
+                                />
+                            </div>
+                            <div className="field">
+                                <label>Teléfono / WhatsApp</label>
+                                <input
+                                    value={editForm.telefono}
+                                    onChange={e => setEditForm({ ...editForm, telefono: e.target.value })}
+                                    placeholder="Ej: 11 6787-3243"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-3 gap-md">
+                            <div className="field" style={{ gridColumn: 'span 2' }}>
+                                <label>Dirección de Entrega</label>
+                                <input
+                                    value={editForm.direccion}
+                                    onChange={e => setEditForm({ ...editForm, direccion: e.target.value })}
+                                    placeholder="Calle, número, depto / timbre"
+                                />
+                            </div>
+                            <div className="field">
+                                <label>Zona / Localidad</label>
+                                <input
+                                    value={editForm.zona}
+                                    onChange={e => setEditForm({ ...editForm, zona: e.target.value })}
+                                    placeholder="Ej: CABA / Ramos Mejía"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-2 gap-md">
+                            <div className="field">
+                                <label>🚚 Franja Horaria de Entrega</label>
+                                <input
+                                    value={editForm.horario_entrega}
+                                    onChange={e => setEditForm({ ...editForm, horario_entrega: e.target.value })}
+                                    placeholder="Ej: 14:00 a 18:00 hs / Mañana"
+                                />
+                            </div>
+                            <div className="field">
+                                <label>💳 Método de Pago</label>
+                                <input
+                                    value={editForm.metodo_pago}
+                                    onChange={e => setEditForm({ ...editForm, metodo_pago: e.target.value })}
+                                    placeholder="Ej: Transferencia / Efectivo contraentrega"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="field">
+                            <label>Notas / Indicaciones del Cliente</label>
+                            <input
+                                value={editForm.notas}
+                                onChange={e => setEditForm({ ...editForm, notas: e.target.value })}
+                                placeholder="Observaciones especiales para el reparto"
+                            />
+                        </div>
+
+                        <div style={{ marginTop: 8, borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
+                            <div className="spread" style={{ marginBottom: 8, alignItems: 'center' }}>
+                                <label style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>📦 Productos del Pedido</label>
+                                <button type="button" className="btn btn-secondary btn-sm" onClick={agregarItem}>
+                                    + Agregar Producto
+                                </button>
+                            </div>
+
+                            <div className="table-wrap">
+                                <table className="data-table" style={{ fontSize: 13, minWidth: 540 }}>
+                                    <thead>
+                                        <tr>
+                                            <th>Producto (Catálogo Mix Point)</th>
+                                            <th style={{ width: 90 }}>Cant.</th>
+                                            <th style={{ width: 70 }}>Unidad</th>
+                                            <th style={{ width: 120 }}>P. Unitario</th>
+                                            <th style={{ width: 120 }} className="text-right">Subtotal</th>
+                                            <th style={{ width: 45 }}></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {editItems.map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td>
+                                                    <select
+                                                        value={item.producto_id || ''}
+                                                        onChange={e => cambiarProductoItem(idx, e.target.value)}
+                                                        style={{ width: '100%', padding: '6px 8px', fontSize: 13 }}
+                                                    >
+                                                        <option value="">
+                                                            {item.nombre ? `Manual: ${item.nombre}` : '— Seleccionar producto —'}
+                                                        </option>
+                                                        {productos.map(p => (
+                                                            <option key={p.id} value={p.id}>
+                                                                {p.codigo ? `[${p.codigo}] ` : ''}{p.nombre} ({fmtMoney(p.precio_venta)})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {!item.producto_id && (
+                                                        <input
+                                                            type="text"
+                                                            value={item.nombre}
+                                                            onChange={e => {
+                                                                const nuevos = [...editItems];
+                                                                nuevos[idx].nombre = e.target.value;
+                                                                setEditItems(nuevos);
+                                                            }}
+                                                            placeholder="Nombre personalizado del producto..."
+                                                            style={{ marginTop: 4, width: '100%', fontSize: 12, padding: '4px 6px' }}
+                                                        />
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0.01"
+                                                        value={item.cantidad}
+                                                        onChange={e => cambiarCantidadItem(idx, e.target.value)}
+                                                        required
+                                                        style={{ width: '100%', padding: '6px', fontSize: 13 }}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <select
+                                                        value={item.unidad_medida || 'kg'}
+                                                        onChange={e => {
+                                                            const nuevos = [...editItems];
+                                                            nuevos[idx].unidad_medida = e.target.value;
+                                                            setEditItems(nuevos);
+                                                        }}
+                                                        style={{ width: '100%', padding: '6px', fontSize: 13 }}
+                                                    >
+                                                        <option value="kg">kg</option>
+                                                        <option value="u">u</option>
+                                                        <option value="caja">caja</option>
+                                                        <option value="bolsa">bolsa</option>
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={item.precio_unitario}
+                                                        onChange={e => cambiarPrecioItem(idx, e.target.value)}
+                                                        required
+                                                        style={{ width: '100%', padding: '6px', fontSize: 13 }}
+                                                    />
+                                                </td>
+                                                <td className="text-right mono" style={{ fontWeight: 600, verticalAlign: 'middle' }}>
+                                                    {fmtMoney(item.subtotal)}
+                                                </td>
+                                                <td className="text-center" style={{ verticalAlign: 'middle' }}>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => eliminarItem(idx)}
+                                                        title="Eliminar producto"
+                                                        style={{ color: 'var(--color-danger)', padding: '2px 6px' }}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                                <div style={{ background: 'var(--color-surface)', padding: '10px 16px', borderRadius: 8, border: '1px solid var(--color-border)', textAlign: 'right', minWidth: 220 }}>
+                                    <div className="muted text-xs">Total del Pedido Web</div>
+                                    <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+                                        {fmtMoney(totalEditado)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="row gap-sm" style={{ justifyContent: 'flex-end', marginTop: 14, borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => setPedidoParaEditar(null)}
+                                disabled={guardandoEdicion}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                disabled={guardandoEdicion}
+                            >
+                                {guardandoEdicion ? 'Guardando...' : '💾 Guardar Cambios'}
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
 
             {/* MODAL CONFIGURACIÓN SHEETS */}
             {configOpen && (

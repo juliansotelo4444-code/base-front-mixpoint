@@ -8,9 +8,23 @@ import catalogoOficialData from '../data/catalogo_completo.json';
 export function obtenerImagenProducto(prod) {
     if (!prod) return '/catalogo/productos/mixpoint_generico.svg';
 
-    // Si ya tiene una imagen válida que apunte a /catalogo/productos/
-    if (prod.imagen && prod.imagen.startsWith('/catalogo/productos/')) {
-        return prod.imagen;
+    // Si ya tiene una imagen válida asignada (data:image base64, URL externa, asset o /catalogo/)
+    if (prod.imagen && typeof prod.imagen === 'string' && prod.imagen.trim().length > 0) {
+        const clean = prod.imagen.trim();
+        if (
+            clean.startsWith('data:image') ||
+            clean.startsWith('http://') ||
+            clean.startsWith('https://') ||
+            clean.startsWith('/catalogo/') ||
+            clean.startsWith('/assets/') ||
+            clean.startsWith('blob:')
+        ) {
+            return clean;
+        }
+        // Si es un nombre de archivo directo
+        if (clean.includes('.')) {
+            return clean.startsWith('/') ? clean : `/assets/${clean}`;
+        }
     }
 
     const nombreNorm = (prod.nombre || '').toLowerCase().trim();

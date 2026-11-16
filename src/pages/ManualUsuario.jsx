@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
     IconManual, IconBuscar, IconChevron, IconRemito, IconRecepcion,
-    IconProducto, IconClientes, IconProveedores, IconGastos, IconUsuarios,
+    IconProducto, IconClientes, IconProveedores, IconUsuarios,
     IconMix, IconSync, IconBanco, IconReporte, IconFlyer, IconCarrito, IconDashboard
 } from '../components/Icons';
 
@@ -435,12 +435,7 @@ export default function ManualUsuario() {
             </header>
 
             {/* CONTENEDOR DE DOS COLUMNAS */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: '320px 1fr',
-                gap: 24,
-                alignItems: 'start'
-            }}>
+            <div className="manual-layout-grid">
                 {/* COLUMNA IZQUIERDA: ÍNDICE DE SECCIONES */}
                 <aside style={{
                     background: 'var(--color-surface)',
