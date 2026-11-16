@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
+import ImageFinderModal from '../components/ImageFinderModal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconPlus, IconBuscar, IconEditar } from '../components/Icons';
 import { obtenerImagenProducto } from '../utils/imagenProducto';
@@ -74,6 +75,7 @@ export default function Productos() {
     const [ajusteVencimiento, setAjusteVencimiento] = useState('');
     const [verPreciosId, setVerPreciosId] = useState(null);
     const [subiendoImagen, setSubiendoImagen] = useState(false);
+    const [finderOpen, setFinderOpen] = useState(false);
 
     async function manejarArchivoImagen(e) {
         const file = e.target.files?.[0];
@@ -479,9 +481,9 @@ export default function Productos() {
                                 </div>
 
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
-                                            {subiendoImagen ? 'Procesando foto...' : (form.imagen ? 'Cambiar foto de portada' : 'Seleccionar foto desde PC / Celular')}
+                                            {subiendoImagen ? 'Procesando foto...' : (form.imagen ? 'Subir desde archivo' : 'Subir desde archivo')}
                                             <input
                                                 type="file"
                                                 accept="image/png,image/jpeg,image/webp,image/svg+xml"
@@ -490,6 +492,24 @@ export default function Productos() {
                                                 disabled={subiendoImagen}
                                             />
                                         </label>
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => setFinderOpen(true)}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 5,
+                                                background: '#ecfdf5',
+                                                borderColor: '#a7f3d0',
+                                                color: '#047857',
+                                                fontWeight: 600,
+                                                cursor: 'pointer'
+                                            }}
+                                            title="Buscar automáticamente fotos limpias de catálogo"
+                                        >
+                                            🪄 Buscar foto automática
+                                        </button>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                         <span style={{ fontSize: 11, color: '#64748b' }}>O ingresar URL / nombre:</span>
@@ -611,6 +631,17 @@ export default function Productos() {
                     </form>
                 </Modal>
             )}
+
+            {/* MODAL BUSCADOR MÁGICO DE FOTOS */}
+            <ImageFinderModal
+                isOpen={finderOpen}
+                initialQuery={form.nombre}
+                onClose={() => setFinderOpen(false)}
+                onSelectImage={(url) => {
+                    setForm(prev => ({ ...prev, imagen: url }));
+                    setFinderOpen(false);
+                }}
+            />
         </div>
     );
 }
