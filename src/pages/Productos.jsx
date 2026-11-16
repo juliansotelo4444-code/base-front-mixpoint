@@ -251,26 +251,6 @@ export default function Productos() {
         cargar();
     }
 
-    const [syncing, setSyncing] = useState(false);
-    const [syncMensaje, setSyncMensaje] = useState('');
-
-    async function sincronizarConSheets() {
-        setSyncing(true);
-        setError('');
-        setSyncMensaje('');
-        try {
-            const { data } = await client.post('/integraciones/sync-catalogo');
-            setSyncMensaje(`✅ Catálogo sincronizado desde Google Sheets (${data.total} productos procesados, ${data.nuevos} nuevos, ${data.actualizados} actualizados).`);
-            setTimeout(() => setSyncMensaje(''), 5000);
-            cargar();
-            cargarCategorias();
-        } catch (err) {
-            setError(err.response?.data?.error || 'Error al sincronizar con Google Sheets.');
-        } finally {
-            setSyncing(false);
-        }
-    }
-
     return (
         <div className="stack gap-lg">
             <div className="spread page-header">
@@ -281,26 +261,11 @@ export default function Productos() {
                     </p>
                 </div>
                 <div className="row gap-sm">
-                    <button
-                        className="btn btn-secondary"
-                        onClick={sincronizarConSheets}
-                        disabled={syncing}
-                        style={{ fontSize: 13.5 }}
-                        title="Actualizar catálogo y precios directamente desde tu Google Sheet"
-                    >
-                        {syncing ? '⏳ Sincronizando...' : '🔄 Sincronizar Google Sheets'}
-                    </button>
                     <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14 }}>
                         <IconPlus /> Nuevo producto
                     </button>
                 </div>
             </div>
-
-            {syncMensaje && (
-                <div className="alert-banner" style={{ background: 'var(--color-success-tint)', color: 'var(--color-success)' }}>
-                    {syncMensaje}
-                </div>
-            )}
 
             <div className="card">
                 <div className="spread" style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: 12 }}>

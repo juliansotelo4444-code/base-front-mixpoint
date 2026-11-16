@@ -114,7 +114,7 @@ export default function Dashboard() {
                                 MIX POINT OPERATIONS — VISUALIZACIÓN TÁCTICA
                             </h1>
                             <p className="mono text-xs" style={{ color: '#00E676' }}>
-                                ● TELEMETRÍA EN VIVO · LATENCIA: 0ms · FLUJO: GOOGLE SHEETS ➔ POSTGRESQL
+                                ● TELEMETRÍA EN VIVO · LATENCIA: 0ms · BASE DE DATOS NEON CLOUD (POSTGRESQL)
                             </p>
                         </div>
                     ) : (
@@ -227,7 +227,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                         <div className="mono text-xs" style={{ background: 'rgba(0,0,0,0.4)', padding: '6px 10px', borderRadius: 4, color: '#CBD5E1' }}>
-                            &gt; Conector Apps Script: Unidireccional activo. Cargas realizadas en Sheets se reflejan de inmediato.
+                            &gt; Base de Datos Neon Cloud: Conexión directa en tiempo real. Catálogo y pedidos sincronizados de inmediato.
                         </div>
                     </div>
 

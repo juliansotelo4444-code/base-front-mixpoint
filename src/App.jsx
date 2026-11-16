@@ -16,7 +16,6 @@ const Gastos = lazy(() => import('./pages/Gastos'));
 const Usuarios = lazy(() => import('./pages/Usuarios'));
 const PedidosWeb = lazy(() => import('./pages/PedidosWeb'));
 const Produccion = lazy(() => import('./pages/Produccion'));
-const SincronizacionSheets = lazy(() => import('./pages/SincronizacionSheets'));
 const ConciliacionBancaria = lazy(() => import('./pages/ConciliacionBancaria'));
 const ReportesDiarios = lazy(() => import('./pages/ReportesDiarios'));
 const CatalogoFlyers = lazy(() => import('./pages/CatalogoFlyers'));
@@ -98,7 +97,6 @@ export default function App() {
                                 <Route path="clientes" element={<RutaProtegidaPermiso ruta="/clientes"><Clientes /></RutaProtegidaPermiso>} />
                                 <Route path="proveedores" element={<RutaProtegidaPermiso ruta="/proveedores"><Proveedores /></RutaProtegidaPermiso>} />
                                 <Route path="gastos" element={<RutaProtegidaPermiso ruta="/gastos"><Gastos /></RutaProtegidaPermiso>} />
-                                <Route path="sincronizacion-sheets" element={<RutaProtegidaPermiso ruta="/sincronizacion-sheets"><SincronizacionSheets /></RutaProtegidaPermiso>} />
                                 <Route path="conciliacion" element={<RutaProtegidaPermiso ruta="/conciliacion"><ConciliacionBancaria /></RutaProtegidaPermiso>} />
                                 <Route path="reportes-diarios" element={<RutaProtegidaPermiso ruta="/reportes-diarios"><ReportesDiarios /></RutaProtegidaPermiso>} />
                                 <Route path="manual" element={<RutaProtegidaPermiso ruta="/manual"><ManualUsuario /></RutaProtegidaPermiso>} />

@@ -314,12 +314,6 @@ export default function PedidosWeb() {
                     </p>
                 </div>
                 <div className="row gap-sm" style={{ flexWrap: 'wrap' }}>
-                    <button className="btn btn-secondary" onClick={importarHistoricoSheets} disabled={importando || loading} title="Copiar pedidos que estaban en Google Sheets a la base de datos">
-                        {importando ? 'Importando...' : '📥 Importar histórico Sheets'}
-                    </button>
-                    <button className="btn btn-secondary" onClick={() => setConfigOpen(true)}>
-                        ⚙️ Sheets
-                    </button>
                     <button className="btn btn-primary" onClick={cargarConfigYPedidos} disabled={loading}>
                         {loading ? 'Cargando...' : '🔄 Actualizar pedidos'}
                     </button>

@@ -2067,3 +2067,40 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
         gap: 8px;
     }
 }
+
+/* CARRUSEL DE OFERTAS RESPONSIVO */
+.carrusel-card-row {
+    display: grid;
+    grid-template-columns: auto 60px 1.5fr 1fr 1fr auto;
+    align-items: center;
+    gap: 16px;
+}
+
+@media (max-width: 900px) {
+    .carrusel-card-row {
+        grid-template-columns: auto 54px 1fr;
+        gap: 12px;
+    }
+    .carrusel-col-badge,
+    .carrusel-col-price,
+    .carrusel-col-actions {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+    .carrusel-col-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 8px;
+        border-top: 1px dashed #e2e8f0;
+    }
+}
+
+@media (max-width: 480px) {
+    .carrusel-col-badge div {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .carrusel-col-badge input {
+        width: 100% !important;
+    }
+}

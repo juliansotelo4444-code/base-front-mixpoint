@@ -25,7 +25,6 @@ export const MODULOS_SISTEMA = [
     { ruta: '/clientes', label: 'Clientes y Cuentas', icono: '👥', descripcion: 'Fichas de clientes, saldos de cuenta corriente' },
     { ruta: '/conciliacion', label: 'Conciliación Bancaria', icono: '🏦', descripcion: 'Carga de comprobantes y validación de transferencias' },
     { ruta: '/reportes-diarios', label: 'Reportes 8:00 AM', icono: '📈', descripcion: 'Resumen gerencial matutino y métricas financieras' },
-    { ruta: '/sincronizacion-sheets', label: 'Google Sheets', icono: '🔄', descripcion: 'Sincronización de planillas y respaldos en la nube' },
     { ruta: '/proveedores', label: 'Proveedores', icono: '🏭', descripcion: 'Gestión de compras y cuentas corrientes de proveedores' },
     { ruta: '/gastos', label: 'Gastos Operativos', icono: '💵', descripcion: 'Registro de egresos y control de caja' },
     { ruta: '/auditoria', label: 'Historial / Auditoría', icono: '🛡️', descripcion: 'Trazabilidad de cambios, logins y movimientos del sistema' },
@@ -35,7 +34,7 @@ export const MODULOS_SISTEMA = [
 const PERMISOS_DEFAULT_POR_ROL = {
     ventas: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'],
     deposito: ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'],
-    administracion: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/sincronizacion-sheets', '/productos', '/manual'],
+    administracion: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'],
     admin: MODULOS_SISTEMA.map(m => m.ruta)
 };
 

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Fondo circular cálido -->
+  <circle cx="16" cy="16" r="16" fill="#3D2B1F"/>
+
+  <!-- Cuerpo de la nuez / almendra -->
+  <ellipse cx="16" cy="17" rx="8" ry="10" fill="#C8862A"/>
+
+  <!-- Textura / línea central de la nuez -->
+  <path d="M16 8 Q13 12 13 17 Q13 22 16 26 Q19 22 19 17 Q19 12 16 8Z"
+        fill="#A8661A" opacity="0.6"/>
+
+  <!-- Surco lateral izquierdo -->
+  <path d="M10 14 Q11 17 10 20" stroke="#7A4A10" stroke-width="1.2"
+        fill="none" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- Surco lateral derecho -->
+  <path d="M22 14 Q21 17 22 20" stroke="#7A4A10" stroke-width="1.2"
+        fill="none" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- Brillo superior -->
+  <ellipse cx="14" cy="11" rx="2.5" ry="1.5" fill="#E8A84A" opacity="0.5"
+           transform="rotate(-20 14 11)"/>
+
+  <!-- Ramita / tallo -->
+  <path d="M16 8 Q17 5 19 4" stroke="#5C3A1A" stroke-width="1.5"
+        fill="none" stroke-linecap="round"/>
+
+  <!-- Hojita -->
+  <ellipse cx="20.5" cy="3.5" rx="2.5" ry="1.2" fill="#6B8F3A"
+           transform="rotate(-30 20.5 3.5)"/>
+  <path d="M18.8 4.8 Q20.5 3.5 22.2 2.8" stroke="#4A6A22" stroke-width="0.6"
+        fill="none" stroke-linecap="round"/>
+</svg>

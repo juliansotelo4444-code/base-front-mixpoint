@@ -11,7 +11,6 @@ import {
 import NotificacionesDropdown from './NotificacionesDropdown';
 import JarvisWidget from './JarvisWidget';
 import OfflineBanner from './OfflineBanner';
-import SyncStatusIndicator from './SyncStatusIndicator';
 import PreferenciasModal from './PreferenciasModal';
 
 const NAV_ITEMS = [
@@ -27,7 +26,6 @@ const NAV_ITEMS = [
     { to: '/clientes', label: 'Clientes', icon: IconClientes },
     { to: '/conciliacion', label: 'Conciliación Bancaria', icon: IconBanco },
     { to: '/reportes-diarios', label: 'Reportes 8:00 AM', icon: IconReporte },
-    { to: '/sincronizacion-sheets', label: 'Google Sheets', icon: IconSync },
     { to: '/proveedores', label: 'Proveedores', icon: IconProveedores },
     { to: '/gastos', label: 'Gastos', icon: IconGastos },
     { to: '/auditoria', label: 'Historial / Auditoría', icon: IconReporte },
@@ -90,7 +88,6 @@ export default function Layout() {
                     </div>
                 </div>
                 <div className="row gap-xs" style={{ alignItems: 'center' }}>
-                    <SyncStatusIndicator />
                     <button
                         type="button"
                         onClick={() => setModalPrefsAbierto(true)}
@@ -249,7 +246,6 @@ export default function Layout() {
                     background: 'rgba(17, 20, 29, 0.6)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <SyncStatusIndicator />
                         {preferences?.hudMode === 'tactical' && (
                             <span style={{
                                 fontSize: 11,

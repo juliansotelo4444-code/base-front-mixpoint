@@ -74,7 +74,7 @@ export function AuthProvider({ children }) {
             return ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'].includes(ruta);
         }
         if (usuario.rol === 'administracion') {
-            return ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/sincronizacion-sheets', '/productos', '/manual'].includes(ruta);
+            return ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'].includes(ruta);
         }
 
         return false;

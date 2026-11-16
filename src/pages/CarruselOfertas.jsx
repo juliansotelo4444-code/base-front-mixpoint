@@ -272,12 +272,7 @@ export default function CarruselOfertas() {
                                     background: '#ffffff'
                                 }}
                             >
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'auto 64px 1.5fr 1fr 1fr auto',
-                                    alignItems: 'center',
-                                    gap: 16
-                                }}>
+                                <div className="carrusel-card-row">
                                     {/* ORDEN Y BOTONES ARRIBA / ABAJO */}
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                                         <button
@@ -307,15 +302,16 @@ export default function CarruselOfertas() {
 
                                     {/* FOTO DE PORTADA */}
                                     <div style={{
-                                        width: 60,
-                                        height: 60,
+                                        width: 54,
+                                        height: 54,
                                         borderRadius: 8,
                                         border: '1px solid #e2e8f0',
                                         background: '#f8fafc',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        overflow: 'hidden'
+                                        overflow: 'hidden',
+                                        flexShrink: 0
                                     }}>
                                         <img
                                             src={obtenerImagenProducto(item)}
@@ -326,8 +322,8 @@ export default function CarruselOfertas() {
                                     </div>
 
                                     {/* DATOS DEL PRODUCTO */}
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <div style={{ minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                             <span style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>
                                                 {item.nombre}
                                             </span>
@@ -339,17 +335,17 @@ export default function CarruselOfertas() {
                                             Categoría: <strong>{item.categoria_nombre}</strong> · Stock disp: <strong className="mono">{item.stock_actual} {item.unidad_medida}</strong>
                                         </div>
                                         {/* Escalas mayoristas cargadas */}
-                                        <div className="mono text-xs" style={{ color: '#64748b', marginTop: 4 }}>
+                                        <div className="mono text-xs" style={{ color: '#64748b', marginTop: 4, overflowX: 'auto', whiteSpace: 'nowrap' }}>
                                             5k: {item.precio_5kg > 0 ? fmtMoney(item.precio_5kg) : '—'} · 10k: {item.precio_10kg > 0 ? fmtMoney(item.precio_10kg) : '—'} · 25k: {item.precio_25kg > 0 ? fmtMoney(item.precio_25kg) : '—'}
                                         </div>
                                     </div>
 
                                     {/* ETIQUETA / BADGE */}
-                                    <div>
+                                    <div className="carrusel-col-badge">
                                         <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>
                                             🏷️ ETIQUETA DESTACADA
                                         </label>
-                                        <div style={{ display: 'flex', gap: 6 }}>
+                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                             <input
                                                 type="text"
                                                 value={item.badge_carrusel || ''}
@@ -374,7 +370,7 @@ export default function CarruselOfertas() {
                                     </div>
 
                                     {/* PRECIOS: BASE vs PROMOCIÓN */}
-                                    <div>
+                                    <div className="carrusel-col-price">
                                         <div style={{ fontSize: 11, color: '#475569', marginBottom: 2 }}>
                                             Precio base: <strong className="mono">{fmtMoney(precioBase)}</strong>
                                         </div>
@@ -399,7 +395,7 @@ export default function CarruselOfertas() {
                                     </div>
 
                                     {/* ACCIONES GUARDAR / QUITAR */}
-                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <div className="carrusel-col-actions" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                         <button
                                             type="button"
                                             className="btn btn-primary btn-sm"
