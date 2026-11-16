@@ -21,7 +21,10 @@ const emptyForm = {
     precio_10kg: 0,
     precio_25kg: 0,
     precio_30kg: 0,
-    stock_minimo: 20
+    stock_minimo: 20,
+    destacado_carrusel: false,
+    badge_carrusel: '🔥 OFERTA',
+    precio_oferta: ''
 };
 
 // Comprime y redimensiona imágenes del lado del cliente para carga rápida y óptimo almacenamiento
@@ -76,6 +79,49 @@ export default function Productos() {
     const [verPreciosId, setVerPreciosId] = useState(null);
     const [subiendoImagen, setSubiendoImagen] = useState(false);
     const [finderOpen, setFinderOpen] = useState(false);
+    const [editingPriceId, setEditingPriceId] = useState(null);
+    const [editingPriceValue, setEditingPriceValue] = useState('');
+    const [savingPriceId, setSavingPriceId] = useState(null);
+
+    async function guardarPrecioRapido(id) {
+        const nuevoPrecio = Number(editingPriceValue);
+        if (isNaN(nuevoPrecio) || nuevoPrecio < 0) return;
+        setSavingPriceId(id);
+        try {
+            const pActual = productos.find(p => p.id === id);
+            await client.put(`/productos/${id}`, {
+                ...pActual,
+                precio_venta: nuevoPrecio
+            });
+            setProductos(prev => prev.map(p => p.id === id ? { ...p, precio_venta: nuevoPrecio } : p));
+            setEditingPriceId(null);
+        } catch (err) {
+            alert(err.response?.data?.error || 'Error al actualizar el precio.');
+        } finally {
+            setSavingPriceId(null);
+        }
+    }
+
+    function autocalcularEscalas() {
+        const base = Number(form.precio_venta) || 0;
+        if (base <= 0) {
+            alert('Por favor ingresá primero un Precio 1 kg (Base) válido.');
+            return;
+        }
+        // Redondeo a múltiplos de $10: -5% para 5kg, -10% para 10kg, -15% para 25kg, -18% para 30kg
+        const p5 = Math.round((base * 0.95) / 10) * 10;
+        const p10 = Math.round((base * 0.90) / 10) * 10;
+        const p25 = Math.round((base * 0.85) / 10) * 10;
+        const p30 = Math.round((base * 0.82) / 10) * 10;
+
+        setForm(prev => ({
+            ...prev,
+            precio_5kg: p5,
+            precio_10kg: p10,
+            precio_25kg: p25,
+            precio_30kg: p30
+        }));
+    }
 
     async function manejarArchivoImagen(e) {
         const file = e.target.files?.[0];
@@ -139,6 +185,9 @@ export default function Productos() {
             precio_25kg: Number(p.precio_25kg) || 0,
             precio_30kg: Number(p.precio_30kg) || 0,
             stock_minimo: Number(p.stock_minimo) || 0,
+            destacado_carrusel: Boolean(p.destacado_carrusel),
+            badge_carrusel: p.badge_carrusel || '🔥 OFERTA',
+            precio_oferta: p.precio_oferta ? Number(p.precio_oferta) : ''
         });
         setError('');
         setModalOpen(true);
@@ -158,6 +207,9 @@ export default function Productos() {
                 precio_25kg: Number(form.precio_25kg) || 0,
                 precio_30kg: Number(form.precio_30kg) || 0,
                 stock_minimo: Number(form.stock_minimo) || 0,
+                destacado_carrusel: Boolean(form.destacado_carrusel),
+                badge_carrusel: form.badge_carrusel || '🔥 OFERTA',
+                precio_oferta: form.precio_oferta ? Number(form.precio_oferta) : null,
             };
             if (editando) await client.put(`/productos/${editando.id}`, payload);
             else await client.post('/productos', payload);
@@ -342,8 +394,55 @@ export default function Productos() {
                                                 {p.stock_actual} {p.unidad_medida}
                                             </button>
                                         </td>
-                                        <td className="text-right mono" style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                                            {fmtMoney(p.precio_venta)}
+                                        <td className="text-right">
+                                            {editingPriceId === p.id ? (
+                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={editingPriceValue}
+                                                        onChange={(e) => setEditingPriceValue(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') guardarPrecioRapido(p.id);
+                                                            if (e.key === 'Escape') setEditingPriceId(null);
+                                                        }}
+                                                        autoFocus
+                                                        style={{ width: 92, padding: '3px 6px', fontSize: 13, borderRadius: 4, border: '1px solid #047857', textAlign: 'right' }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-primary btn-sm"
+                                                        onClick={() => guardarPrecioRapido(p.id)}
+                                                        disabled={savingPriceId === p.id}
+                                                        style={{ padding: '2px 7px', height: 26 }}
+                                                        title="Guardar precio rápido (Enter)"
+                                                    >
+                                                        ✓
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => setEditingPriceId(null)}
+                                                        style={{ padding: '2px 6px', height: 26 }}
+                                                        title="Cancelar (Esc)"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    onClick={() => {
+                                                        setEditingPriceId(p.id);
+                                                        setEditingPriceValue(p.precio_venta);
+                                                    }}
+                                                    title="Clic para editar precio rápidamente"
+                                                    style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 700, color: 'var(--color-primary-dark)' }}
+                                                    className="mono"
+                                                >
+                                                    <span>{fmtMoney(p.precio_venta)}</span>
+                                                    <span style={{ opacity: 0.4, fontSize: 11 }} title="Editar precio">✏️</span>
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="text-right">
                                             <button
@@ -526,29 +625,57 @@ export default function Productos() {
                         </div>
 
                         {/* ESCALAS DE PRECIOS MIX POINT */}
+                        {/* ESCALAS DE PRECIOS MIX POINT */}
                         <div style={{ background: '#faf8f2', border: '1px solid #e2dac9', borderRadius: 8, padding: '14px 16px' }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-primary-dark)', marginBottom: 10 }}>
-                                💰 Escalas de precios de venta (ARS)
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+                                    💰 Precios de venta y escalas mayoristas (ARS)
+                                </div>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={autocalcularEscalas}
+                                    style={{
+                                        background: '#ecfdf5',
+                                        borderColor: '#a7f3d0',
+                                        color: '#047857',
+                                        fontWeight: 600,
+                                        fontSize: 12,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 5
+                                    }}
+                                    title="Calcular escalas mayoristas con 1 clic: -5% (5k), -10% (10k), -15% (25k), -18% (30k)"
+                                >
+                                    🪄 Autocalcular escalas (-5%, -10%, -15%, -18%)
+                                </button>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                                 <div className="field">
-                                    <label>Precio 1 kg (Base)</label>
-                                    <input type="number" step="0.01" value={form.precio_venta} onChange={e => setForm({ ...form, precio_venta: Number(e.target.value) })} />
+                                    <label style={{ fontWeight: 700, color: '#047857' }}>Precio 1 kg (Base) *</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        required
+                                        value={form.precio_venta}
+                                        onChange={e => setForm({ ...form, precio_venta: Number(e.target.value) })}
+                                        style={{ borderColor: '#86efac', fontWeight: 600 }}
+                                    />
                                 </div>
                                 <div className="field">
-                                    <label>Precio escala 5 kg</label>
+                                    <label>Precio escala 5 kg (-5%)</label>
                                     <input type="number" step="0.01" value={form.precio_5kg} onChange={e => setForm({ ...form, precio_5kg: Number(e.target.value) })} />
                                 </div>
                                 <div className="field">
-                                    <label>Precio escala 10 kg</label>
+                                    <label>Precio escala 10 kg (-10%)</label>
                                     <input type="number" step="0.01" value={form.precio_10kg} onChange={e => setForm({ ...form, precio_10kg: Number(e.target.value) })} />
                                 </div>
                                 <div className="field">
-                                    <label>Precio escala 25 kg</label>
+                                    <label>Precio escala 25 kg (-15%)</label>
                                     <input type="number" step="0.01" value={form.precio_25kg} onChange={e => setForm({ ...form, precio_25kg: Number(e.target.value) })} />
                                 </div>
                                 <div className="field">
-                                    <label>Precio escala 30 kg</label>
+                                    <label>Precio escala 30 kg (-18%)</label>
                                     <input type="number" step="0.01" value={form.precio_30kg} onChange={e => setForm({ ...form, precio_30kg: Number(e.target.value) })} />
                                 </div>
                                 <div className="field">
@@ -556,6 +683,45 @@ export default function Productos() {
                                     <input type="number" step="0.01" value={form.precio_compra} onChange={e => setForm({ ...form, precio_compra: Number(e.target.value) })} />
                                 </div>
                             </div>
+                        </div>
+
+                        {/* CONFIGURACIÓN CARRUSEL DE OFERTAS HOME */}
+                        <div style={{
+                            background: '#f0fdf4',
+                            border: '1px solid #bbf7d0',
+                            borderRadius: 8,
+                            padding: '12px 14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 10
+                        }}>
+                            <div>
+                                <label style={{ fontWeight: 700, fontSize: 13, color: '#166534', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(form.destacado_carrusel)}
+                                        onChange={(e) => setForm({ ...form, destacado_carrusel: e.target.checked })}
+                                    />
+                                    ⭐ Mostrar en Carrusel de Inicio (distribuidora-mix-point.com.ar)
+                                </label>
+                                <span style={{ fontSize: 11, color: '#15803d', display: 'block', marginTop: 2, marginLeft: 24 }}>
+                                    Se mostrará automáticamente en el slider de ofertas destacadas de la portada.
+                                </span>
+                            </div>
+                            {form.destacado_carrusel && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: '#166534' }}>Etiqueta:</span>
+                                    <input
+                                        type="text"
+                                        value={form.badge_carrusel || '🔥 OFERTA'}
+                                        onChange={(e) => setForm({ ...form, badge_carrusel: e.target.value })}
+                                        placeholder="Ej: 🔥 OFERTA"
+                                        style={{ width: 140, fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #86efac' }}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="field" style={{ maxWidth: 200 }}>

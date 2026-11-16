@@ -68,13 +68,13 @@ export function AuthProvider({ children }) {
 
         // Permisos por defecto según su rol si no se han especificado permisos personalizados
         if (usuario.rol === 'ventas') {
-            return ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/clientes', '/productos', '/manual'].includes(ruta);
+            return ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'].includes(ruta);
         }
         if (usuario.rol === 'deposito') {
             return ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'].includes(ruta);
         }
         if (usuario.rol === 'administracion') {
-            return ['/', '/remitos', '/pedidos-web', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/sincronizacion-sheets', '/productos', '/manual'].includes(ruta);
+            return ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/sincronizacion-sheets', '/productos', '/manual'].includes(ruta);
         }
 
         return false;

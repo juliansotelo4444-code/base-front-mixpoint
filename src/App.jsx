@@ -20,6 +20,7 @@ const SincronizacionSheets = lazy(() => import('./pages/SincronizacionSheets'));
 const ConciliacionBancaria = lazy(() => import('./pages/ConciliacionBancaria'));
 const ReportesDiarios = lazy(() => import('./pages/ReportesDiarios'));
 const CatalogoFlyers = lazy(() => import('./pages/CatalogoFlyers'));
+const CarruselOfertas = lazy(() => import('./pages/CarruselOfertas'));
 const DepositoKanban = lazy(() => import('./pages/DepositoKanban'));
 const AuditLogTimeline = lazy(() => import('./pages/AuditLogTimeline'));
 const ManualUsuario = lazy(() => import('./pages/ManualUsuario'));
@@ -90,6 +91,7 @@ export default function App() {
                                 <Route path="auditoria" element={<RutaProtegidaPermiso ruta="/auditoria"><AuditLogTimeline /></RutaProtegidaPermiso>} />
                                 <Route path="pedidos-web" element={<RutaProtegidaPermiso ruta="/pedidos-web"><PedidosWeb /></RutaProtegidaPermiso>} />
                                 <Route path="catalogo-flyers" element={<RutaProtegidaPermiso ruta="/catalogo-flyers"><CatalogoFlyers /></RutaProtegidaPermiso>} />
+                                <Route path="carrusel-ofertas" element={<RutaProtegidaPermiso ruta="/carrusel-ofertas"><CarruselOfertas /></RutaProtegidaPermiso>} />
                                 <Route path="recepciones" element={<RutaProtegidaPermiso ruta="/recepciones"><Recepciones /></RutaProtegidaPermiso>} />
                                 <Route path="produccion" element={<RutaProtegidaPermiso ruta="/produccion"><Produccion /></RutaProtegidaPermiso>} />
                                 <Route path="productos" element={<RutaProtegidaPermiso ruta="/productos"><Productos /></RutaProtegidaPermiso>} />

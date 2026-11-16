@@ -18,6 +18,7 @@ export const MODULOS_SISTEMA = [
     { ruta: '/deposito-kanban', label: 'Preparación & Despacho (Picking)', icono: '🚚', descripcion: 'Tablero logístico, armado de pedidos y tracking con chofer' },
     { ruta: '/pedidos-web', label: 'Pedidos Web', icono: '🛒', descripcion: 'Gestión de órdenes entrantes de la tienda virtual' },
     { ruta: '/catalogo-flyers', label: 'Catálogo y Flyers', icono: '🖼️', descripcion: 'Generación de flyers promocionales y catálogo PDF' },
+    { ruta: '/carrusel-ofertas', label: 'Carrusel de Ofertas', icono: '🔥', descripcion: 'Gestión dinámica de productos en el carrusel de la tienda web' },
     { ruta: '/recepciones', label: 'Recepción de Mercadería', icono: '📥', descripcion: 'Ingreso de compras, control de lotes y stock recibido' },
     { ruta: '/produccion', label: 'Armado de Mixes (Producción)', icono: '🥣', descripcion: 'Fórmulas, transformación de materias primas y fraccionado' },
     { ruta: '/productos', label: 'Productos y Stock', icono: '📦', descripcion: 'Precios, stock en tiempo real y ajuste de inventario' },
@@ -32,9 +33,9 @@ export const MODULOS_SISTEMA = [
 ];
 
 const PERMISOS_DEFAULT_POR_ROL = {
-    ventas: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/clientes', '/productos', '/manual'],
+    ventas: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'],
     deposito: ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'],
-    administracion: ['/', '/remitos', '/pedidos-web', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/sincronizacion-sheets', '/productos', '/manual'],
+    administracion: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/sincronizacion-sheets', '/productos', '/manual'],
     admin: MODULOS_SISTEMA.map(m => m.ruta)
 };
 

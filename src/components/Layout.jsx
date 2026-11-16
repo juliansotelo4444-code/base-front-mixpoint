@@ -20,6 +20,7 @@ const NAV_ITEMS = [
     { to: '/deposito-kanban', label: 'Preparación & Despacho', icon: IconCamion },
     { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
     { to: '/catalogo-flyers', label: 'Catálogo y Flyers', icon: IconFlyer },
+    { to: '/carrusel-ofertas', label: 'Carrusel de Ofertas', icon: IconMix },
     { to: '/recepciones', label: 'Recepción de mercadería', icon: IconRecepcion },
     { to: '/produccion', label: 'Armado de Mixes', icon: IconMix },
     { to: '/productos', label: 'Productos y stock', icon: IconProducto },
