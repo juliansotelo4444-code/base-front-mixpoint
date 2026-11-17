@@ -82,6 +82,27 @@ export default function Productos() {
     const [editingPriceId, setEditingPriceId] = useState(null);
     const [editingPriceValue, setEditingPriceValue] = useState('');
     const [savingPriceId, setSavingPriceId] = useState(null);
+    const [productoAEliminar, setProductoAEliminar] = useState(null);
+    const [eliminando, setEliminando] = useState(false);
+
+    function confirmarEliminar(p) {
+        setProductoAEliminar(p);
+    }
+
+    async function ejecutarEliminar() {
+        if (!productoAEliminar) return;
+        setEliminando(true);
+        try {
+            await client.delete(`/productos/${productoAEliminar.id}`);
+            setProductoAEliminar(null);
+            setModalOpen(false);
+            await cargar();
+        } catch (err) {
+            alert(err.response?.data?.error || 'Error al eliminar el producto.');
+        } finally {
+            setEliminando(false);
+        }
+    }
 
     async function guardarPrecioRapido(id) {
         const nuevoPrecio = Number(editingPriceValue);
@@ -463,7 +484,7 @@ export default function Productos() {
                                             )}
                                         </td>
                                         <td className="text-right col-acciones">
-                                            <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
+                                            <div className="row gap-xs" style={{ justifyContent: 'flex-end', alignItems: 'center' }}>
                                                 <button
                                                     className="btn btn-secondary btn-sm"
                                                     onClick={(e) => {
@@ -483,6 +504,23 @@ export default function Productos() {
                                                     }}
                                                 >
                                                     <IconEditar /> Editar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        confirmarEliminar(p);
+                                                    }}
+                                                    title={`Eliminar "${p.nombre}"`}
+                                                    style={{
+                                                        color: '#dc2626',
+                                                        padding: '5px 8px',
+                                                        fontSize: 13,
+                                                        borderRadius: 4
+                                                    }}
+                                                >
+                                                    🗑️
                                                 </button>
                                             </div>
                                         </td>
@@ -558,6 +596,15 @@ export default function Productos() {
                                         onClick={() => abrirEditar(p)}
                                     >
                                         <IconEditar /> Editar Producto
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        style={{ color: '#dc2626', borderColor: '#fca5a5', padding: '9px 12px', borderRadius: 6 }}
+                                        onClick={() => confirmarEliminar(p)}
+                                        title={`Eliminar "${p.nombre}"`}
+                                    >
+                                        🗑️
                                     </button>
                                 </div>
                             </div>
@@ -803,9 +850,21 @@ export default function Productos() {
                             <input type="number" step="0.01" value={form.stock_minimo} onChange={e => setForm({ ...form, stock_minimo: Number(e.target.value) })} />
                         </div>
 
-                        <div className="row gap-sm" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
-                            <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
-                            <button type="submit" className="btn btn-primary">Guardar producto</button>
+                        <div className="row gap-sm" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--color-border)' }}>
+                            {editando ? (
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => confirmarEliminar(editando)}
+                                    style={{ color: '#dc2626', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                                >
+                                    🗑️ Eliminar este producto
+                                </button>
+                            ) : <div />}
+                            <div className="row gap-sm">
+                                <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary">Guardar producto</button>
+                            </div>
                         </div>
                     </form>
                 </Modal>
@@ -882,6 +941,47 @@ export default function Productos() {
                     setFinderOpen(false);
                 }}
             />
+
+            {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+            {productoAEliminar && (
+                <Modal title="Eliminar producto del catálogo" onClose={() => setProductoAEliminar(null)} width={480}>
+                    <div className="stack gap-md">
+                        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                            <div style={{ fontSize: 32, lineHeight: 1 }}>⚠️</div>
+                            <div>
+                                <h4 style={{ margin: '0 0 6px 0', fontSize: 16 }}>¿Deseas eliminar este producto?</h4>
+                                <p style={{ margin: 0, fontSize: 13.5, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                                    Estás por retirar <strong style={{ color: 'var(--color-text)' }}>{productoAEliminar.nombre}</strong> {productoAEliminar.codigo ? `(${productoAEliminar.codigo})` : ''} del catálogo activo.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: 8, padding: '10px 14px', fontSize: 12.5, color: '#991b1b', lineHeight: 1.4 }}>
+                            ℹ️ El producto dejará de ser visible en el catálogo de gestión y en la tienda web de ventas. Las ventas o remitos históricos se mantendrán preservados de forma segura en las auditorías contables.
+                        </div>
+
+                        <div className="row gap-sm" style={{ justifyContent: 'flex-end', marginTop: 10 }}>
+                            <button 
+                                type="button" 
+                                className="btn btn-secondary" 
+                                onClick={() => setProductoAEliminar(null)}
+                                disabled={eliminando}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="button" 
+                                className="btn btn-danger" 
+                                onClick={ejecutarEliminar}
+                                disabled={eliminando}
+                                style={{ fontWeight: 700, background: '#dc2626', borderColor: '#dc2626', color: '#fff' }}
+                            >
+                                {eliminando ? 'Eliminando...' : 'Sí, eliminar producto'}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 }
