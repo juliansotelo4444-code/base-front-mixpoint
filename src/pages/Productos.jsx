@@ -344,7 +344,17 @@ export default function Productos() {
                                         >
                                             <div className="row gap-xs" style={{ alignItems: 'center' }}>
                                                 <div style={{ fontWeight: 600 }}>{p.nombre}</div>
-                                                <span className="badge-edit-hint" title="Clic para editar">✏️</span>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-xs btn-edit-title"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        abrirEditar(p);
+                                                    }}
+                                                    title="Editar este producto"
+                                                >
+                                                    ✏️ Editar
+                                                </button>
                                             </div>
                                             {p.descripcion && (
                                                 <div className="muted text-xs" style={{ marginTop: 2, fontStyle: 'italic' }}>
