@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import client from '../api/client';
 import Modal from '../components/Modal';
 import ImageFinderModal from '../components/ImageFinderModal';
@@ -84,6 +84,66 @@ export default function Productos() {
     const [savingPriceId, setSavingPriceId] = useState(null);
     const [productoAEliminar, setProductoAEliminar] = useState(null);
     const [eliminando, setEliminando] = useState(false);
+    const [ordenCampo, setOrdenCampo] = useState('nombre'); // 'nombre', 'precio_venta', 'stock_actual', 'codigo', 'categoria', 'precio_compra'
+    const [ordenDir, setOrdenDir] = useState('asc'); // 'asc', 'desc'
+
+    function cambiarOrden(campo) {
+        if (ordenCampo === campo) {
+            setOrdenDir(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setOrdenCampo(campo);
+            setOrdenDir('asc');
+        }
+    }
+
+    function renderSortIndicator(campo) {
+        if (ordenCampo !== campo) {
+            return <span style={{ opacity: 0.35, marginLeft: 4, fontSize: 10 }}>↕</span>;
+        }
+        return (
+            <span style={{ color: 'var(--color-primary-dark)', marginLeft: 5, fontSize: 11, fontWeight: 900 }}>
+                {ordenDir === 'asc' ? '▲' : '▼'}
+            </span>
+        );
+    }
+
+    const productosProcesados = useMemo(() => {
+        const list = [...productos];
+        list.sort((a, b) => {
+            if (ordenCampo === 'nombre') {
+                const valA = (a.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+                const valB = (b.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+                return ordenDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            if (ordenCampo === 'codigo') {
+                const valA = (a.codigo || '').toLowerCase().trim();
+                const valB = (b.codigo || '').toLowerCase().trim();
+                return ordenDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            if (ordenCampo === 'categoria') {
+                const valA = (a.categoria_nombre || '').toLowerCase().trim();
+                const valB = (b.categoria_nombre || '').toLowerCase().trim();
+                return ordenDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            if (ordenCampo === 'precio_venta') {
+                const numA = Number(a.precio_venta) || 0;
+                const numB = Number(b.precio_venta) || 0;
+                return ordenDir === 'asc' ? numA - numB : numB - numA;
+            }
+            if (ordenCampo === 'stock_actual') {
+                const numA = Number(a.stock_actual) || 0;
+                const numB = Number(b.stock_actual) || 0;
+                return ordenDir === 'asc' ? numA - numB : numB - numA;
+            }
+            if (ordenCampo === 'precio_compra') {
+                const numA = Number(a.precio_compra) || 0;
+                const numB = Number(b.precio_compra) || 0;
+                return ordenDir === 'asc' ? numA - numB : numB - numA;
+            }
+            return 0;
+        });
+        return list;
+    }, [productos, ordenCampo, ordenDir]);
 
     function confirmarEliminar(p) {
         setProductoAEliminar(p);
@@ -300,7 +360,28 @@ export default function Productos() {
                         />
                         <VoiceSearchButton onResult={texto => setQ(texto)} placeholder="Hablar para buscar productos..." />
                     </div>
-                    <div className="row gap-sm">
+                    <div className="row gap-sm" style={{ flexWrap: 'wrap' }}>
+                        <select
+                            value={`${ordenCampo}_${ordenDir}`}
+                            onChange={e => {
+                                const parts = e.target.value.split('_');
+                                const dir = parts.pop();
+                                const campo = parts.join('_');
+                                setOrdenCampo(campo);
+                                setOrdenDir(dir);
+                            }}
+                            style={{ padding: '7px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)', fontSize: 13, background: 'var(--color-surface)', fontWeight: 600 }}
+                            title="Ordenar productos"
+                        >
+                            <option value="nombre_asc">🔤 Nombre: A → Z (Alfabético)</option>
+                            <option value="nombre_desc">🔤 Nombre: Z → A</option>
+                            <option value="precio_venta_asc">💰 Precio: Menor a Mayor</option>
+                            <option value="precio_venta_desc">💰 Precio: Mayor a Menor</option>
+                            <option value="stock_actual_asc">📦 Stock: Menor a Mayor</option>
+                            <option value="stock_actual_desc">📦 Stock: Mayor a Menor</option>
+                            <option value="codigo_asc">🏷️ Código: A → Z</option>
+                            <option value="categoria_asc">📂 Categoría: A → Z</option>
+                        </select>
                         <select
                             value={categoriaFiltro}
                             onChange={e => setCategoriaFiltro(e.target.value)}
@@ -322,20 +403,62 @@ export default function Productos() {
                     <table className="data-table">
                         <thead>
                             <tr>
+                                <th style={{ width: 36, textAlign: 'center' }}>#</th>
                                 <th style={{ width: 44, textAlign: 'center' }}>Foto</th>
-                                <th className="col-codigo">Código</th>
-                                <th>Producto / Descripción</th>
-                                <th className="col-categoria">Categoría</th>
-                                <th className="text-right">Stock disp.</th>
-                                <th className="text-right">Precio 1 kg</th>
+                                <th 
+                                    className="col-codigo"
+                                    onClick={() => cambiarOrden('codigo')}
+                                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                                    title="Ordenar por Código"
+                                >
+                                    Código {renderSortIndicator('codigo')}
+                                </th>
+                                <th 
+                                    onClick={() => cambiarOrden('nombre')}
+                                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                                    title="Ordenar alfabéticamente por Nombre"
+                                >
+                                    Producto / Descripción {renderSortIndicator('nombre')}
+                                </th>
+                                <th 
+                                    className="col-categoria"
+                                    onClick={() => cambiarOrden('categoria')}
+                                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                                    title="Ordenar por Categoría"
+                                >
+                                    Categoría {renderSortIndicator('categoria')}
+                                </th>
+                                <th 
+                                    className="text-right"
+                                    onClick={() => cambiarOrden('stock_actual')}
+                                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                                    title="Ordenar por Stock disponible"
+                                >
+                                    Stock disp. {renderSortIndicator('stock_actual')}
+                                </th>
+                                <th 
+                                    className="text-right"
+                                    onClick={() => cambiarOrden('precio_venta')}
+                                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                                    title="Ordenar por Precio (menor a mayor / mayor a menor)"
+                                >
+                                    Precio 1 kg {renderSortIndicator('precio_venta')}
+                                </th>
                                 <th className="text-right col-escalas">Escalas mayoristas (5/10/25/30k)</th>
-                                <th className="text-right col-costo">Costo estimado</th>
+                                <th 
+                                    className="text-right col-costo"
+                                    onClick={() => cambiarOrden('precio_compra')}
+                                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                                    title="Ordenar por Costo estimado"
+                                >
+                                    Costo estimado {renderSortIndicator('precio_compra')}
+                                </th>
                                 <th className="text-right col-margen">Margen / Rentab.</th>
                                 <th className="text-right col-acciones">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {productos.map(p => {
+                            {productosProcesados.map((p, idx) => {
                                 const bajoStock = Number(p.stock_actual) <= Number(p.stock_minimo);
                                 const isVerPrecios = verPreciosId === p.id;
                                 const costo = Number(p.precio_compra) || 0;
@@ -344,6 +467,7 @@ export default function Productos() {
 
                                 return (
                                     <tr key={p.id}>
+                                        <td className="col-row-num">{idx + 1}</td>
                                         <td style={{ textAlign: 'center', padding: '6px 4px' }}>
                                             <img
                                                 src={obtenerImagenProducto(p)}
@@ -533,7 +657,7 @@ export default function Productos() {
 
                 {/* VISTA MÓVIL OPTIMIZADA PARA CELULARES (< 768px) */}
                 <div className="productos-mobile-cards">
-                    {productos.map(p => {
+                    {productosProcesados.map(p => {
                         const bajoStock = Number(p.stock_actual) <= Number(p.stock_minimo);
 
                         return (
@@ -611,7 +735,7 @@ export default function Productos() {
                         );
                     })}
                 </div>
-                    {!loading && productos.length === 0 && (
+                    {!loading && productosProcesados.length === 0 && (
                         <div className="empty-state">
                             <div className="icon">🥜</div>
                             <p>No hay productos que coincidan con los filtros.</p>
