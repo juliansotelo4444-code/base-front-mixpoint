@@ -502,7 +502,19 @@ export default function Productos() {
                                                 </button>
                                             </div>
                                             {p.descripcion && (
-                                                <div className="muted text-xs" style={{ marginTop: 2, fontStyle: 'italic' }}>
+                                                <div 
+                                                    className="muted text-xs col-producto-desc" 
+                                                    title={p.descripcion}
+                                                    style={{ 
+                                                        marginTop: 3, 
+                                                        fontSize: 11.5, 
+                                                        color: 'var(--color-text-muted)', 
+                                                        maxWidth: 320,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}
+                                                >
                                                     {p.descripcion}
                                                 </div>
                                             )}
