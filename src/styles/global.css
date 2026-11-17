@@ -2104,3 +2104,18 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
         width: 100% !important;
     }
 }
+
+/* CREADOR DE FLYERS RESPONSIVO */
+.flyer-creator-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 24px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .flyer-creator-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}

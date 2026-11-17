@@ -412,8 +412,8 @@ export default function PedidosWeb() {
                                                 )}
                                                 {p.telefono && (() => {
                                                     const telLimpio = String(p.telefono).replace(/\D/g, '');
-                                                    const telWa = telLimpio.startsWith('549') ? telLimpio : (telLimpio.length >= 10 ? `549${telLimpio}` : '5491167873243');
-                                                    const waMsg = `¡Hola ${p.nombre}! Recibimos tu pedido web #${p.numero} en Mix Point.\nTotal: ${fmtMoney(p.total)}\nDatos para transferencia:\nAlias: *mixpoint2026*\nLínea oficial WhatsApp: 1167873243\n¡Muchas gracias!`;
+                                                    const telWa = telLimpio.startsWith('549') ? telLimpio : (telLimpio.length >= 10 ? `549${telLimpio}` : '5491157077061');
+                                                    const waMsg = `¡Hola ${p.nombre}! Recibimos tu pedido web #${p.numero} en Mix Point.\nTotal: ${fmtMoney(p.total)}\nDatos para transferencia:\nAlias: *mixpoint2026*\nLínea oficial WhatsApp: +54 9 11 5707-7061\n¡Muchas gracias!`;
 
                                                     return (
                                                         <a
@@ -422,7 +422,7 @@ export default function PedidosWeb() {
                                                             rel="noreferrer"
                                                             className="mono text-xs"
                                                             style={{ color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '2px 6px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
-                                                            title="Enviar confirmación y datos de pago por WhatsApp (1167873243)"
+                                                            title="Enviar confirmación y datos de pago por WhatsApp (11 5707-7061)"
                                                         >
                                                             📲 WhatsApp
                                                         </a>

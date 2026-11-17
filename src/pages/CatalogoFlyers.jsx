@@ -10,7 +10,8 @@ import { generarHojasCatalogo } from '../utils/catalogoPaginacion';
 const fmtMoney = (n) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
 
-const WHATSAPP_OFICIAL = '1167873243';
+const WHATSAPP_OFICIAL = '1157077061';
+const WHATSAPP_OFICIAL_FORMAT = '+54 9 11 5707-7061';
 const ALIAS_PAGO = 'mixpoint2026';
 
 // Nombres descriptivos para las 21 páginas de la revista oficial
@@ -204,7 +205,7 @@ export default function CatalogoFlyers() {
                             💳 Alias: {ALIAS_PAGO}
                         </span>
                         <span className="badge" style={{ background: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0', fontSize: 11, fontWeight: 700 }}>
-                            📲 WhatsApp: {WHATSAPP_OFICIAL}
+                            📲 WhatsApp: {WHATSAPP_OFICIAL_FORMAT}
                         </span>
                     </div>
                     <h1 style={{ fontSize: 26, margin: 0 }}>Catálogo Oficial & Creador de Flyers</h1>
@@ -1110,7 +1111,7 @@ export default function CatalogoFlyers() {
 
             {/* TAB 3: CREADOR Y PREVISUALIZADOR DE FLYERS */}
             {tabActiva === 'flyer' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.35fr', gap: 24, alignItems: 'start' }}>
+                <div className="flyer-creator-layout">
                     {/* PANEL DE CONTROL DE CONFIGURACIÓN */}
                     <div className="card card-pad stack gap-md no-print" style={{ background: '#FFFFFF' }}>
                         <div className="spread">
@@ -1281,7 +1282,7 @@ export default function CatalogoFlyers() {
                             <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
                                 <div style={{ fontSize: 12 }}>
                                     <span>📲 <strong>Línea Oficial WhatsApp:</strong> </span>
-                                    <span className="mono" style={{ color: '#C9A227', fontWeight: 800, fontSize: 14 }}>{WHATSAPP_OFICIAL}</span>
+                                    <span className="mono" style={{ color: '#C9A227', fontWeight: 800, fontSize: 14 }}>{WHATSAPP_OFICIAL_FORMAT}</span>
                                 </div>
                                 <div style={{ fontSize: 12 }}>
                                     <span>💳 <strong>Alias Transferencia:</strong> </span>

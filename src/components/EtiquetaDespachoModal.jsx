@@ -75,7 +75,7 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
                 `Transporte: ${transportista}`,
                 `Valor: $${valorDeclarado}`,
                 `Peso: ${pesoKg} kg`,
-                `Contacto: 1167873243`
+                `Contacto: +54 9 11 5707-7061`
             ].join('\n');
 
             try {
@@ -453,7 +453,7 @@ export default function EtiquetaDespachoModal({ remito, onClose, onUpdated }) {
                                                 DISTRIBUIDORA MIX POINT
                                             </div>
                                             <div style={{ fontSize: 9.5, fontWeight: 600, color: '#333' }}>
-                                                San Isidro 2135 Ituzaingo, Bs. As. · WApp: 1167873243
+                                                San Isidro 2135 Ituzaingo, Bs. As. · WApp: +54 9 11 5707-7061
                                             </div>
                                         </div>
                                         <div style={{

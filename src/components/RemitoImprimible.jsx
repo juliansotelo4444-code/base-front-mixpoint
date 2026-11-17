@@ -564,7 +564,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
 
     useEffect(() => {
         if (!remito) return;
-        const qrTexto = `MIX POINT MAYORISTA\nAlias: mixpoint2026\nRemito: ${remito.numero || ''}\nTotal: ${fmtMoney(remito.total)}\nWhatsApp: 1167873243`;
+        const qrTexto = `MIX POINT MAYORISTA\nAlias: mixpoint2026\nRemito: ${remito.numero || ''}\nTotal: ${fmtMoney(remito.total)}\nWhatsApp: +54 9 11 5707-7061`;
         QRCode.toDataURL(qrTexto, {
             margin: 1,
             width: 140,
@@ -1123,7 +1123,7 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
                                                     <div style={{ fontWeight: 800, color: '#1a382b', fontSize: 10.5 }}>PAGO POR TRANSFERENCIA</div>
                                                     <div><strong>Alias:</strong> <span className="mono" style={{ fontSize: 11.5, fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '1px 5px', borderRadius: 3, border: '1px solid #FDE68A' }}>mixpoint2026</span></div>
                                                     <div><strong>Titular:</strong> Mix Point Mayorista</div>
-                                                    <div><strong>WhatsApp:</strong> 1167873243</div>
+                                                    <div><strong>WhatsApp:</strong> +54 9 11 5707-7061</div>
                                                     <div style={{ color: '#475569', fontStyle: 'italic', marginTop: 2, fontSize: 8.5 }}>🔍 Trazabilidad de lotes bajo norma FEFO</div>
                                                 </div>
                                             </div>

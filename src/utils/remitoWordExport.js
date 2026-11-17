@@ -204,7 +204,7 @@ table.footer-table td {
                     FRUTOS SECOS · CEREALES · SEMILLAS · ALIMENTOS NATURALES
                 </p>
                 <p style="margin:1pt 0; font-size:8pt; color:#333;"><strong>Depósito Central:</strong> San Isidro 2135 Ituzaingo, Bs. As.</p>
-                <p style="margin:1pt 0; font-size:8pt; color:#333;"><strong>Tel / WhatsApp:</strong> (011) 57077061 · 1167873243</p>
+                <p style="margin:1pt 0; font-size:8pt; color:#333;"><strong>Tel / WhatsApp:</strong> +54 9 11 5707-7061</p>
                 <p style="margin:1pt 0; font-size:8pt; color:#333;"><strong>Email:</strong> ventas@distribuidora-mix-point.com.ar</p>
                 <p style="margin:1pt 0; font-size:8pt; color:#333;"><strong>Condición IVA:</strong> Responsable Inscripto</p>
             </td>
@@ -279,7 +279,7 @@ table.footer-table td {
                     <p style="margin:0 0 2pt 0; font-weight:bold; color:#1a382b;">💳 DATOS PARA PAGO POR TRANSFERENCIA</p>
                     <p style="margin:1pt 0;"><strong>Alias CBU:</strong> <span style="font-family:'Courier New', monospace; font-size:10pt; font-weight:bold; color:#92400e; background-color:#fef3c7;">mixpoint2026</span></p>
                     <p style="margin:1pt 0;"><strong>Titular:</strong> Mix Point Mayorista</p>
-                    <p style="margin:1pt 0;"><strong>WhatsApp de comprobantes:</strong> 1167873243</p>
+                    <p style="margin:1pt 0;"><strong>WhatsApp de comprobantes:</strong> +54 9 11 5707-7061</p>
                     <p style="margin:2pt 0 0 0; font-size:7.5pt; color:#64748b; font-style:italic;">🔍 Trazabilidad de lotes bajo norma de seguridad FEFO</p>
                 </div>
             </td>

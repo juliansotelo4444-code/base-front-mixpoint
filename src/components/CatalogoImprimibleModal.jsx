@@ -6,7 +6,8 @@ import { generarHojasCatalogo } from '../utils/catalogoPaginacion';
 const fmtMoney = (n) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
 
-const WHATSAPP_OFICIAL = '1167873243';
+const WHATSAPP_OFICIAL = '1157077061';
+const WHATSAPP_OFICIAL_FORMAT = '+54 9 11 5707-7061';
 const ALIAS_PAGO = 'mixpoint2026';
 
 function getPrintCss() {
@@ -491,7 +492,7 @@ export default function CatalogoImprimibleModal({ productos = [], categorias = [
                                                             Ventas & Asesoramiento Mayorista
                                                         </div>
                                                         <div style={{ fontSize: 13, fontWeight: 800, color: '#047857', marginTop: 3 }}>
-                                                            📲 WhatsApp: {WHATSAPP_OFICIAL}
+                                                            📲 WhatsApp: {WHATSAPP_OFICIAL_FORMAT}
                                                         </div>
                                                     </div>
                                                     <div>
@@ -677,7 +678,7 @@ export default function CatalogoImprimibleModal({ productos = [], categorias = [
                                                     color: '#6B7280'
                                                 }}
                                             >
-                                                <span>📲 WA Pedidos: {WHATSAPP_OFICIAL}</span>
+                                                <span>📲 WA Pedidos: {WHATSAPP_OFICIAL_FORMAT}</span>
                                                 <span style={{ fontWeight: 700, color: '#784A1C' }}>Mix Point · {hoja.numero}</span>
                                                 <span>💳 Alias: {ALIAS_PAGO}</span>
                                             </div>
@@ -812,7 +813,7 @@ export default function CatalogoImprimibleModal({ productos = [], categorias = [
                                                     color: '#6B7280'
                                                 }}
                                             >
-                                                <span>📲 WA Pedidos: {WHATSAPP_OFICIAL}</span>
+                                                <span>📲 WA Pedidos: {WHATSAPP_OFICIAL_FORMAT}</span>
                                                 <span style={{ fontWeight: 700, color: '#784A1C' }}>Mix Point · {hoja.numero}</span>
                                                 <span>💳 Alias: {ALIAS_PAGO}</span>
                                             </div>

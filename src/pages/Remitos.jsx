@@ -48,10 +48,10 @@ export function buildWhatsAppLink(remito) {
     if (tel.startsWith('0')) tel = tel.slice(1);
     if (tel.startsWith('15')) tel = '11' + tel.slice(2);
     if (!tel.startsWith('549') && tel.length >= 10) tel = '549' + tel;
-    if (!tel) tel = '5491167873243'; // Línea oficial Mix Point
+    if (!tel) tel = '5491157077061'; // Línea oficial Mix Point
 
     const estadoLabel = ESTADOS[remito.estado]?.label || remito.estado;
-    const msg = `¡Hola ${remito.cliente_nombre || 'Cliente'}! Tu pedido #${remito.numero} de Mix Point se encuentra en estado: *${estadoLabel.toUpperCase()}*.\nTotal: ${fmtMoney(remito.total)}\nDatos de pago por transferencia:\nAlias: *mixpoint2026*\nLínea oficial WhatsApp: 1167873243\n¡Muchas gracias por elegir Mix Point!`;
+    const msg = `¡Hola ${remito.cliente_nombre || 'Cliente'}! Tu pedido #${remito.numero} de Mix Point se encuentra en estado: *${estadoLabel.toUpperCase()}*.\nTotal: ${fmtMoney(remito.total)}\nDatos de pago por transferencia:\nAlias: *mixpoint2026*\nLínea oficial WhatsApp: +54 9 11 5707-7061\n¡Muchas gracias por elegir Mix Point!`;
 
     return `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
 }
@@ -1261,7 +1261,7 @@ export default function Remitos() {
                                                             rel="noreferrer"
                                                             className="btn btn-secondary btn-sm"
                                                             style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5', padding: '5px 8px', fontSize: 12 }}
-                                                            title="Enviar estado y datos de pago por WhatsApp (1167873243)"
+                                                            title="Enviar estado y datos de pago por WhatsApp (11 5707-7061)"
                                                         >
                                                             📲 WA
                                                         </a>
@@ -1951,7 +1951,7 @@ export default function Remitos() {
                                     className="btn btn-secondary btn-sm"
                                     style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5' }}
                                 >
-                                    📲 WhatsApp (1167873243)
+                                    📲 WhatsApp (11 5707-7061)
                                 </a>
                             </div>
 

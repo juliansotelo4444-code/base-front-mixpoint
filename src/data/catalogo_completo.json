@@ -931,7 +931,7 @@
       "escalas": {
         "x1kg": 11520
       },
-      "imagen": "/assets/chips-chocolate.jpg",
+      "imagen": "/assets/chips-chocolate-negro.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -949,7 +949,7 @@
       "escalas": {
         "x1kg": 11520
       },
-      "imagen": "/assets/chips-chocolate.jpg",
+      "imagen": "/assets/chips-chocolate-blanco.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -1791,7 +1791,7 @@
       "escalas": {
         "x1kg": 17880
       },
-      "imagen": "/assets/anis.jpg",
+      "imagen": "/assets/anis-en-grano.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3051,7 +3051,7 @@
       "escalas": {
         "x1kg": 33600
       },
-      "imagen": "/assets/pasas-chocolate.jpg",
+      "imagen": "/assets/almendras-chocolate.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3106,7 +3106,7 @@
         "x1kg": 26045,
         "x5kg": 21704
       },
-      "imagen": "/catalogo/productos/gingko_biloba_x_1kg_166.svg",
+      "imagen": "/assets/gingko-biloba.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3125,7 +3125,7 @@
         "x1kg": 39960,
         "x5kg": 33300
       },
-      "imagen": "/catalogo/productos/chocolate_barra_al_70_con_stevia_366.jpeg",
+      "imagen": "/assets/moringa.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3144,7 +3144,7 @@
         "x1kg": 42166,
         "x5kg": 35138
       },
-      "imagen": "/catalogo/productos/rosa_mosqueta_x_1kg_178.svg",
+      "imagen": "/assets/rosa-mosqueta.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3163,7 +3163,7 @@
         "x1kg": 5861,
         "x5kg": 4884
       },
-      "imagen": "/catalogo/productos/sem_x_1kg_167.svg",
+      "imagen": "/assets/sen.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3182,7 +3182,7 @@
         "x1kg": 63202,
         "x5kg": 52668
       },
-      "imagen": "/catalogo/productos/cascara_sagrada_x_1kg_173.svg",
+      "imagen": "/assets/cascara-sagrada.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3201,7 +3201,7 @@
         "x1kg": 12815,
         "x5kg": 10679
       },
-      "imagen": "/catalogo/productos/castanas_de_la_india_x_1kg_179.svg",
+      "imagen": "/assets/castanas-india.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3220,7 +3220,7 @@
         "x1kg": 43352,
         "x5kg": 36127
       },
-      "imagen": "/catalogo/productos/graviola_x_1kg_168.svg",
+      "imagen": "/assets/graviola.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3239,7 +3239,7 @@
         "x1kg": 27000,
         "x5kg": 22500
       },
-      "imagen": "/catalogo/productos/manzanilla_174.svg",
+      "imagen": "/assets/manzanilla.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3258,7 +3258,7 @@
         "x1kg": 68020,
         "x5kg": 56683
       },
-      "imagen": "/catalogo/productos/petalo_de_rosas_180.svg",
+      "imagen": "/assets/petalo-rosas.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3277,7 +3277,7 @@
         "x1kg": 34454,
         "x5kg": 28712
       },
-      "imagen": "/catalogo/productos/sandalo_169.svg",
+      "imagen": "/assets/sandalo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3296,7 +3296,7 @@
         "x1kg": 106560,
         "x5kg": 88800
       },
-      "imagen": "/catalogo/productos/siempre_viva_175.svg",
+      "imagen": "/assets/siempre-viva.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3315,7 +3315,7 @@
         "x1kg": 86598,
         "x5kg": 72165
       },
-      "imagen": "/catalogo/productos/flor_de_tilo_181.svg",
+      "imagen": "/assets/tilo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3334,7 +3334,7 @@
         "x1kg": 71218,
         "x5kg": 59348
       },
-      "imagen": "/catalogo/productos/valeriana_170.svg",
+      "imagen": "/assets/valeriana.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3353,7 +3353,7 @@
         "x1kg": 29837,
         "x5kg": 24864
       },
-      "imagen": "/catalogo/productos/cedron_176.svg",
+      "imagen": "/assets/cedron.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3372,7 +3372,7 @@
         "x1kg": 19536,
         "x5kg": 16280
       },
-      "imagen": "/catalogo/productos/laurel_182.svg",
+      "imagen": "/assets/laurel.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3391,7 +3391,7 @@
         "x1kg": 52410,
         "x5kg": 43675
       },
-      "imagen": "/catalogo/productos/hammamelis_171.svg",
+      "imagen": "/assets/hammamelis.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3410,7 +3410,7 @@
         "x1kg": 6026,
         "x5kg": 5022
       },
-      "imagen": "/catalogo/productos/higuera_tinta_60_cc_177.svg",
+      "imagen": "/assets/higuera-tintura.jpg",
       "unidad_medida": "unidad"
     },
     {
@@ -3429,7 +3429,7 @@
         "x1kg": 9588,
         "x5kg": 7990
       },
-      "imagen": "/catalogo/productos/malva_183.svg",
+      "imagen": "/assets/malva.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3448,7 +3448,7 @@
         "x1kg": 23024,
         "x5kg": 19187
       },
-      "imagen": "/catalogo/productos/melisa_184.svg",
+      "imagen": "/assets/melisa.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3467,7 +3467,7 @@
         "x1kg": 10200,
         "x5kg": 8500
       },
-      "imagen": "/catalogo/productos/lapacho_191.svg",
+      "imagen": "/assets/lapacho.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3486,7 +3486,7 @@
         "x1kg": 6026,
         "x5kg": 5022
       },
-      "imagen": "/catalogo/productos/llanten_tinta_60_cc_198.svg",
+      "imagen": "/assets/llanten-tintura.jpg",
       "unidad_medida": "unidad"
     },
     {
@@ -3505,7 +3505,7 @@
         "x1kg": 13741,
         "x5kg": 11451
       },
-      "imagen": "/catalogo/productos/menta_185.svg",
+      "imagen": "/assets/menta.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3524,7 +3524,7 @@
         "x1kg": 8466,
         "x5kg": 7055
       },
-      "imagen": "/catalogo/productos/muna_muna_192.svg",
+      "imagen": "/assets/muna-muna.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3543,7 +3543,7 @@
         "x1kg": 7548,
         "x5kg": 6290
       },
-      "imagen": "/catalogo/productos/ortiga_199.svg",
+      "imagen": "/assets/ortiga.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3562,7 +3562,7 @@
         "x1kg": 16284,
         "x5kg": 13570
       },
-      "imagen": "/catalogo/productos/salvia_186.svg",
+      "imagen": "/assets/salvia.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3581,7 +3581,7 @@
         "x1kg": 15902,
         "x5kg": 13252
       },
-      "imagen": "/catalogo/productos/poleo_193.svg",
+      "imagen": "/assets/poleo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3600,7 +3600,7 @@
         "x1kg": 4723,
         "x5kg": 3936
       },
-      "imagen": "/catalogo/productos/romero_titura_50cc_200.svg",
+      "imagen": "/assets/romero-tintura.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3619,7 +3619,7 @@
         "x1kg": 29268,
         "x5kg": 24390
       },
-      "imagen": "/catalogo/productos/peperina_187.svg",
+      "imagen": "/assets/peperina.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3638,7 +3638,7 @@
         "x1kg": 10657,
         "x5kg": 8881
       },
-      "imagen": "/catalogo/productos/pasionaria_194.svg",
+      "imagen": "/assets/pasionaria.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3657,7 +3657,7 @@
         "x1kg": 9132,
         "x5kg": 7610
       },
-      "imagen": "/catalogo/productos/te_negro_201.svg",
+      "imagen": "/assets/te-negro.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3676,7 +3676,7 @@
         "x1kg": 10680,
         "x5kg": 8900
       },
-      "imagen": "/catalogo/productos/te_rojo_188.svg",
+      "imagen": "/assets/te-rojo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3695,7 +3695,7 @@
         "x1kg": 9840,
         "x5kg": 8200
       },
-      "imagen": "/catalogo/productos/te_verde_195.svg",
+      "imagen": "/assets/te-verde.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3714,7 +3714,7 @@
         "x1kg": 14690,
         "x5kg": 12242
       },
-      "imagen": "/catalogo/productos/marcela_202.svg",
+      "imagen": "/assets/marcela.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3733,7 +3733,7 @@
         "x1kg": 11940,
         "x5kg": 9950
       },
-      "imagen": "/catalogo/productos/pesuna_de_vaca_189.svg",
+      "imagen": "/assets/pesuna-de-vaca.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3752,7 +3752,7 @@
         "x1kg": 2292,
         "x5kg": 1910
       },
-      "imagen": "/catalogo/productos/rompe_piedra_50grs_196.svg",
+      "imagen": "/assets/rompe-piedra.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3771,7 +3771,7 @@
         "x1kg": 6026,
         "x5kg": 5022
       },
-      "imagen": "/catalogo/productos/rompe_piedra_tintura_60cc_203.svg",
+      "imagen": "/assets/rompe-piedra-tintura.jpg",
       "unidad_medida": "unidad"
     },
     {
@@ -3790,7 +3790,7 @@
         "x1kg": 12974,
         "x5kg": 10812
       },
-      "imagen": "/catalogo/productos/ajenjo_190.svg",
+      "imagen": "/assets/ajenjo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3809,7 +3809,7 @@
         "x1kg": 7961,
         "x5kg": 6634
       },
-      "imagen": "/catalogo/productos/alcachofa_197.svg",
+      "imagen": "/assets/alcachofa.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3828,7 +3828,7 @@
         "x1kg": 15860,
         "x5kg": 13217
       },
-      "imagen": "/catalogo/productos/amargon_204.svg",
+      "imagen": "/assets/amargon.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3847,7 +3847,7 @@
         "x1kg": 11890,
         "x5kg": 9908
       },
-      "imagen": "/catalogo/productos/ambay_205.svg",
+      "imagen": "/assets/ambay.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3866,7 +3866,7 @@
         "x1kg": 7200,
         "x5kg": 6000
       },
-      "imagen": "/catalogo/productos/burrito_212.svg",
+      "imagen": "/assets/burrito.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3885,7 +3885,7 @@
         "x1kg": 15984,
         "x5kg": 13320
       },
-      "imagen": "/catalogo/productos/boldo_219.svg",
+      "imagen": "/assets/boldo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3904,7 +3904,7 @@
         "x1kg": 7038,
         "x5kg": 5865
       },
-      "imagen": "/catalogo/productos/carqueja_206.svg",
+      "imagen": "/assets/carqueja.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3923,7 +3923,7 @@
         "x1kg": 4380,
         "x5kg": 3650
       },
-      "imagen": "/catalogo/productos/cola_de_caballo_213.svg",
+      "imagen": "/assets/cola-de-caballo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3942,7 +3942,7 @@
         "x1kg": 17442,
         "x5kg": 14535
       },
-      "imagen": "/catalogo/productos/cola_de_quirquincho_220.svg",
+      "imagen": "/assets/cola-de-quirquincho.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3961,7 +3961,7 @@
         "x1kg": 6026,
         "x5kg": 5022
       },
-      "imagen": "/catalogo/productos/chanar_titntura_60cc_207.svg",
+      "imagen": "/assets/chanar-tintura.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3980,7 +3980,7 @@
         "x1kg": 21013,
         "x5kg": 17511
       },
-      "imagen": "/catalogo/productos/calendula_214.svg",
+      "imagen": "/assets/calendula.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -3999,7 +3999,7 @@
         "x1kg": 4716,
         "x5kg": 3930
       },
-      "imagen": "/catalogo/productos/diente_de_leon_tintutara_60cc_221.svg",
+      "imagen": "/assets/diente-de-leon-tintura.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4018,7 +4018,7 @@
         "x1kg": 6528,
         "x5kg": 5440
       },
-      "imagen": "/catalogo/productos/espina_colorada_208.svg",
+      "imagen": "/assets/espina-colorada.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4037,7 +4037,7 @@
         "x1kg": 2292,
         "x5kg": 1910
       },
-      "imagen": "/catalogo/productos/doradilla_40grs_215.svg",
+      "imagen": "/assets/doradilla.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4056,7 +4056,7 @@
         "x1kg": 25200,
         "x5kg": 21000
       },
-      "imagen": "/catalogo/productos/estigma_de_maiz_222.svg",
+      "imagen": "/assets/estigma-de-maiz.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4075,7 +4075,7 @@
         "x1kg": 11911,
         "x5kg": 9926
       },
-      "imagen": "/catalogo/productos/eucalipto_209.svg",
+      "imagen": "/assets/eucalipto.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4094,7 +4094,7 @@
         "x1kg": 74592,
         "x5kg": 62160
       },
-      "imagen": "/catalogo/productos/cardo_mariano_216.svg",
+      "imagen": "/assets/cardo-mariano.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4113,7 +4113,7 @@
         "x1kg": 20893,
         "x5kg": 17411
       },
-      "imagen": "/catalogo/productos/hisopo_223.svg",
+      "imagen": "/assets/hisopo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4132,7 +4132,7 @@
         "x1kg": 3982,
         "x5kg": 3318
       },
-      "imagen": "/catalogo/productos/palo_amarillo_210.svg",
+      "imagen": "/assets/palo-amarillo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4151,7 +4151,7 @@
         "x1kg": 13260,
         "x5kg": 11050
       },
-      "imagen": "/catalogo/productos/salvia_blanca_217.svg",
+      "imagen": "/assets/salvia-blanca.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4170,7 +4170,7 @@
         "x1kg": 86610,
         "x5kg": 72175
       },
-      "imagen": "/catalogo/productos/tilo_224.svg",
+      "imagen": "/assets/tilo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4189,7 +4189,7 @@
         "x1kg": 30000,
         "x5kg": 25000
       },
-      "imagen": "https://www.google.com/imgres?q=tipos%20de%20hierbabuena&imgurl=https%3A%2F%2Fpymstatic.com%2F28531%2Fconversions%2Fhierbabuena-wide.jpg&imgrefurl=https%3A%2F%2Fpsicologiaymente.com%2Fnutricion%2Fhierbabuena&docid=8F-BMJbQ1I4yMM&tbnid=QO_O8dOKTKcQMM&vet=12ahUKEwjZmuvH17KWAxXSDLkGHf82AFoQnPAOegUIkgEQAA..i&w=1200&h=675&hcb=2&ved=2ahUKEwjZmuvH17KWAxXSDLkGHf82AFoQnPAOegUIkgEQAA",
+      "imagen": "/assets/hierbabuena.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4208,7 +4208,7 @@
         "x1kg": 760,
         "x5kg": 633
       },
-      "imagen": "/catalogo/productos/yerba_de_pollo_25grs_218.svg",
+      "imagen": "/assets/yerba-de-pollo.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4227,7 +4227,7 @@
         "x1kg": 27362,
         "x5kg": 22802
       },
-      "imagen": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIVuUgPfn8lJWv8MXItaXU2gmIFhWOwwb_jhKkOzuF3g&s=10",
+      "imagen": "/assets/mirra.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4245,7 +4245,7 @@
       "escalas": {
         "x1kg": 26500
       },
-      "imagen": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXPyIYKPPE8nLz6Ae1nDC2O2pv0XSLGJBzYArnsHMAbg&s=10",
+      "imagen": "/assets/pimienta-negra-granos.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4281,7 +4281,7 @@
       "escalas": {
         "x1kg": 3620
       },
-      "imagen": "https://www.google.com/imgres?q=xantica%2040gr%20Goma%20xantica%2040cc%20Procal&imgurl=https%3A%2F%2Fd22fxaf9t8d39k.cloudfront.net%2F81a21aef5b76133549c8a1934f992e50a6eef71c4d99113abe7b924c7679a2b810477.jpg&imgrefurl=https%3A%2F%2Fwww.delilaplata.com.ar%2Falacena1%2Fgoma-xantica-40-g-sin-tacc-procal&docid=E6xqCOO81qJNuM&tbnid=SZX4HLYG94rxBM&vet=12ahUKEwiJmYnvvc2WAxWQKrkGHQJ8A20QnPAOegQIPBAA..i&w=600&h=663&hcb=2&ved=2ahUKEwiJmYnvvc2WAxWQKrkGHQJ8A20QnPAOegQIPBAA",
+      "imagen": "/assets/goma-xantica.jpg",
       "unidad_medida": "unidad"
     },
     {
@@ -4299,7 +4299,7 @@
       "escalas": {
         "x1kg": 16900
       },
-      "imagen": "https://drive.google.com/file/d/1AjT1Rz9gVK-DQ0nxa7tngylczsfdZaY9/view?usp=drive_link",
+      "imagen": "/assets/honey-del-amor.jpg",
       "unidad_medida": "unidad"
     },
     {
@@ -4317,7 +4317,7 @@
       "escalas": {
         "x1kg": 5700
       },
-      "imagen": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4XDpAiohPZUty1KCMODvuxbZO5j1kerxW7zOsX8ohZw&s=10",
+      "imagen": "/assets/huang-he.jpg",
       "unidad_medida": "unidad"
     },
     {
@@ -4335,7 +4335,7 @@
       "escalas": {
         "x1kg": 10500
       },
-      "imagen": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXs2z_-3q46yqHSHyLmIbzt05UeCc1rO27miuFYDB5QQ&s",
+      "imagen": "/assets/pum-pum.jpg",
       "unidad_medida": "unidad"
     },
     {
@@ -4353,7 +4353,7 @@
       "escalas": {
         "x1kg": 36500
       },
-      "imagen": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRICTPQlcBioXpyjoCKjKe3TXgQ464smfBbhaSX8kP4HA&s=10",
+      "imagen": "/assets/castanas-de-para.jpg",
       "unidad_medida": "kg"
     },
     {
@@ -4371,7 +4371,7 @@
       "escalas": {
         "x1kg": 23800
       },
-      "imagen": "https://http2.mlstatic.com/D_NQ_NP_2X_675463-MLA46783120410_072021-F.webp",
+      "imagen": "/assets/agar-agar.jpg",
       "unidad_medida": "unidad"
     }
   ]
