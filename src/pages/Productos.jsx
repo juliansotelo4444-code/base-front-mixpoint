@@ -302,15 +302,15 @@ export default function Productos() {
                         <thead>
                             <tr>
                                 <th style={{ width: 44, textAlign: 'center' }}>Foto</th>
-                                <th>Código</th>
+                                <th className="col-codigo">Código</th>
                                 <th>Producto / Descripción</th>
-                                <th>Categoría</th>
+                                <th className="col-categoria">Categoría</th>
                                 <th className="text-right">Stock disp.</th>
                                 <th className="text-right">Precio 1 kg</th>
-                                <th className="text-right">Escalas mayoristas (5/10/25/30k)</th>
-                                <th className="text-right">Costo estimado</th>
-                                <th className="text-right">Margen / Rentab.</th>
-                                <th className="text-right">Acciones</th>
+                                <th className="text-right col-escalas">Escalas mayoristas (5/10/25/30k)</th>
+                                <th className="text-right col-costo">Costo estimado</th>
+                                <th className="text-right col-margen">Margen / Rentab.</th>
+                                <th className="text-right col-acciones">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -333,18 +333,32 @@ export default function Productos() {
                                                 }}
                                             />
                                         </td>
-                                        <td className="mono text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                                        <td className="mono text-sm col-codigo" style={{ color: 'var(--color-text-muted)' }}>
                                             {p.codigo || `MP-${p.id}`}
                                         </td>
-                                        <td>
-                                            <div style={{ fontWeight: 600 }}>{p.nombre}</div>
+                                        <td 
+                                            className="col-producto"
+                                            onClick={() => abrirEditar(p)}
+                                            style={{ cursor: 'pointer' }}
+                                            title="Clic para editar este producto"
+                                        >
+                                            <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                                                <div style={{ fontWeight: 600 }}>{p.nombre}</div>
+                                                <span className="badge-edit-hint" title="Clic para editar">✏️</span>
+                                            </div>
                                             {p.descripcion && (
                                                 <div className="muted text-xs" style={{ marginTop: 2, fontStyle: 'italic' }}>
                                                     {p.descripcion}
                                                 </div>
                                             )}
+                                            <div className="mobile-meta-tags">
+                                                <span className="mono text-xs muted">{p.codigo || `MP-${p.id}`}</span>
+                                                <span className="badge badge-neutral" style={{ fontSize: 10, padding: '1px 6px' }}>
+                                                    {p.categoria_nombre || 'General'}
+                                                </span>
+                                            </div>
                                         </td>
-                                        <td>
+                                        <td className="col-categoria">
                                             <span className="badge badge-neutral" style={{ fontSize: 11 }}>
                                                 {p.categoria_nombre || 'General'}
                                             </span>
@@ -409,7 +423,7 @@ export default function Productos() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="text-right">
+                                        <td className="text-right col-escalas">
                                             <button
                                                 className="btn btn-ghost btn-sm"
                                                 onClick={() => setVerPreciosId(isVerPrecios ? null : p.id)}
@@ -426,10 +440,10 @@ export default function Productos() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="text-right mono muted text-sm">
+                                        <td className="text-right mono muted text-sm col-costo">
                                             {fmtMoney(p.precio_compra)}
                                         </td>
-                                        <td className="text-right">
+                                        <td className="text-right col-margen">
                                             {margen !== null ? (
                                                 <span className={`mono badge ${Number(margen) >= 35 ? 'badge-success' : (Number(margen) > 15 ? 'badge-warning' : 'badge-danger')}`} style={{ fontSize: 11.5 }}>
                                                     +{margen}%
@@ -438,12 +452,25 @@ export default function Productos() {
                                                 <span className="muted text-xs">—</span>
                                             )}
                                         </td>
-                                        <td className="text-right">
+                                        <td className="text-right col-acciones">
                                             <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
                                                 <button
-                                                    className="btn btn-ghost btn-sm"
-                                                    onClick={() => abrirEditar(p)}
+                                                    className="btn btn-secondary btn-sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        abrirEditar(p);
+                                                    }}
                                                     title="Editar producto y precios"
+                                                    style={{
+                                                        color: 'var(--color-primary-dark)',
+                                                        borderColor: 'var(--color-border-strong)',
+                                                        fontWeight: 700,
+                                                        padding: '5px 12px',
+                                                        fontSize: 12,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 5
+                                                    }}
                                                 >
                                                     <IconEditar /> Editar
                                                 </button>
@@ -454,6 +481,79 @@ export default function Productos() {
                             })}
                         </tbody>
                     </table>
+                </div>
+
+                {/* VISTA MÓVIL OPTIMIZADA PARA CELULARES (< 768px) */}
+                <div className="productos-mobile-cards">
+                    {productos.map(p => {
+                        const bajoStock = Number(p.stock_actual) <= Number(p.stock_minimo);
+
+                        return (
+                            <div key={p.id} className="producto-mobile-card">
+                                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                    <img
+                                        src={obtenerImagenProducto(p)}
+                                        alt={p.nombre}
+                                        style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 6, border: '1px solid #e2e8f0', background: '#f8fafc', padding: 2, flexShrink: 0 }}
+                                        onError={e => { e.target.src = '/catalogo/ilustraciones/mixpoint_generico.svg'; }}
+                                    />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div 
+                                            style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--color-text)', cursor: 'pointer' }}
+                                            onClick={() => abrirEditar(p)}
+                                        >
+                                            {p.nombre}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 3, flexWrap: 'wrap' }}>
+                                            <span className="mono text-xs muted">{p.codigo || `MP-${p.id}`}</span>
+                                            <span className="badge badge-neutral" style={{ fontSize: 10, padding: '1px 6px' }}>
+                                                {p.categoria_nombre || 'General'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {p.descripcion && (
+                                    <div className="muted text-xs" style={{ fontStyle: 'italic', marginTop: 6 }}>
+                                        {p.descripcion}
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--color-border)' }}>
+                                    <div>
+                                        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 600 }}>PRECIO 1 KG</div>
+                                        <div className="mono" style={{ fontWeight: 800, fontSize: 17, color: 'var(--color-primary-dark)' }}>
+                                            {fmtMoney(p.precio_venta)}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 600 }}>STOCK DISP.</div>
+                                        <button
+                                            className={`mono badge ${bajoStock ? 'badge-danger' : 'badge-neutral'}`}
+                                            style={{ border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, marginTop: 2 }}
+                                            onClick={() => abrirAjuste(p)}
+                                            title="Ajuste manual de stock"
+                                        >
+                                            {p.stock_actual} {p.unidad_medida}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary btn-sm"
+                                        style={{ flex: 1, justifyContent: 'center', padding: '9px 12px', fontWeight: 700, fontSize: 13, borderRadius: 6 }}
+                                        onClick={() => abrirEditar(p)}
+                                    >
+                                        <IconEditar /> Editar Producto
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
                     {!loading && productos.length === 0 && (
                         <div className="empty-state">
                             <div className="icon">🥜</div>
@@ -461,7 +561,6 @@ export default function Productos() {
                         </div>
                     )}
                 </div>
-            </div>
 
             {/* MODAL CREAR / EDITAR PRODUCTO */}
             {modalOpen && (

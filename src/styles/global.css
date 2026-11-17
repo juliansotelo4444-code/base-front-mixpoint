@@ -2119,3 +2119,116 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
         gap: 16px;
     }
 }
+
+/* =========================================================
+   CATÁLOGO DE PRODUCTOS: TABLA RESPONSIVA & COLUMNA EDITAR STICKY
+   ========================================================= */
+.data-table th.col-acciones,
+.data-table td.col-acciones {
+    position: sticky;
+    right: 0;
+    background: var(--color-surface);
+    box-shadow: -5px 0 10px rgba(0, 0, 0, 0.08);
+    z-index: 5;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.data-table thead th.col-acciones {
+    background: #FAF7F2;
+    z-index: 6;
+}
+
+[data-theme="marino"] .data-table thead th.col-acciones {
+    background: #E1E8F2;
+}
+
+[data-theme="oscuro"] .data-table thead th.col-acciones {
+    background: #11141D;
+}
+
+.data-table tbody tr:hover td.col-acciones {
+    background: var(--color-surface-sunken);
+}
+
+.col-producto {
+    transition: background 0.15s ease;
+}
+
+.col-producto:hover > div > div:first-child {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+}
+
+.col-producto .badge-edit-hint {
+    opacity: 0.4;
+    font-size: 11px;
+    transition: opacity 0.15s ease;
+}
+
+.col-producto:hover .badge-edit-hint {
+    opacity: 1;
+}
+
+.mobile-meta-tags {
+    display: none;
+    gap: 6px;
+    align-items: center;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+/* Ocultamiento inteligente de columnas secundarias en laptops (pantallas medianas) */
+@media (max-width: 1300px) {
+    .data-table th.col-costo,
+    .data-table td.col-costo,
+    .data-table th.col-margen,
+    .data-table td.col-margen {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1080px) {
+    .data-table th.col-escalas,
+    .data-table td.col-escalas {
+        display: none !important;
+    }
+}
+
+@media (max-width: 880px) {
+    .data-table th.col-categoria,
+    .data-table td.col-categoria,
+    .data-table th.col-codigo,
+    .data-table td.col-codigo {
+        display: none !important;
+    }
+    .mobile-meta-tags {
+        display: flex !important;
+    }
+}
+
+/* En dispositivos móviles (< 768px) alternar a vista de Cards compactas */
+.productos-mobile-cards {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .table-wrap {
+        display: none !important;
+    }
+    .productos-mobile-cards {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px;
+    }
+    .producto-mobile-card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+    }
+}
