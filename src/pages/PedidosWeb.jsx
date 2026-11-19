@@ -15,6 +15,34 @@ function extraerHorarioEntrega(notas) {
     return m ? m[1].trim() : '';
 }
 
+function formatItemWeb(it) {
+    const cant = Number(it.cantidad) || 1;
+    let mult = Number(it.multiplicador) || 1;
+    const escala = String(it.escala || it.escala_key || '').toLowerCase().trim();
+    const nombre = String(it.nombre || '').toLowerCase();
+
+    if (mult === 1) {
+        if (escala.includes('30kg') || escala.includes('30 kg') || escala.includes('treintakg') || nombre.includes('x30kg') || nombre.includes('x 30kg')) mult = 30;
+        else if (escala.includes('25kg') || escala.includes('25 kg') || escala.includes('veinticincokg') || nombre.includes('x25kg') || nombre.includes('x 25kg')) mult = 25;
+        else if (escala.includes('10kg') || escala.includes('10 kg') || escala.includes('diezkg') || escala.includes('pack x10') || nombre.includes('x10kg') || nombre.includes('x 10kg')) mult = 10;
+        else if (escala.includes('5kg') || escala.includes('5 kg') || escala.includes('cincokg') || escala.includes('pack x5') || nombre.includes('x5kg') || nombre.includes('x 5kg')) mult = 5;
+    }
+
+    const esUnidad = (it.unidad_medida && it.unidad_medida.toLowerCase() === 'unidad') || escala.includes('pack');
+    if (mult > 1) {
+        const bultoLabel = esUnidad ? (cant > 1 ? `${cant} Packs` : '1 Pack') : (cant > 1 ? `${cant} Bolsas` : '1 Bolsa');
+        const totalKg = cant * mult;
+        return {
+            texto: `${bultoLabel} x${mult}${esUnidad ? 'u' : 'kg'} (${totalKg} ${esUnidad ? 'u' : 'kg'})`,
+            esMayorista: true
+        };
+    }
+    return {
+        texto: `${cant} ${it.unidad_medida || 'kg'}`,
+        esMayorista: false
+    };
+}
+
 
 export default function PedidosWeb() {
     const [pedidos, setPedidos] = useState([]);
@@ -105,7 +133,10 @@ export default function PedidosWeb() {
                 cantidad: cant,
                 unidad_medida: it.unidad_medida || 'kg',
                 precio_unitario: pu,
-                subtotal: it.subtotal !== undefined && it.subtotal !== null ? Number(it.subtotal) : cant * pu
+                subtotal: it.subtotal !== undefined && it.subtotal !== null ? Number(it.subtotal) : cant * pu,
+                escala: it.escala || '',
+                multiplicador: it.multiplicador || 1,
+                kilos_totales: it.kilos_totales || null
             };
         });
 
@@ -187,7 +218,10 @@ export default function PedidosWeb() {
                     cantidad: Number(it.cantidad) || 1,
                     unidad_medida: it.unidad_medida || 'kg',
                     precio_unitario: Number(it.precio_unitario) || 0,
-                    subtotal: Number(it.subtotal) || 0
+                    subtotal: Number(it.subtotal) || 0,
+                    escala: it.escala || '',
+                    multiplicador: Number(it.multiplicador) || 1,
+                    kilos_totales: it.kilos_totales || null
                 })),
                 total: totalEditado
             };
@@ -451,11 +485,16 @@ export default function PedidosWeb() {
                                             </td>
                                             <td style={{ maxWidth: 320 }}>
                                                 <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-                                                    {p.items.map((it, itIdx) => (
-                                                        <div key={itIdx} style={{ marginBottom: 2 }}>
-                                                            <strong>{it.cantidad} {it.unidad_medida}</strong> × {it.nombre}
-                                                        </div>
-                                                    ))}
+                                                    {p.items.map((it, itIdx) => {
+                                                        const info = formatItemWeb(it);
+                                                        return (
+                                                            <div key={itIdx} style={{ marginBottom: 2 }}>
+                                                                <strong style={info.esMayorista ? { color: '#92400e', background: '#fef3c7', padding: '1px 5px', borderRadius: 3, display: 'inline-block' } : {}}>
+                                                                    {info.texto}
+                                                                </strong> × {it.nombre}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </td>
                                             <td className="text-right mono" style={{ fontWeight: 700, fontSize: 13.5 }}>
