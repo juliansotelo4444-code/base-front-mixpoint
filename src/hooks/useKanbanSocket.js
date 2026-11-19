@@ -48,7 +48,9 @@ export function useKanbanSocket(onEvento) {
             'kanban:movido',
             'kanban:batch_actualizado',
             'pedido_web_nuevo',
-            'pedido_web_actualizado'
+            'pedido_web_actualizado',
+            'producto_actualizado',
+            'productos_actualizados'
         ];
 
         eventos.forEach((evento) => {

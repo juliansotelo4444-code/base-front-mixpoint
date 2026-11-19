@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import client from '../api/client';
+import useKanbanSocket from '../hooks/useKanbanSocket';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconBuscar, IconFlyer } from '../components/Icons';
 import CatalogoImprimibleModal from '../components/CatalogoImprimibleModal';
@@ -59,7 +60,7 @@ const CATEGORIAS_CON_ICONO = [
 ];
 
 export default function CatalogoFlyers() {
-    // Inicializar de inmediato con el catálogo oficial JSON para evitar pantallas en blanco
+    // Inicializar con catálogo base y actualizar de inmediato desde PostgreSQL
     const [productos, setProductos] = useState(catalogoOficialData.productos || []);
     const [categorias, setCategorias] = useState(catalogoOficialData.categorias || []);
     const [q, setQ] = useState('');
@@ -67,6 +68,8 @@ export default function CatalogoFlyers() {
     const [vistaCatalogo, setVistaCatalogo] = useState('grilla'); // 'grilla' | 'tabla'
     const [tabActiva, setTabActiva] = useState('catalogo'); // 'catalogo' | 'revista' | 'flyer'
     const [loading, setLoading] = useState(false);
+    const [sincronizadoBD, setSincronizadoBD] = useState(false);
+    const [ultimaSync, setUltimaSync] = useState(null);
     const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false);
 
     // Estado del Visor de Revista Digital PDF
@@ -77,11 +80,138 @@ export default function CatalogoFlyers() {
     // Estado del Creador de Flyers
     const [flyerTitulo, setFlyerTitulo] = useState('¡OFERTAS MAYORISTAS DE LA SEMANA!');
     const [flyerSubtitulo, setFlyerSubtitulo] = useState('Precios directos para dietéticas, comercios y distribuidores');
-    const [productosSeleccionados, setProductosSeleccionados] = useState([1, 5, 8, 12]);
+    const [productosSeleccionados, setProductosSeleccionados] = useState([]);
     const [notaPie, setNotaPie] = useState('Precios netos por bulto cerrado · Envíos a todo el país · Stock asegurado');
     const [copiado, setCopiado] = useState(false);
 
     const flyerRef = useRef(null);
+
+    // Carga autoritativa y reactiva desde la Base de Gestión (PostgreSQL)
+    const cargarProductosDesdeBD = useCallback(async () => {
+        setLoading(true);
+        try {
+            let prodsDB = [];
+            let catsDB = [];
+
+            // 1. Intentar endpoint autenticado /productos con activo=1
+            try {
+                const pRes = await client.get('/productos', { params: { activo: 1 } });
+                if (Array.isArray(pRes.data) && pRes.data.length > 0) {
+                    prodsDB = pRes.data;
+                }
+            } catch (errAuth) {
+                console.warn('[CatalogoFlyers] /productos con auth no respondió, intentando fallback público...', errAuth?.message);
+            }
+
+            // 2. Si falló o vino vacío, fallback al endpoint público /productos/public
+            if (!prodsDB.length) {
+                try {
+                    const pubRes = await client.get('/productos/public');
+                    if (Array.isArray(pubRes.data) && pubRes.data.length > 0) {
+                        prodsDB = pubRes.data;
+                    }
+                } catch (errPub) {
+                    console.error('[CatalogoFlyers] Fallback /productos/public falló:', errPub);
+                }
+            }
+
+            // 3. Obtener categorías de la base de datos
+            try {
+                const cRes = await client.get('/productos/categorias');
+                if (Array.isArray(cRes.data) && cRes.data.length > 0) {
+                    catsDB = cRes.data;
+                }
+            } catch (_) {}
+
+            if (prodsDB.length > 0) {
+                // Combinar datos: los precios y atributos de PostgreSQL son la VERDAD ABSOLUTA
+                const combinados = prodsDB.map(p => {
+                    const pCod = String(p.codigo || '').toLowerCase().trim();
+                    const pNom = String(p.nombre || '').toLowerCase().trim();
+
+                    const localMatch = (catalogoOficialData.productos || []).find(x => {
+                        const xCod = String(x.codigo || '').toLowerCase().trim();
+                        const xNom = String(x.nombre || '').toLowerCase().trim();
+                        return (pCod && xCod && pCod === xCod) || (pNom && xNom && pNom === xNom);
+                    });
+
+                    const pVenta = Number(p.precio_venta || 0);
+                    const p5k = Number(p.precio_5kg || 0);
+                    const p10k = Number(p.precio_10kg || 0);
+                    const p25k = Number(p.precio_25kg || 0);
+                    const p30k = Number(p.precio_30kg || 0);
+
+                    return {
+                        ...p,
+                        id: p.id,
+                        codigo: p.codigo || localMatch?.codigo || '',
+                        nombre: p.nombre,
+                        descripcion: p.descripcion || localMatch?.descripcion || '',
+                        categoria: p.categoria || p.categoria_nombre || localMatch?.categoria || 'Otros',
+                        categoria_nombre: p.categoria_nombre || p.categoria || localMatch?.categoria || 'Otros',
+                        unidad_medida: p.unidad_medida || localMatch?.unidad_medida || 'kg',
+                        pagina: localMatch?.pagina || p.pagina || 3,
+                        imagen: obtenerImagenProducto(p) || localMatch?.imagen,
+                        precio_venta: pVenta,
+                        precio_5kg: p5k,
+                        precio_10kg: p10k,
+                        precio_25kg: p25k,
+                        precio_30kg: p30k,
+                        precio_oferta: p.precio_oferta ? Number(p.precio_oferta) : null,
+                        escalas: {
+                            x1kg: pVenta,
+                            x5kg: p5k,
+                            x10kg: p10k,
+                            x25kg: p25k,
+                            x30kg: p30k
+                        }
+                    };
+                });
+
+                setProductos(combinados);
+                setSincronizadoBD(true);
+                setUltimaSync(new Date());
+
+                // Asegurar que haya productos seleccionados válidos para el creador de Flyers
+                setProductosSeleccionados(prev => {
+                    const validos = prev.filter(id => combinados.some(x => x.id === id));
+                    if (validos.length > 0) return validos;
+                    // Sugerir los 4 primeros con imagen o escala de la base
+                    const sugeridos = combinados.slice(0, 4).map(x => x.id);
+                    return sugeridos.length > 0 ? sugeridos : [combinados[0]?.id].filter(Boolean);
+                });
+            }
+
+            if (catsDB.length > 0) {
+                setCategorias(catsDB);
+            }
+        } catch (err) {
+            console.error('[CatalogoFlyers] Error al sincronizar catálogo con base de gestión:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Sincronización en tiempo real vía WebSockets ante cambios en la base de datos
+    const handleEventoSocket = useCallback((evento) => {
+        if (evento === 'producto_actualizado' || evento === 'productos_actualizados') {
+            console.log('⚡ [CatalogoFlyers] Producto o precio modificado en la Base de Gestión, refrescando catálogo...');
+            cargarProductosDesdeBD();
+        }
+    }, [cargarProductosDesdeBD]);
+
+    useKanbanSocket(handleEventoSocket);
+
+    // Carga inicial y recarga al reenfocar la ventana del navegador
+    useEffect(() => {
+        cargarProductosDesdeBD();
+
+        const onFocus = () => {
+            cargarProductosDesdeBD();
+        };
+        window.addEventListener('focus', onFocus);
+        return () => window.removeEventListener('focus', onFocus);
+    }, [cargarProductosDesdeBD]);
 
     // Hojas balanceadas dinámicas (25 páginas oficiales sin huérfanos ni hojas en blanco)
     const { hojas: hojasRevista, indice: indiceRevista } = useMemo(() => {
@@ -89,40 +219,6 @@ export default function CatalogoFlyers() {
     }, [productos]);
     const totalHojasRevista = hojasRevista.length;
     const hojaActiva = hojasRevista.find(h => h.numero === paginaActual) || hojasRevista[0] || { tipo: 'portada', numero: 1 };
-
-    // Intentar sincronizar con la API si está disponible
-    useEffect(() => {
-        Promise.all([
-            client.get('/productos', { params: { activo: 1 } }).catch(() => ({ data: [] })),
-            client.get('/productos/categorias').catch(() => ({ data: [] }))
-        ]).then(([pRes, cRes]) => {
-            if (pRes.data && pRes.data.length > 0) {
-                // Combinar datos de DB asegurando que se preserven las páginas y fotos del catálogo si existen
-                const combinados = pRes.data.map(p => {
-                    const localMatch = catalogoOficialData.productos.find(x => 
-                        x.nombre.toLowerCase().trim() === p.nombre.toLowerCase().trim() ||
-                        (p.codigo && x.codigo && x.codigo.toLowerCase() === p.codigo.toLowerCase())
-                    );
-                    return {
-                        ...p,
-                        pagina: localMatch?.pagina || p.pagina || 3,
-                        imagen: obtenerImagenProducto(p) || localMatch?.imagen,
-                        escalas: {
-                            x1kg: p.precio_venta || localMatch?.escalas?.x1kg || 0,
-                            x5kg: p.precio_5kg || localMatch?.escalas?.x5kg || 0,
-                            x10kg: p.precio_10kg || localMatch?.escalas?.x10kg || 0,
-                            x25kg: p.precio_25kg || localMatch?.escalas?.x25kg || 0,
-                            x30kg: p.precio_30kg || localMatch?.escalas?.x30kg || 0
-                        }
-                    };
-                });
-                setProductos(combinados);
-            }
-            if (cRes.data && cRes.data.length > 0) {
-                setCategorias(cRes.data);
-            }
-        });
-    }, []);
 
     const productosFiltrados = productos.filter(p => {
         const query = q.toLowerCase().trim();
@@ -142,6 +238,20 @@ export default function CatalogoFlyers() {
 
         return matchesQ && matchesCat;
     });
+
+    const categoriasConTotales = useMemo(() => {
+        return CATEGORIAS_CON_ICONO.map(cat => {
+            if (cat.nombre === 'Todas') {
+                return { ...cat, total: productos.length };
+            }
+            const count = productos.filter(p => {
+                const c = String(p.categoria_nombre || p.categoria || '').toLowerCase().trim();
+                return c === cat.nombre.toLowerCase().trim() ||
+                       c.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === cat.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            }).length;
+            return { ...cat, total: count };
+        });
+    }, [productos]);
 
     const prodsFlyer = productos.filter(p => productosSeleccionados.includes(p.id));
 
@@ -197,10 +307,30 @@ export default function CatalogoFlyers() {
             {/* ENCABEZADO DE PÁGINA */}
             <div className="spread page-header no-print" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                    <div className="row gap-xs" style={{ marginBottom: 4 }}>
+                    <div className="row gap-xs" style={{ marginBottom: 4, flexWrap: 'wrap' }}>
                         <span className="badge badge-primary" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.05em' }}>
                             LISTA DE PRECIOS MAYORISTA
                         </span>
+                        {sincronizadoBD ? (
+                            <span className="badge" style={{ background: '#DCFCE7', color: '#166534', border: '1px solid #86EFAC', fontSize: 11, fontWeight: 700 }} title={ultimaSync ? `Última sincronización: ${ultimaSync.toLocaleTimeString()}` : ''}>
+                                🟢 En vivo con Base de Gestión ({productos.length} productos)
+                            </span>
+                        ) : (
+                            <span className="badge" style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D', fontSize: 11, fontWeight: 700 }}>
+                                🟡 Sincronizando precios...
+                            </span>
+                        )}
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={cargarProductosDesdeBD}
+                            disabled={loading}
+                            title="Refrescar catálogo y precios desde la base de datos de gestión"
+                            style={{ fontSize: 11, padding: '2px 8px', height: 24, cursor: loading ? 'not-allowed' : 'pointer' }}
+                        >
+                            <span style={{ display: 'inline-block', transform: loading ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }}>🔄</span>
+                            {loading ? 'Actualizando...' : 'Actualizar precios'}
+                        </button>
                         <span className="badge" style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D', fontSize: 11, fontWeight: 700 }}>
                             💳 Alias: {ALIAS_PAGO}
                         </span>
@@ -402,7 +532,7 @@ export default function CatalogoFlyers() {
 
                         {/* CHIPS DE CATEGORÍAS */}
                         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'thin' }}>
-                            {CATEGORIAS_CON_ICONO.map(cat => {
+                            {categoriasConTotales.map(cat => {
                                 const isSelected = (cat.nombre === 'Todas' && !categoriaFiltro) || categoriaFiltro.toLowerCase() === cat.nombre.toLowerCase();
                                 return (
                                     <button
@@ -1261,16 +1391,23 @@ export default function CatalogoFlyers() {
                                         <div style={{ fontSize: 11, color: '#A9A79B', marginTop: 2 }}>
                                             Por {p.unidad_medida || 'kg'} · Calidad Selección
                                         </div>
-                                        {Number(p.precio_10kg) > 0 && (
-                                            <div style={{ fontSize: 11, color: '#C9A227', marginTop: 2 }}>
-                                                Escala 10kg: {fmtMoney(p.precio_10kg)}/kg
-                                            </div>
-                                        )}
+                                        {(() => {
+                                            const esc = Number(p.precio_5kg) > 0 ? { escala: '5kg', precio: p.precio_5kg } :
+                                                        Number(p.precio_10kg) > 0 ? { escala: '10kg', precio: p.precio_10kg } :
+                                                        Number(p.precio_25kg) > 0 ? { escala: '25kg', precio: p.precio_25kg } :
+                                                        Number(p.precio_30kg) > 0 ? { escala: '30kg', precio: p.precio_30kg } : null;
+                                            if (!esc) return null;
+                                            return (
+                                                <div style={{ fontSize: 11, color: '#C9A227', marginTop: 2 }}>
+                                                    Escala {esc.escala}: {fmtMoney(esc.precio)}/kg
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                         <div style={{ fontSize: 9.5, color: '#A9A79B' }}>DESDE</div>
                                         <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#C9A227' }}>
-                                            {fmtMoney(p.precio_25kg || p.precio_10kg || p.precio_venta)}
+                                            {fmtMoney(p.precio_30kg || p.precio_25kg || p.precio_10kg || p.precio_5kg || p.precio_venta)}
                                         </div>
                                     </div>
                                 </div>
