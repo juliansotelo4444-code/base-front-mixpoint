@@ -53,6 +53,7 @@ export default function PedidosWeb() {
     const [loading, setLoading] = useState(true);
     const [importando, setImportando] = useState(false);
     const [origen, setOrigen] = useState('base_de_datos');
+    const [ultimaSync, setUltimaSync] = useState(null);
     const [generandoId, setGenerandoId] = useState(null);
     const [remitoParaImprimir, setRemitoParaImprimir] = useState(null);
     const [error, setError] = useState('');
@@ -77,17 +78,17 @@ export default function PedidosWeb() {
     const handleEventoSocket = useCallback((evento, payload) => {
         if (evento === 'pedido_web_nuevo') {
             setMensaje(`🔔 ¡Nuevo pedido web #${payload.numero} de ${payload.cliente_nombre}!`);
-            cargarConfigYPedidos();
+            cargarConfigYPedidos(true);
             setTimeout(() => setMensaje(''), 7000);
         } else if (evento === 'pedido_web_actualizado') {
-            cargarConfigYPedidos();
+            cargarConfigYPedidos(true);
         }
     }, []);
 
     useKanbanSocket(handleEventoSocket);
 
-    async function cargarConfigYPedidos() {
-        setLoading(true);
+    async function cargarConfigYPedidos(silent = false) {
+        if (!silent) setLoading(true);
         setError('');
         try {
             const [cfgRes, pedidosRes, prodsRes] = await Promise.all([
@@ -100,15 +101,32 @@ export default function PedidosWeb() {
             setPedidos(pedidosRes.data.pedidos || []);
             setOrigen(pedidosRes.data.origen || 'base_de_datos');
             setProductos(prodsRes.data || []);
+            setUltimaSync(new Date());
         } catch (err) {
-            setError(err.response?.data?.error || 'No se pudieron cargar los pedidos web.');
+            if (!silent) setError(err.response?.data?.error || 'No se pudieron cargar los pedidos web.');
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     }
 
     useEffect(() => {
         cargarConfigYPedidos();
+
+        // 1. Polling periódico silencioso cada 15 segundos para asegurar que ningún pedido quede pendiente
+        const timer = setInterval(() => {
+            cargarConfigYPedidos(true);
+        }, 15000);
+
+        // 2. Refresco instantáneo al reenfocar la ventana del navegador
+        const onFocus = () => {
+            cargarConfigYPedidos(true);
+        };
+        window.addEventListener('focus', onFocus);
+
+        return () => {
+            clearInterval(timer);
+            window.removeEventListener('focus', onFocus);
+        };
     }, []);
 
     function abrirModalEditar(p) {
@@ -345,10 +363,15 @@ export default function PedidosWeb() {
                     </div>
                     <p className="muted text-sm" style={{ marginTop: 4 }}>
                         {pedidos.length} pedidos registrados · Distribuidora Mix Point (Gus-Gus)
+                        {ultimaSync && (
+                            <span style={{ marginLeft: 8, fontSize: 11, color: '#166534', fontWeight: 500 }}>
+                                · Sincronizado: {ultimaSync.toLocaleTimeString()}
+                            </span>
+                        )}
                     </p>
                 </div>
                 <div className="row gap-sm" style={{ flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" onClick={cargarConfigYPedidos} disabled={loading}>
+                    <button className="btn btn-primary" onClick={() => cargarConfigYPedidos(false)} disabled={loading}>
                         {loading ? 'Cargando...' : '🔄 Actualizar pedidos'}
                     </button>
                 </div>
@@ -485,16 +508,26 @@ export default function PedidosWeb() {
                                             </td>
                                             <td style={{ maxWidth: 320 }}>
                                                 <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-                                                    {p.items.map((it, itIdx) => {
-                                                        const info = formatItemWeb(it);
-                                                        return (
-                                                            <div key={itIdx} style={{ marginBottom: 2 }}>
-                                                                <strong style={info.esMayorista ? { color: '#92400e', background: '#fef3c7', padding: '1px 5px', borderRadius: 3, display: 'inline-block' } : {}}>
-                                                                    {info.texto}
-                                                                </strong> × {it.nombre}
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    {Array.isArray(p.items) && p.items.length > 0 ? (
+                                                        p.items.map((it, itIdx) => {
+                                                            const info = formatItemWeb(it);
+                                                            return (
+                                                                <div key={itIdx} style={{ marginBottom: 2 }}>
+                                                                    <strong style={info.esMayorista ? { color: '#92400e', background: '#fef3c7', padding: '1px 5px', borderRadius: 3, display: 'inline-block' } : {}}>
+                                                                        {info.texto}
+                                                                    </strong> × {it.nombre || 'Producto'}
+                                                                </div>
+                                                            );
+                                                        })
+                                                    ) : p.productos_str ? (
+                                                        <div style={{ fontSize: 12, color: 'var(--color-text-main, #334155)', lineHeight: 1.35 }}>
+                                                            {String(p.productos_str).split('|').map((s, i) => (
+                                                                <div key={i} style={{ marginBottom: 2 }}>• {s.trim()}</div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="muted" style={{ fontStyle: 'italic', fontSize: 12 }}>Sin productos especificados</span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="text-right mono" style={{ fontWeight: 700, fontSize: 13.5 }}>
