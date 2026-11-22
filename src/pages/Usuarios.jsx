@@ -8,7 +8,8 @@ const ROLES = {
     admin: 'badge-primary',
     ventas: 'badge-accent',
     deposito: 'badge-warning',
-    administracion: 'badge-neutral'
+    administracion: 'badge-neutral',
+    repartidor: 'badge-status-camino'
 };
 
 // Lista completa de secciones / módulos configurables
@@ -35,6 +36,7 @@ const PERMISOS_DEFAULT_POR_ROL = {
     ventas: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'],
     deposito: ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'],
     administracion: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'],
+    repartidor: ['/', '/deposito-kanban', '/remitos', '/clientes', '/manual'],
     admin: MODULOS_SISTEMA.map(m => m.ruta)
 };
 
@@ -343,6 +345,7 @@ export default function Usuarios() {
                                     <option value="ventas">Ventas (Comercial)</option>
                                     <option value="deposito">Depósito (Logística y armado)</option>
                                     <option value="administracion">Administración (Cuentas y Finanzas)</option>
+                                    <option value="repartidor">Repartidor (Despacho, Entregas y Rutas)</option>
                                 </select>
                             </div>
                         </div>

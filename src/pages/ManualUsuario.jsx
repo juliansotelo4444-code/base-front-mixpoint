@@ -322,7 +322,7 @@ const SECCIONES_MANUAL = [
             },
             {
                 subtitulo: 'Roles y Permisos',
-                detalle: '• Administrador: acceso total a costos, reportes, usuarios y configuraciones.\n• Ventas: habilitado para remitos, catálogo, clientes y consultas.\n• Depósito: acceso al Tablero Kanban, armado de pedidos y stock físico (sin visualización de márgenes ni costos financieros).'
+                detalle: '• Administrador: acceso total a costos, reportes, usuarios y configuraciones.\n• Ventas: habilitado para remitos, catálogo, clientes y consultas.\n• Depósito: acceso al Tablero Kanban, armado de pedidos y stock físico (sin visualización de márgenes ni costos financieros).\n• Repartidor: habilitado para Tablero Logístico (despacho y entregas en camino), consulta de remitos y fichas de clientes para coordinación de entrega.'
             }
         ],
         tips: [

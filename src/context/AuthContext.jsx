@@ -76,6 +76,9 @@ export function AuthProvider({ children }) {
         if (usuario.rol === 'administracion') {
             return ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'].includes(ruta);
         }
+        if (usuario.rol === 'repartidor') {
+            return ['/', '/deposito-kanban', '/remitos', '/clientes', '/manual'].includes(ruta);
+        }
 
         return false;
     }
