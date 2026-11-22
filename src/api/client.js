@@ -18,6 +18,7 @@ client.interceptors.response.use(
         if (err.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('usuario');
+            localStorage.removeItem('login_time');
             if (window.location.pathname !== '/login') window.location.href = '/login';
         }
         return Promise.reject(err);

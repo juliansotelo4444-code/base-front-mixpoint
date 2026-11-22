@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import client from '../api/client';
 
 const AuthContext = createContext(null);
-const ONE_HOUR_MS = 60 * 60 * 1000;
+const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 
 export function AuthProvider({ children }) {
     const [usuario, setUsuario] = useState(() => {
@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
         const loginTime = localStorage.getItem('login_time');
         if (stored && loginTime) {
             const elapsed = Date.now() - parseInt(loginTime, 10);
-            if (elapsed > ONE_HOUR_MS) {
+            if (elapsed > FOUR_HOURS_MS) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('usuario');
                 localStorage.removeItem('login_time');
@@ -80,15 +80,15 @@ export function AuthProvider({ children }) {
         return false;
     }
 
-    // Comprobar expiración periódica de la sesión de 1 hora
+    // Comprobar expiración periódica de la sesión de 4 horas
     useEffect(() => {
         if (!usuario) return;
         const interval = setInterval(() => {
             const loginTime = localStorage.getItem('login_time');
             if (loginTime) {
                 const elapsed = Date.now() - parseInt(loginTime, 10);
-                if (elapsed >= ONE_HOUR_MS) {
-                    alert('Tu sesión de 1 hora ha expirado por motivos de seguridad. Por favor, ingresá nuevamente.');
+                if (elapsed >= FOUR_HOURS_MS) {
+                    alert('Tu sesión de 4 horas ha expirado por motivos de seguridad. Por favor, ingresá nuevamente.');
                     logout();
                     window.location.href = '/login';
                 }
