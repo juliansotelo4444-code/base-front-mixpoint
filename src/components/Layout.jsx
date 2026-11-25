@@ -18,6 +18,7 @@ const NAV_ITEMS = [
     { to: '/remitos', label: 'Remitos', icon: IconRemito },
     { to: '/deposito-kanban', label: 'Preparación & Despacho', icon: IconCamion },
     { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
+    { to: '/retencion', label: 'Retención y Cupones', icon: IconCarrito },
     { to: '/catalogo-flyers', label: 'Catálogo y Flyers', icon: IconFlyer },
     { to: '/carrusel-ofertas', label: 'Carrusel de Ofertas', icon: IconMix },
     { to: '/recepciones', label: 'Recepción de mercadería', icon: IconRecepcion },

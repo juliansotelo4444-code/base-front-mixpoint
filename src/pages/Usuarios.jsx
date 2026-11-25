@@ -18,6 +18,7 @@ export const MODULOS_SISTEMA = [
     { ruta: '/remitos', label: 'Remitos y Facturación', icono: '📄', descripcion: 'Creación, edición y emisión de remitos' },
     { ruta: '/deposito-kanban', label: 'Preparación & Despacho (Picking)', icono: '🚚', descripcion: 'Tablero logístico, armado de pedidos y tracking con chofer' },
     { ruta: '/pedidos-web', label: 'Pedidos Web', icono: '🛒', descripcion: 'Gestión de órdenes entrantes de la tienda virtual' },
+    { ruta: '/retencion', label: 'Retención y Cupones', icono: '🔁', descripcion: 'Carritos abandonados, reposición 25–30 días y cupones' },
     { ruta: '/catalogo-flyers', label: 'Catálogo y Flyers', icono: '🖼️', descripcion: 'Generación de flyers promocionales y catálogo PDF' },
     { ruta: '/carrusel-ofertas', label: 'Carrusel de Ofertas', icono: '🔥', descripcion: 'Gestión dinámica de productos en el carrusel de la tienda web' },
     { ruta: '/recepciones', label: 'Recepción de Mercadería', icono: '📥', descripcion: 'Ingreso de compras, control de lotes y stock recibido' },
@@ -33,9 +34,9 @@ export const MODULOS_SISTEMA = [
 ];
 
 const PERMISOS_DEFAULT_POR_ROL = {
-    ventas: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'],
+    ventas: ['/', '/remitos', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'],
     deposito: ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'],
-    administracion: ['/', '/remitos', '/pedidos-web', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'],
+    administracion: ['/', '/remitos', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'],
     repartidor: ['/', '/deposito-kanban', '/remitos', '/clientes', '/manual'],
     admin: MODULOS_SISTEMA.map(m => m.ruta)
 };

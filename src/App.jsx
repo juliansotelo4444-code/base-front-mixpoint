@@ -22,6 +22,7 @@ const CatalogoFlyers = lazy(() => import('./pages/CatalogoFlyers'));
 const CarruselOfertas = lazy(() => import('./pages/CarruselOfertas'));
 const DepositoKanban = lazy(() => import('./pages/DepositoKanban'));
 const AuditLogTimeline = lazy(() => import('./pages/AuditLogTimeline'));
+const Retencion = lazy(() => import('./pages/Retencion'));
 const ManualUsuario = lazy(() => import('./pages/ManualUsuario'));
 
 function RutaPrivada({ children }) {
@@ -89,6 +90,7 @@ export default function App() {
                                 <Route path="deposito-kanban" element={<RutaProtegidaPermiso ruta="/deposito-kanban"><DepositoKanban /></RutaProtegidaPermiso>} />
                                 <Route path="auditoria" element={<RutaProtegidaPermiso ruta="/auditoria"><AuditLogTimeline /></RutaProtegidaPermiso>} />
                                 <Route path="pedidos-web" element={<RutaProtegidaPermiso ruta="/pedidos-web"><PedidosWeb /></RutaProtegidaPermiso>} />
+                                <Route path="retencion" element={<RutaProtegidaPermiso ruta="/retencion"><Retencion /></RutaProtegidaPermiso>} />
                                 <Route path="catalogo-flyers" element={<RutaProtegidaPermiso ruta="/catalogo-flyers"><CatalogoFlyers /></RutaProtegidaPermiso>} />
                                 <Route path="carrusel-ofertas" element={<RutaProtegidaPermiso ruta="/carrusel-ofertas"><CarruselOfertas /></RutaProtegidaPermiso>} />
                                 <Route path="recepciones" element={<RutaProtegidaPermiso ruta="/recepciones"><Recepciones /></RutaProtegidaPermiso>} />
