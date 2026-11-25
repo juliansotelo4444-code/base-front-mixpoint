@@ -15,7 +15,20 @@ function extraerHorarioEntrega(notas) {
     return m ? m[1].trim() : '';
 }
 
+function normalizarNombreWeb(str) {
+    return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
 function formatItemWeb(it) {
+    if (it.es_de_remito) {
+        const cant = Number(it.cantidad) || 0;
+        const base = `${cant} ${it.unidad_medida || 'kg'}`;
+        return {
+            texto: it.descripcion ? `${base} (${it.descripcion})` : base,
+            esMayorista: Boolean(it.descripcion)
+        };
+    }
+
     const cant = Number(it.cantidad) || 1;
     let mult = Number(it.multiplicador) || 1;
     const escala = String(it.escala || it.escala_key || '').toLowerCase().trim();
@@ -144,12 +157,23 @@ export default function PedidosWeb() {
         const itemsClonados = (p.items || []).map(it => {
             const cant = Number(it.cantidad) || 1;
             const pu = Number(it.precio_unitario) || 0;
+            const normItNombre = normalizarNombreWeb(it.nombre);
+            let prodMatch = null;
+            if (it.producto_id) {
+                const porId = productos.find(pr => Number(pr.id) === Number(it.producto_id));
+                if (porId && (!normItNombre || normalizarNombreWeb(porId.nombre) === normItNombre)) {
+                    prodMatch = porId;
+                }
+            }
+            if (!prodMatch && normItNombre) {
+                prodMatch = productos.find(pr => normalizarNombreWeb(pr.nombre) === normItNombre) || null;
+            }
             return {
-                producto_id: it.producto_id || '',
-                codigo: it.codigo || '',
-                nombre: it.nombre || '',
+                producto_id: prodMatch ? prodMatch.id : '',
+                codigo: (prodMatch && prodMatch.codigo) || it.codigo || '',
+                nombre: it.nombre || (prodMatch ? prodMatch.nombre : ''),
                 cantidad: cant,
-                unidad_medida: it.unidad_medida || 'kg',
+                unidad_medida: it.unidad_medida || prodMatch?.unidad_medida || 'kg',
                 precio_unitario: pu,
                 subtotal: it.subtotal !== undefined && it.subtotal !== null ? Number(it.subtotal) : cant * pu,
                 escala: it.escala || '',
@@ -299,22 +323,22 @@ export default function PedidosWeb() {
             ].filter(Boolean);
 
             const { data: remito } = await client.post('/integraciones/crear-remito-desde-pedido', {
+                pedido_id: pedido.id,
                 pedido_numero: pedido.numero,
                 fecha: pedido.fecha,
                 nombre: pedido.nombre,
                 telefono: pedido.telefono,
                 direccion_completa: pedido.direccion_completa,
                 items: pedido.items,
+                productos_str: pedido.productos_str,
                 horario_entrega: horario,
                 observaciones: obsPartes.join(' | ')
             });
 
-            // Actualizar lista local de pedidos para marcarlo como emitido
-            setPedidos(pedidos.map(p => p.numero === pedido.numero ? { ...p, remito_asociado: { id: remito.id, numero: remito.numero } } : p));
-
-            // Abrir automáticamente la vista de impresión del remito generado
-            const { data: fullRemito } = await client.get(`/remitos/${remito.id}`);
+            // Abrir automáticamente la vista de impresión del remito generado (siempre fresco)
+            const { data: fullRemito } = await client.get(`/remitos/${remito.id}`, { params: { _t: Date.now() } });
             setRemitoParaImprimir(fullRemito);
+            cargarConfigYPedidos(true);
         } catch (err) {
             setError(err.response?.data?.error || 'Error al generar el remito para este pedido.');
         } finally {
@@ -324,7 +348,7 @@ export default function PedidosWeb() {
 
     async function verRemitoExistente(remitoId) {
         try {
-            const { data: fullRemito } = await client.get(`/remitos/${remitoId}`);
+            const { data: fullRemito } = await client.get(`/remitos/${remitoId}`, { params: { _t: Date.now() } });
             setRemitoParaImprimir(fullRemito);
         } catch (err) {
             setError('No se pudo cargar el remito.');

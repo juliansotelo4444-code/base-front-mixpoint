@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import client from '../api/client';
+import useKanbanSocket from '../hooks/useKanbanSocket';
 import Modal from '../components/Modal';
 import ProductPicker from '../components/ProductPicker';
 import RemitoImprimible from '../components/RemitoImprimible';
@@ -122,13 +123,14 @@ export default function Remitos() {
     const [guardandoCliente, setGuardandoCliente] = useState(false);
     const [errorClienteRapido, setErrorClienteRapido] = useState('');
 
-    async function cargar() {
+    const cargar = useCallback(async () => {
         setLoading(true);
         try {
             const { data } = await client.get('/remitos', {
                 params: {
                     estado: estadoFiltro || undefined,
-                    estado_pago: estadoPagoFiltro || undefined
+                    estado_pago: estadoPagoFiltro || undefined,
+                    _t: Date.now()
                 }
             });
             setRemitos(data);
@@ -137,7 +139,7 @@ export default function Remitos() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [estadoFiltro, estadoPagoFiltro]);
 
     async function cargarClientesYProductos() {
         try {
@@ -158,7 +160,24 @@ export default function Remitos() {
 
     useEffect(() => {
         cargar();
-    }, [estadoFiltro, estadoPagoFiltro]);
+    }, [cargar]);
+
+    const handleSocketRemito = useCallback(async (evento, payload) => {
+        if (!['remito:editado', 'remito:creado', 'remito:estado_cambiado'].includes(evento)) return;
+        cargar();
+        const editedId = payload?.id ? Number(payload.id) : null;
+        if (!editedId) return;
+
+        if ((detalle && Number(detalle.id) === editedId) || (remitoParaImprimir && Number(remitoParaImprimir.id) === editedId)) {
+            try {
+                const { data } = await client.get(`/remitos/${editedId}`, { params: { _t: Date.now() } });
+                setDetalle(prev => (prev && Number(prev.id) === editedId ? data : prev));
+                setRemitoParaImprimir(prev => (prev && Number(prev.id) === editedId ? data : prev));
+            } catch {}
+        }
+    }, [cargar, detalle, remitoParaImprimir]);
+
+    useKanbanSocket(handleSocketRemito);
 
     // Métricas del Mes Actual (por defecto muestra todo lo del mes en curso)
     const remitosMes = remitos.filter(r => esFechaDeEsteMes(r.fecha));
@@ -353,18 +372,18 @@ export default function Remitos() {
     }
 
     async function verDetalle(r) {
-        const { data } = await client.get(`/remitos/${r.id}`);
+        const { data } = await client.get(`/remitos/${r.id}`, { params: { _t: Date.now() } });
         setDetalle(data);
     }
 
     async function imprimirRemito(id) {
-        const { data } = await client.get(`/remitos/${id}`);
+        const { data } = await client.get(`/remitos/${id}`, { params: { _t: Date.now() } });
         setRemitoParaImprimir(data);
     }
 
     async function abrirEtiquetas(r) {
         try {
-            const { data } = await client.get(`/remitos/${r.id}`);
+            const { data } = await client.get(`/remitos/${r.id}`, { params: { _t: Date.now() } });
             setEtiquetaModalRemito(data);
         } catch (e) {
             setEtiquetaModalRemito(r);
@@ -377,7 +396,7 @@ export default function Remitos() {
             await client.put(`/remitos/${id}/estado`, { estado: nuevoEstado });
             await cargar();
             if (detalle && detalle.id === id) {
-                const { data } = await client.get(`/remitos/${id}`);
+                const { data } = await client.get(`/remitos/${id}`, { params: { _t: Date.now() } });
                 setDetalle(data);
             }
         } catch (err) {
@@ -393,7 +412,7 @@ export default function Remitos() {
             await client.put(`/remitos/${id}/estado-pago`, { estado_pago: nuevoEstadoPago });
             await cargar();
             if (detalle && detalle.id === id) {
-                const { data } = await client.get(`/remitos/${id}`);
+                const { data } = await client.get(`/remitos/${id}`, { params: { _t: Date.now() } });
                 setDetalle(data);
             }
         } catch (err) {
@@ -405,14 +424,10 @@ export default function Remitos() {
 
     async function exportarRemitoAWordConDatos(r) {
         try {
-            if (!r.items || r.items.length === 0) {
-                const { data } = await client.get(`/remitos/${r.id}`);
-                exportarRemitoAWord(data);
-            } else {
-                exportarRemitoAWordConDatos(r);
-            }
+            const { data } = await client.get(`/remitos/${r.id}`, { params: { _t: Date.now() } });
+            exportarRemitoAWord(data);
         } catch (e) {
-            exportarRemitoAWordConDatos(r);
+            exportarRemitoAWord(r);
         }
     }
 
@@ -423,7 +438,11 @@ export default function Remitos() {
         }
         setErrorEdicion('');
         try {
-            const { data } = await client.get(`/remitos/${r.id}`);
+            const { data } = await client.get(`/remitos/${r.id}`, { params: { _t: Date.now() } });
+            const idsFaltantes = (data.items || []).some(it => !productos.some(p => Number(p.id) === Number(it.producto_id)));
+            if (idsFaltantes) {
+                cargarClientesYProductos();
+            }
             setRemitoParaEditar(data);
             setEditForm({
                 cliente_id: String(data.cliente_id || ''),
@@ -445,10 +464,11 @@ export default function Remitos() {
                     producto_id: String(it.producto_id),
                     cantidad: it.cantidad,
                     precio_unitario: it.precio_unitario,
-                    unidad_medida: it.unidad_medida || 'kg'
+                    unidad_medida: it.unidad_medida || 'kg',
+                    descripcion: it.descripcion || ''
                 })));
             } else {
-                setEditItems([{ producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg' }]);
+                setEditItems([{ producto_id: '', cantidad: '', precio_unitario: '', unidad_medida: 'kg', descripcion: '' }]);
             }
         } catch (err) {
             alert('Error al cargar datos del remito para editar: ' + (err.response?.data?.error || err.message));
@@ -456,7 +476,7 @@ export default function Remitos() {
     }
 
     function agregarEditItem() {
-        setEditItems([...editItems, { producto_id: '', cantidad: '1', precio_unitario: '', unidad_medida: 'kg' }]);
+        setEditItems([...editItems, { producto_id: '', cantidad: '1', precio_unitario: '', unidad_medida: 'kg', descripcion: '' }]);
     }
 
     function quitarEditItem(i) {
@@ -472,6 +492,7 @@ export default function Remitos() {
         nuevos[index].producto_id = String(prodId);
         nuevos[index].cantidad = nuevos[index].cantidad || '1';
         nuevos[index].unidad_medida = prodObj?.unidad_medida || 'kg';
+        nuevos[index].descripcion = '';
         const sugerido = calcularPrecioSugerido(prodObj, cant, clienteActual);
         nuevos[index].precio_unitario = String(sugerido || prodObj?.precio_venta || prodObj?.precio_compra || '');
         setEditItems(nuevos);
@@ -512,7 +533,8 @@ export default function Remitos() {
                 items: editItems.map(it => ({
                     producto_id: Number(it.producto_id),
                     cantidad: Number(it.cantidad) || 0,
-                    precio_unitario: Number(it.precio_unitario) || 0
+                    precio_unitario: Number(it.precio_unitario) || 0,
+                    descripcion: it.descripcion || null
                 })).filter(it => it.producto_id > 0 && it.cantidad > 0)
             };
 
@@ -523,6 +545,8 @@ export default function Remitos() {
             }
 
             const { data } = await client.put(`/remitos/${remitoParaEditar.id}`, payload);
+            setDetalle(prev => (prev && prev.id === data.id ? data : prev));
+            setRemitos(prev => prev.map(r => (r.id === data.id ? { ...r, ...data } : r)));
             setRemitoParaEditar(null);
             await cargar();
             setRemitoParaImprimir(data);

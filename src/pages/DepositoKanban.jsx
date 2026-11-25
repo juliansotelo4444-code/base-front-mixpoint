@@ -60,7 +60,7 @@ export default function DepositoKanban() {
     }, [cargarTablero]);
 
     // Manejar eventos de Socket.io en tiempo real
-    const handleEventoSocket = useCallback((evento, payload) => {
+    const handleEventoSocket = useCallback(async (evento, payload) => {
         console.log(`📡 [Socket Evento] ${evento}`, payload);
         // Mostrar notificación toast no intrusiva
         if (evento === 'remito:asignado') {
@@ -69,10 +69,15 @@ export default function DepositoKanban() {
             mostrarToast(`📥 Nuevo pedido #${payload.numero} ingresó al depósito`, 'info');
         } else if (evento === 'kanban:movido') {
             mostrarToast(`📦 Pedido #${payload.numero} movido a "${payload.columna_destino}"`, 'info');
+        } else if (evento === 'remito:editado' && remitoParaVer && Number(remitoParaVer.id) === Number(payload?.id)) {
+            try {
+                const { data } = await api.client.get(`/remitos/${payload.id}`, { params: { _t: Date.now() } });
+                setRemitoParaVer(data);
+            } catch {}
         }
         // Refrescar estado del tablero
         cargarTablero();
-    }, [cargarTablero]);
+    }, [cargarTablero, remitoParaVer?.id]);
 
     const { conectado } = useKanbanSocket(handleEventoSocket);
 
@@ -555,7 +560,7 @@ export default function DepositoKanban() {
                                                         <button
                                                             className="btn btn-secondary"
                                                             onClick={async () => {
-                                                                const { data } = await api.client.get(`/remitos/${pedido.id}`);
+                                                                const { data } = await api.client.get(`/remitos/${pedido.id}`, { params: { _t: Date.now() } });
                                                                 setRemitoParaVer(data);
                                                             }}
                                                             style={{ fontSize: 11.5, padding: '4px 8px' }}

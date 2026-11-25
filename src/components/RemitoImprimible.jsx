@@ -572,6 +572,10 @@ export default function RemitoImprimible({ remito, onClose, onAbrirEtiquetas }) 
         }).then(url => setQrDataUrl(url)).catch(() => {});
     }, [remito]);
 
+    useEffect(() => {
+        setPaginaActiva('todas');
+    }, [remito?.id, remito?.items?.length]);
+
     if (!remito) return null;
 
     const totalItems = remito.items?.length || 0;
