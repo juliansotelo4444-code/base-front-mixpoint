@@ -455,7 +455,7 @@ export default function PedidosWeb() {
                                     const esGenerando = generandoId === p.numero;
 
                                     return (
-                                        <tr key={p.numero || idx} style={{ background: yaEmitido ? 'rgba(62, 122, 82, 0.04)' : undefined }}>
+                                        <tr key={p.id ? `db-${p.id}` : `sh-${p.numero}-${idx}`} style={{ background: yaEmitido ? 'rgba(62, 122, 82, 0.04)' : undefined }}>
                                             <td className="mono" style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
                                                 {p.numero}
                                             </td>
