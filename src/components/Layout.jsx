@@ -17,6 +17,7 @@ const NAV_ITEMS = [
     { to: '/', label: 'Panel', icon: IconDashboard, end: true },
     { to: '/remitos', label: 'Remitos', icon: IconRemito },
     { to: '/deposito-kanban', label: 'Preparación & Despacho', icon: IconCamion },
+    { to: '/pagos-mp', label: 'Pagos Mercado Pago', icon: IconBanco },
     { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
     { to: '/retencion', label: 'Retención y Cupones', icon: IconCarrito },
     { to: '/catalogo-flyers', label: 'Catálogo y Flyers', icon: IconFlyer },
@@ -370,10 +371,17 @@ export default function Layout() {
                     <IconRemito />
                     <span>Remitos</span>
                 </NavLink>
-                <NavLink to="/pedidos-web" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
-                    <IconCarrito />
-                    <span>Pedidos</span>
-                </NavLink>
+                {usuario?.rol === 'repartidor' ? (
+                    <NavLink to="/pagos-mp" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                        <IconBanco />
+                        <span>Pagos MP</span>
+                    </NavLink>
+                ) : (
+                    <NavLink to="/pedidos-web" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                        <IconCarrito />
+                        <span>Pedidos</span>
+                    </NavLink>
+                )}
                 <NavLink to="/productos" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
                     <IconProducto />
                     <span>Stock</span>

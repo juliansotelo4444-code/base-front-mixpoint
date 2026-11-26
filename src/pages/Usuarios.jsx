@@ -17,6 +17,7 @@ export const MODULOS_SISTEMA = [
     { ruta: '/', label: 'Panel Principal (Dashboard)', icono: '📊', descripcion: 'Métricas generales, KPIs y accesos directos' },
     { ruta: '/remitos', label: 'Remitos y Facturación', icono: '📄', descripcion: 'Creación, edición y emisión de remitos' },
     { ruta: '/deposito-kanban', label: 'Preparación & Despacho (Picking)', icono: '🚚', descripcion: 'Tablero logístico, armado de pedidos y tracking con chofer' },
+    { ruta: '/pagos-mp', label: 'Movimientos Mercado Pago', icono: '💳', descripcion: 'Consulta en tiempo real de pagos entrantes (solo lectura para reparto)' },
     { ruta: '/pedidos-web', label: 'Pedidos Web', icono: '🛒', descripcion: 'Gestión de órdenes entrantes de la tienda virtual' },
     { ruta: '/retencion', label: 'Retención y Cupones', icono: '🔁', descripcion: 'Carritos abandonados, reposición 25–30 días y cupones' },
     { ruta: '/catalogo-flyers', label: 'Catálogo y Flyers', icono: '🖼️', descripcion: 'Generación de flyers promocionales y catálogo PDF' },
@@ -34,10 +35,10 @@ export const MODULOS_SISTEMA = [
 ];
 
 const PERMISOS_DEFAULT_POR_ROL = {
-    ventas: ['/', '/remitos', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'],
+    ventas: ['/', '/remitos', '/pagos-mp', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'],
     deposito: ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'],
-    administracion: ['/', '/remitos', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'],
-    repartidor: ['/', '/deposito-kanban', '/remitos', '/clientes', '/manual'],
+    administracion: ['/', '/remitos', '/pagos-mp', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'],
+    repartidor: ['/', '/deposito-kanban', '/remitos', '/pagos-mp', '/clientes', '/manual'],
     admin: MODULOS_SISTEMA.map(m => m.ruta)
 };
 

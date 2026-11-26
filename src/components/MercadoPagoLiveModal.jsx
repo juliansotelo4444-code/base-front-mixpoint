@@ -1,10 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import client from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import Modal from './Modal';
 
 const fmtMoney = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(Number(n) || 0);
 
 export default function MercadoPagoLiveModal({ onClose, remitoTarget = null, onPagoConfirmado }) {
+    const { usuario } = useAuth();
+    const esSoloLectura = usuario?.rol === 'repartidor';
     const [loading, setLoading] = useState(true);
     const [refrescando, setRefrescando] = useState(false);
     const [configurado, setConfigurado] = useState(true);
@@ -319,19 +322,32 @@ export default function MercadoPagoLiveModal({ onClose, remitoTarget = null, onP
 
                                             {remitoTarget && !p.ya_conciliado && (
                                                 <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 8 }}>
-                                                    <button
-                                                        type="button"
-                                                        className={`btn btn-sm ${matchExacto ? 'btn-primary' : 'btn-secondary'}`}
-                                                        disabled={estaConfirmando}
-                                                        onClick={() => handleConfirmarPago(p)}
-                                                        style={matchExacto
-                                                            ? { background: '#059669', borderColor: '#059669', color: '#FFFFFF', fontWeight: 800, padding: '7px 14px' }
-                                                            : { fontWeight: 600 }}
-                                                    >
-                                                        {estaConfirmando
-                                                            ? 'Confirmando...'
-                                                            : (matchExacto ? '✅ Confirmar Pago del Remito' : `Imputar a ${remitoTarget.numero}`)}
-                                                    </button>
+                                                    {esSoloLectura ? (
+                                                        <span style={{
+                                                            fontSize: 11.5,
+                                                            fontWeight: 700,
+                                                            padding: '4px 10px',
+                                                            borderRadius: 6,
+                                                            background: '#F1F5F9',
+                                                            color: '#475569'
+                                                        }}>
+                                                            🔒 Solo consulta (sin edición)
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            className={`btn btn-sm ${matchExacto ? 'btn-primary' : 'btn-secondary'}`}
+                                                            disabled={estaConfirmando}
+                                                            onClick={() => handleConfirmarPago(p)}
+                                                            style={matchExacto
+                                                                ? { background: '#059669', borderColor: '#059669', color: '#FFFFFF', fontWeight: 800, padding: '7px 14px' }
+                                                                : { fontWeight: 600 }}
+                                                        >
+                                                            {estaConfirmando
+                                                                ? 'Confirmando...'
+                                                                : (matchExacto ? '✅ Confirmar Pago del Remito' : `Imputar a ${remitoTarget.numero}`)}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

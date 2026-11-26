@@ -68,16 +68,16 @@ export function AuthProvider({ children }) {
 
         // Permisos por defecto según su rol si no se han especificado permisos personalizados
         if (usuario.rol === 'ventas') {
-            return ['/', '/remitos', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'].includes(ruta);
+            return ['/', '/remitos', '/pagos-mp', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/productos', '/manual'].includes(ruta);
         }
         if (usuario.rol === 'deposito') {
             return ['/', '/deposito-kanban', '/recepciones', '/produccion', '/productos', '/manual'].includes(ruta);
         }
         if (usuario.rol === 'administracion') {
-            return ['/', '/remitos', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'].includes(ruta);
+            return ['/', '/remitos', '/pagos-mp', '/pedidos-web', '/retencion', '/catalogo-flyers', '/carrusel-ofertas', '/clientes', '/proveedores', '/gastos', '/conciliacion', '/reportes-diarios', '/productos', '/manual'].includes(ruta);
         }
         if (usuario.rol === 'repartidor') {
-            return ['/', '/deposito-kanban', '/remitos', '/clientes', '/manual'].includes(ruta);
+            return ['/', '/deposito-kanban', '/remitos', '/pagos-mp', '/clientes', '/manual'].includes(ruta);
         }
 
         return false;
