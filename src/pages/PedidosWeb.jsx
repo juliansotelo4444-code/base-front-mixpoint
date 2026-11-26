@@ -429,179 +429,319 @@ export default function PedidosWeb() {
                     </div>
                 </div>
 
-                <div className="table-wrap">
-                    {pedidosFiltrados.length === 0 && !loading ? (
-                        <div className="empty-state">
-                            <div className="icon">📦</div>
-                            <p>No se encontraron pedidos con los filtros aplicados.</p>
-                        </div>
-                    ) : (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>N° Pedido</th>
-                                    <th>Fecha / Hora</th>
-                                    <th>Cliente y Contacto</th>
-                                    <th>Destino / Entrega</th>
-                                    <th>Productos solicitados</th>
-                                    <th className="text-right">Total Web</th>
-                                    <th>Estado</th>
-                                    <th className="text-right">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pedidosFiltrados.map((p, idx) => {
-                                    const yaEmitido = !!p.remito_asociado;
-                                    const esGenerando = generandoId === p.numero;
+                {pedidosFiltrados.length === 0 && !loading ? (
+                    <div className="empty-state">
+                        <div className="icon">📦</div>
+                        <p>No se encontraron pedidos con los filtros aplicados.</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="desktop-only-table table-wrap">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>N° Pedido</th>
+                                        <th>Fecha / Hora</th>
+                                        <th>Cliente y Contacto</th>
+                                        <th>Destino / Entrega</th>
+                                        <th>Productos solicitados</th>
+                                        <th className="text-right">Total Web</th>
+                                        <th>Estado</th>
+                                        <th className="text-right">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pedidosFiltrados.map((p, idx) => {
+                                        const yaEmitido = !!p.remito_asociado;
+                                        const esGenerando = generandoId === p.numero;
 
-                                    return (
-                                        <tr key={p.id ? `db-${p.id}` : `sh-${p.numero}-${idx}`} style={{ background: yaEmitido ? 'rgba(62, 122, 82, 0.04)' : undefined }}>
-                                            <td className="mono" style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                                                {p.numero}
-                                            </td>
-                                            <td className="mono text-xs" style={{ whiteSpace: 'nowrap' }}>
-                                                <div style={{ fontWeight: 600, color: 'var(--color-text-main, #1e293b)' }}>
-                                                    {formatearFecha(p.fecha)}
-                                                </div>
-                                                {(p.hora || p.created_at) && (
-                                                    <div style={{
-                                                        marginTop: 4,
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: 4,
-                                                        background: 'rgba(238, 117, 36, 0.1)',
-                                                        color: '#C25E16',
-                                                        border: '1px solid rgba(238, 117, 36, 0.25)',
-                                                        padding: '1px 6px',
-                                                        borderRadius: 4,
-                                                        fontSize: 11,
-                                                        fontWeight: 600
-                                                    }}>
-                                                        <span>🕒</span>
-                                                        <span>{p.hora || formatearHora(p.created_at)} hs</span>
+                                        return (
+                                            <tr key={p.id ? `db-${p.id}` : `sh-${p.numero}-${idx}`} style={{ background: yaEmitido ? 'rgba(62, 122, 82, 0.04)' : undefined }}>
+                                                <td className="mono" style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+                                                    {p.numero}
+                                                </td>
+                                                <td className="mono text-xs" style={{ whiteSpace: 'nowrap' }}>
+                                                    <div style={{ fontWeight: 600, color: 'var(--color-text-main, #1e293b)' }}>
+                                                        {formatearFecha(p.fecha)}
                                                     </div>
-                                                )}
-                                            </td>
-                                            <td>
-                                                <div style={{ fontWeight: 600 }}>{p.nombre}</div>
-                                                {p.metodo_pago && (
-                                                    <div style={{ marginTop: 2 }}>
-                                                        <span className="badge badge-neutral" style={{ fontSize: 10, padding: '1px 6px' }}>
-                                                            💳 {p.metodo_pago}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {p.telefono && (() => {
-                                                    const telLimpio = String(p.telefono).replace(/\D/g, '');
-                                                    const telWa = telLimpio.startsWith('549') ? telLimpio : (telLimpio.length >= 10 ? `549${telLimpio}` : '5491157077061');
-                                                    const waMsg = `¡Hola ${p.nombre}! Recibimos tu pedido web #${p.numero} en Mix Point.\nTotal: ${fmtMoney(p.total)}\nDatos para transferencia:\nAlias: *mixpoint2026*\nLínea oficial WhatsApp: +54 9 11 5707-7061\n¡Muchas gracias!`;
-
-                                                    return (
-                                                        <a
-                                                            href={`https://wa.me/${telWa}?text=${encodeURIComponent(waMsg)}`}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="mono text-xs"
-                                                            style={{ color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '2px 6px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
-                                                            title="Enviar confirmación y datos de pago por WhatsApp (11 5707-7061)"
-                                                        >
-                                                            📲 WhatsApp
-                                                        </a>
-                                                    );
-                                                })()}
-                                            </td>
-                                            <td>
-                                                <div>{p.direccion || '—'}</div>
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                                                    {p.zona && <span className="badge badge-neutral" style={{ fontSize: 10 }}>{p.zona}</span>}
-                                                    {(p.horario_entrega || extraerHorarioEntrega(p.notas)) && (
-                                                        <span className="badge" style={{ fontSize: 10, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' }}>
-                                                            🚚 Franja: {p.horario_entrega || extraerHorarioEntrega(p.notas)}
-                                                        </span>
+                                                    {(p.hora || p.created_at) && (
+                                                        <div style={{
+                                                            marginTop: 4,
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                            background: 'rgba(238, 117, 36, 0.1)',
+                                                            color: '#C25E16',
+                                                            border: '1px solid rgba(238, 117, 36, 0.25)',
+                                                            padding: '1px 6px',
+                                                            borderRadius: 4,
+                                                            fontSize: 11,
+                                                            fontWeight: 600
+                                                        }}>
+                                                            <span>🕒</span>
+                                                            <span>{p.hora || formatearHora(p.created_at)} hs</span>
+                                                        </div>
                                                     )}
-                                                </div>
-                                                {p.notas && (() => {
-                                                    const notasLimpias = String(p.notas).replace(/\[Horario preferido:[^\]]+\]/gi, '').trim();
-                                                    if (!notasLimpias) return null;
-                                                    return (
-                                                        <div className="muted text-xs" style={{ marginTop: 4, fontStyle: 'italic', maxWidth: 220 }}>
-                                                            📝 {notasLimpias}
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontWeight: 600 }}>{p.nombre}</div>
+                                                    {p.metodo_pago && (
+                                                        <div style={{ marginTop: 2 }}>
+                                                            <span className="badge badge-neutral" style={{ fontSize: 10, padding: '1px 6px' }}>
+                                                                💳 {p.metodo_pago}
+                                                            </span>
                                                         </div>
-                                                    );
-                                                })()}
-                                            </td>
-                                            <td style={{ maxWidth: 320 }}>
-                                                <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-                                                    {Array.isArray(p.items) && p.items.length > 0 ? (
-                                                        p.items.map((it, itIdx) => {
-                                                            const info = formatItemWeb(it);
-                                                            return (
-                                                                <div key={itIdx} style={{ marginBottom: 2 }}>
-                                                                    <strong style={info.esMayorista ? { color: '#92400e', background: '#fef3c7', padding: '1px 5px', borderRadius: 3, display: 'inline-block' } : {}}>
-                                                                        {info.texto}
-                                                                    </strong> × {it.nombre || 'Producto'}
-                                                                </div>
-                                                            );
-                                                        })
-                                                    ) : p.productos_str ? (
-                                                        <div style={{ fontSize: 12, color: 'var(--color-text-main, #334155)', lineHeight: 1.35 }}>
-                                                            {String(p.productos_str).split('|').map((s, i) => (
-                                                                <div key={i} style={{ marginBottom: 2 }}>• {s.trim()}</div>
-                                                            ))}
-                                                        </div>
+                                                    )}
+                                                    {p.telefono && (() => {
+                                                        const telLimpio = String(p.telefono).replace(/\D/g, '');
+                                                        const telWa = telLimpio.startsWith('549') ? telLimpio : (telLimpio.length >= 10 ? `549${telLimpio}` : '5491157077061');
+                                                        const waMsg = `¡Hola ${p.nombre}! Recibimos tu pedido web #${p.numero} en Mix Point.\nTotal: ${fmtMoney(p.total)}\nDatos para transferencia:\nAlias: *mixpoint2026*\nLínea oficial WhatsApp: +54 9 11 5707-7061\n¡Muchas gracias!`;
+
+                                                        return (
+                                                            <a
+                                                                href={`https://wa.me/${telWa}?text=${encodeURIComponent(waMsg)}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="mono text-xs"
+                                                                style={{ color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '2px 6px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
+                                                                title="Enviar confirmación y datos de pago por WhatsApp (11 5707-7061)"
+                                                            >
+                                                                📲 WhatsApp
+                                                            </a>
+                                                        );
+                                                    })()}
+                                                </td>
+                                                <td>
+                                                    <div>{p.direccion || '—'}</div>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                                                        {p.zona && <span className="badge badge-neutral" style={{ fontSize: 10 }}>{p.zona}</span>}
+                                                        {(p.horario_entrega || extraerHorarioEntrega(p.notas)) && (
+                                                            <span className="badge" style={{ fontSize: 10, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' }}>
+                                                                🚚 Franja: {p.horario_entrega || extraerHorarioEntrega(p.notas)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {p.notas && (() => {
+                                                        const notasLimpias = String(p.notas).replace(/\[Horario preferido:[^\]]+\]/gi, '').trim();
+                                                        if (!notasLimpias) return null;
+                                                        return (
+                                                            <div className="muted text-xs" style={{ marginTop: 4, fontStyle: 'italic', maxWidth: 220 }}>
+                                                                📝 {notasLimpias}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </td>
+                                                <td style={{ maxWidth: 320 }}>
+                                                    <div style={{ fontSize: 12, lineHeight: 1.4 }}>
+                                                        {Array.isArray(p.items) && p.items.length > 0 ? (
+                                                            p.items.map((it, itIdx) => {
+                                                                const info = formatItemWeb(it);
+                                                                return (
+                                                                    <div key={itIdx} style={{ marginBottom: 2 }}>
+                                                                        <strong style={info.esMayorista ? { color: '#92400e', background: '#fef3c7', padding: '1px 5px', borderRadius: 3, display: 'inline-block' } : {}}>
+                                                                            {info.texto}
+                                                                        </strong> × {it.nombre || 'Producto'}
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        ) : p.productos_str ? (
+                                                            <div style={{ fontSize: 12, color: 'var(--color-text-main, #334155)', lineHeight: 1.35 }}>
+                                                                {String(p.productos_str).split('|').map((s, i) => (
+                                                                    <div key={i} style={{ marginBottom: 2 }}>• {s.trim()}</div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="muted" style={{ fontStyle: 'italic', fontSize: 12 }}>Sin productos especificados</span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="text-right mono" style={{ fontWeight: 700, fontSize: 13.5 }}>
+                                                    {fmtMoney(p.total)}
+                                                </td>
+                                                <td>
+                                                    {yaEmitido ? (
+                                                        <span className="badge badge-success" style={{ fontSize: 11 }}>
+                                                            Emitido ({p.remito_asociado.numero})
+                                                        </span>
                                                     ) : (
-                                                        <span className="muted" style={{ fontStyle: 'italic', fontSize: 12 }}>Sin productos especificados</span>
+                                                        <span className="badge badge-warning" style={{ fontSize: 11 }}>
+                                                            Pendiente
+                                                        </span>
                                                     )}
-                                                </div>
-                                            </td>
-                                            <td className="text-right mono" style={{ fontWeight: 700, fontSize: 13.5 }}>
-                                                {fmtMoney(p.total)}
-                                            </td>
-                                            <td>
-                                                {yaEmitido ? (
-                                                    <span className="badge badge-success" style={{ fontSize: 11 }}>
-                                                        Emitido ({p.remito_asociado.numero})
-                                                    </span>
-                                                ) : (
-                                                    <span className="badge badge-warning" style={{ fontSize: 11 }}>
-                                                        Pendiente
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
-                                                {yaEmitido ? (
-                                                    <button
-                                                        className="btn btn-secondary btn-sm"
-                                                        onClick={() => verRemitoExistente(p.remito_asociado.id)}
-                                                    >
-                                                        🖨️ Ver Remito
-                                                    </button>
-                                                ) : (
-                                                    <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
+                                                </td>
+                                                <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
+                                                    {yaEmitido ? (
                                                         <button
                                                             className="btn btn-secondary btn-sm"
-                                                            onClick={() => abrirModalEditar(p)}
-                                                            title="Editar datos, entrega o productos antes de emitir remito"
+                                                            onClick={() => verRemitoExistente(p.remito_asociado.id)}
                                                         >
-                                                            ✏️ Editar
+                                                            🖨️ Ver Remito
                                                         </button>
-                                                        <button
-                                                            className="btn btn-primary btn-sm"
-                                                            onClick={() => emitirRemitoAutomatico(p)}
-                                                            disabled={esGenerando}
-                                                        >
-                                                            {esGenerando ? 'Generando...' : '⚡ Emitir Remito'}
-                                                        </button>
-                                                    </div>
+                                                    ) : (
+                                                        <div className="row gap-xs" style={{ justifyContent: 'flex-end' }}>
+                                                            <button
+                                                                className="btn btn-secondary btn-sm"
+                                                                onClick={() => abrirModalEditar(p)}
+                                                                title="Editar datos, entrega o productos antes de emitir remito"
+                                                            >
+                                                                ✏️ Editar
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-primary btn-sm"
+                                                                onClick={() => emitirRemitoAutomatico(p)}
+                                                                disabled={esGenerando}
+                                                            >
+                                                                {esGenerando ? 'Generando...' : '⚡ Emitir Remito'}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* TARJETAS OPTIMIZADAS PARA CELULARES */}
+                        <div className="mobile-only-cards" style={{ padding: '12px' }}>
+                            {pedidosFiltrados.map((p, idx) => {
+                                const yaEmitido = !!p.remito_asociado;
+                                const esGenerando = generandoId === p.numero;
+                                const telLimpio = String(p.telefono || '').replace(/\D/g, '');
+                                const telWa = telLimpio.startsWith('549') ? telLimpio : (telLimpio.length >= 10 ? `549${telLimpio}` : '5491157077061');
+                                const waMsg = `¡Hola ${p.nombre}! Recibimos tu pedido web #${p.numero} en Mix Point.\nTotal: ${fmtMoney(p.total)}\nDatos para transferencia:\nAlias: *mixpoint2026*\nLínea oficial WhatsApp: +54 9 11 5707-7061\n¡Muchas gracias!`;
+                                const notasLimpias = p.notas ? String(p.notas).replace(/\[Horario preferido:[^\]]+\]/gi, '').trim() : '';
+                                const franja = p.horario_entrega || extraerHorarioEntrega(p.notas);
+
+                                return (
+                                    <div
+                                        key={p.id ? `mob-db-${p.id}` : `mob-sh-${p.numero}-${idx}`}
+                                        className="remito-mobile-card"
+                                        style={{ borderLeft: `4px solid ${yaEmitido ? '#10B981' : '#F59E0B'}` }}
+                                    >
+                                        <div className="remito-mobile-header" style={{ flexWrap: 'wrap', gap: 6 }}>
+                                            <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                                                <strong className="mono" style={{ fontSize: 15, color: 'var(--color-primary-dark)' }}>
+                                                    {p.numero}
+                                                </strong>
+                                                <span className="mono text-xs muted">
+                                                    · {formatearFecha(p.fecha)} {(p.hora || p.created_at) ? `${p.hora || formatearHora(p.created_at)} hs` : ''}
+                                                </span>
+                                            </div>
+                                            {yaEmitido ? (
+                                                <span className="badge badge-success" style={{ fontSize: 11 }}>
+                                                    Emitido ({p.remito_asociado.numero})
+                                                </span>
+                                            ) : (
+                                                <span className="badge badge-warning" style={{ fontSize: 11 }}>
+                                                    Pendiente
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="remito-mobile-body">
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                                                <div style={{ fontWeight: 700, fontSize: 15 }}>{p.nombre}</div>
+                                                <div className="mono" style={{ fontWeight: 800, fontSize: 16, color: 'var(--color-primary-dark)' }}>
+                                                    {fmtMoney(p.total)}
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                                                {p.metodo_pago && (
+                                                    <span className="badge badge-neutral" style={{ fontSize: 10.5 }}>💳 {p.metodo_pago}</span>
                                                 )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                                                {p.zona && (
+                                                    <span className="badge badge-neutral" style={{ fontSize: 10.5 }}>📍 {p.zona}</span>
+                                                )}
+                                                {franja && (
+                                                    <span className="badge" style={{ fontSize: 10.5, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' }}>
+                                                        🚚 {franja}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {p.direccion && (
+                                                <div className="text-xs muted">🏠 {p.direccion}</div>
+                                            )}
+
+                                            {notasLimpias && (
+                                                <div className="text-xs muted" style={{ fontStyle: 'italic' }}>📝 {notasLimpias}</div>
+                                            )}
+
+                                            <div style={{
+                                                background: 'var(--color-surface-sunken)',
+                                                borderRadius: 8,
+                                                padding: '8px 10px',
+                                                marginTop: 4,
+                                                fontSize: 12.5,
+                                                lineHeight: 1.45
+                                            }}>
+                                                {Array.isArray(p.items) && p.items.length > 0 ? (
+                                                    p.items.map((it, itIdx) => {
+                                                        const info = formatItemWeb(it);
+                                                        return (
+                                                            <div key={itIdx} style={{ marginBottom: 2 }}>
+                                                                • <strong style={info.esMayorista ? { color: '#92400e', background: '#fef3c7', padding: '1px 5px', borderRadius: 3 } : {}}>
+                                                                    {info.texto}
+                                                                </strong> × {it.nombre || 'Producto'}
+                                                            </div>
+                                                        );
+                                                    })
+                                                ) : p.productos_str ? (
+                                                    String(p.productos_str).split('|').map((s, i) => (
+                                                        <div key={i} style={{ marginBottom: 2 }}>• {s.trim()}</div>
+                                                    ))
+                                                ) : (
+                                                    <span className="muted">Sin productos especificados</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="remito-mobile-actions">
+                                            {p.telefono && (
+                                                <a
+                                                    href={`https://wa.me/${telWa}?text=${encodeURIComponent(waMsg)}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="btn btn-secondary btn-sm"
+                                                    style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5', textDecoration: 'none' }}
+                                                >
+                                                    📲 WhatsApp
+                                                </a>
+                                            )}
+                                            {yaEmitido ? (
+                                                <button
+                                                    className="btn btn-primary btn-sm"
+                                                    onClick={() => verRemitoExistente(p.remito_asociado.id)}
+                                                >
+                                                    🖨️ Ver Remito
+                                                </button>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        className="btn btn-secondary btn-sm"
+                                                        onClick={() => abrirModalEditar(p)}
+                                                    >
+                                                        ✏️ Editar
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-primary btn-sm"
+                                                        onClick={() => emitirRemitoAutomatico(p)}
+                                                        disabled={esGenerando}
+                                                    >
+                                                        {esGenerando ? 'Generando...' : '⚡ Emitir Remito'}
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* MODAL EDICIÓN DE PEDIDO WEB */}

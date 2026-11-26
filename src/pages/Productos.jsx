@@ -399,7 +399,7 @@ export default function Productos() {
                     </div>
                 </div>
 
-                <div className="table-wrap">
+                <div className="desktop-only-table table-wrap">
                     <table className="data-table">
                         <thead>
                             <tr>
