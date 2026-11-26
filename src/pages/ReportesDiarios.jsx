@@ -250,7 +250,7 @@ export default function ReportesDiarios() {
                                     </div>
                                 </div>
                                 <a
-                                    href="https://wa.me/34644718199?text=I%20allow%20callmebot%20to%20send%20me%20messages"
+                                    href="https://wa.me/34623786449?text=I%20allow%20callmebot%20to%20send%20me%20messages"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="btn btn-sm"
@@ -284,7 +284,7 @@ export default function ReportesDiarios() {
                             }}>
                                 <strong style={{ color: '#166534' }}>¿Cómo activar un celular en 3 pasos?</strong>
                                 <ol style={{ margin: '6px 0 0 18px', padding: 0 }}>
-                                    <li>Hacé clic en el botón verde arriba (o agendá al <code>+34 644 71 81 99</code> en WhatsApp).</li>
+                                    <li>Hacé clic en el botón verde arriba (o agendá al <code>+34 623 78 64 49</code> en WhatsApp).</li>
                                     <li>Enviá el mensaje: <code>I allow callmebot to send me messages</code></li>
                                     <li>CallMeBot te responderá con tu <strong>apikey</strong>. Agregá tu celular y esa apikey en la lista de abajo.</li>
                                 </ol>
