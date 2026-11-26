@@ -26,6 +26,24 @@ export default function PreferenciasModal({ isOpen, onClose }) {
     const density = preferences.tableDensity || 'comfortable';
     const metrics = preferences.dashboardMetrics || {};
     const hudMode = preferences.hudMode || 'classic';
+    const highVis = Boolean(preferences.highVisibility);
+
+    function handleToggleHighVisibility() {
+        if (highVis) {
+            updatePreferences({
+                highVisibility: false,
+                fontSize: 'md'
+            });
+        } else {
+            updatePreferences({
+                highVisibility: true,
+                fontSize: 'xl',
+                tableDensity: 'spacious',
+                fontFamily: 'modern'
+            });
+        }
+        showSavedFeedback();
+    }
 
     function handleMetricToggle(key) {
         updatePreferences({
@@ -96,7 +114,7 @@ export default function PreferenciasModal({ isOpen, onClose }) {
                         <span style={{ fontSize: 20 }}>⚙️</span>
                         <div>
                             <h3 style={{ fontSize: 17, color: '#C9A227', margin: 0 }}>Personalización y Preferencias</h3>
-                            <p style={{ fontSize: 11.5, color: '#A9A79B', margin: 0 }}>Adaptá la interfaz de Mix Point a tu estilo de trabajo</p>
+                            <p style={{ fontSize: 12, color: '#CBD5E1', margin: 0 }}>Adaptá la interfaz de Mix Point para leer y trabajar más cómodo</p>
                         </div>
                     </div>
                     <button
@@ -105,7 +123,7 @@ export default function PreferenciasModal({ isOpen, onClose }) {
                         style={{
                             background: 'transparent',
                             border: 'none',
-                            color: '#A9A79B',
+                            color: '#CBD5E1',
                             cursor: 'pointer',
                             padding: 4
                         }}
@@ -116,7 +134,47 @@ export default function PreferenciasModal({ isOpen, onClose }) {
 
                 {/* Body */}
                 <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    
+
+                    {/* TARJETA DESTACADA: MODO ALTA VISIBILIDAD / LECTURA FÁCIL */}
+                    <div style={{
+                        padding: '14px 16px',
+                        borderRadius: 10,
+                        border: `2px solid ${highVis ? '#FACC15' : 'rgba(255, 255, 255, 0.22)'}`,
+                        backgroundColor: highVis ? 'rgba(250, 204, 21, 0.14)' : 'rgba(255, 255, 255, 0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 14,
+                        flexWrap: 'wrap'
+                    }}>
+                        <div style={{ flex: 1, minWidth: 220 }}>
+                            <div style={{ fontWeight: 800, fontSize: 14.5, color: highVis ? '#FEF08A' : '#FFFFFF', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span>👁️</span>
+                                <span>Modo Alta Visibilidad (Lectura Fácil)</span>
+                            </div>
+                            <div style={{ fontSize: 12, color: '#E2E8F0', marginTop: 4, lineHeight: 1.4 }}>
+                                Letras más grandes y nítidas, máximo contraste negro sobre blanco, bordes marcados y botones claros. Ideal para descansar la vista o ver mejor.
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleToggleHighVisibility}
+                            style={{
+                                padding: '9px 16px',
+                                borderRadius: 8,
+                                border: `2px solid ${highVis ? '#FACC15' : '#60A5FA'}`,
+                                backgroundColor: highVis ? '#FACC15' : '#2563EB',
+                                color: highVis ? '#000000' : '#FFFFFF',
+                                fontWeight: 800,
+                                fontSize: 13,
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            {highVis ? '✓ Activado (Apagar)' : '👁️ Activar ahora'}
+                        </button>
+                    </div>
+
                     {/* 1. Modo / Tema Visual Completo */}
                     <div>
                         <div style={{ fontWeight: 600, fontSize: 13.5, color: '#F6EDCD', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -295,12 +353,13 @@ export default function PreferenciasModal({ isOpen, onClose }) {
 
                             {/* Tamaño */}
                             <div>
-                                <label style={{ fontSize: 11, color: '#A9A79B', marginBottom: 4, display: 'block' }}>Tamaño de interfaz:</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                                <label style={{ fontSize: 11.5, color: '#CBD5E1', marginBottom: 4, display: 'block' }}>Tamaño de interfaz:</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
                                     {[
                                         { key: 'sm', label: 'Compacto' },
                                         { key: 'md', label: 'Estándar' },
-                                        { key: 'lg', label: 'Grande' }
+                                        { key: 'lg', label: 'Grande' },
+                                        { key: 'xl', label: 'Extra Grande' }
                                     ].map(sz => (
                                         <button
                                             key={sz.key}
@@ -312,10 +371,11 @@ export default function PreferenciasModal({ isOpen, onClose }) {
                                             style={{
                                                 padding: '6px 4px',
                                                 borderRadius: 6,
-                                                border: `1px solid ${(preferences.fontSize || 'md') === sz.key ? '#C9A227' : 'rgba(255, 255, 255, 0.1)'}`,
-                                                backgroundColor: (preferences.fontSize || 'md') === sz.key ? 'rgba(201, 162, 39, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                                                color: '#F5F1E3',
+                                                border: `1px solid ${(preferences.fontSize || 'md') === sz.key ? '#C9A227' : 'rgba(255, 255, 255, 0.14)'}`,
+                                                backgroundColor: (preferences.fontSize || 'md') === sz.key ? 'rgba(201, 162, 39, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                                                color: '#FFFFFF',
                                                 fontSize: 11,
+                                                fontWeight: (preferences.fontSize || 'md') === sz.key ? 700 : 500,
                                                 cursor: 'pointer'
                                             }}
                                         >

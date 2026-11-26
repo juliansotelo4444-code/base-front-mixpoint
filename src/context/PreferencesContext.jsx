@@ -18,9 +18,10 @@ const DEFAULT_PREFERENCES = {
     hudMode: 'classic', // legacy compatibility
     theme: 'clasico', // 'clasico' | 'dark' | 'verde_natural' | 'marino' | 'terracota' | 'tactical'
     accentColor: 'gold', // 'gold' | 'orange' | 'emerald' | 'blue' | 'purple' | 'ruby'
-    fontSize: 'md', // 'sm' | 'md' | 'lg'
+    fontSize: 'md', // 'sm' | 'md' | 'lg' | 'xl'
     sidebarStyle: 'default', // 'default' | 'contrast' | 'minimal'
-    fontFamily: 'editorial' // 'editorial' | 'modern' | 'mono'
+    fontFamily: 'editorial', // 'editorial' | 'modern' | 'mono'
+    highVisibility: false // Modo Alta Visibilidad / Baja Visión (máximo contraste y tipografía legible)
 };
 
 export function PreferencesProvider({ children }) {
@@ -56,6 +57,7 @@ export function PreferencesProvider({ children }) {
         root.setAttribute('data-font-family', preferences.fontFamily || 'editorial');
         root.setAttribute('data-sidebar-style', preferences.sidebarStyle || 'default');
         root.setAttribute('data-density', preferences.tableDensity || 'comfortable');
+        root.setAttribute('data-high-visibility', preferences.highVisibility ? 'true' : 'false');
     }, [
         preferences.theme,
         preferences.hudMode,
@@ -63,7 +65,8 @@ export function PreferencesProvider({ children }) {
         preferences.fontSize,
         preferences.fontFamily,
         preferences.sidebarStyle,
-        preferences.tableDensity
+        preferences.tableDensity,
+        preferences.highVisibility
     ]);
 
     // Cargar preferencias del backend cuando el usuario se autentica

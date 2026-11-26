@@ -13,16 +13,16 @@
     --color-surface-sunken: #ECE8DA;
     --color-sidebar: #11141D;
     --color-sidebar-hover: #1B2030;
-    --color-border: #E1DCC9;
-    --color-border-strong: #CFC7AC;
+    --color-border: #D6D0BC;
+    --color-border-strong: #B5AC90;
 
-    --color-text: #191A1F;
-    --color-text-muted: #6B6A63;
-    --color-text-on-dark: #F5F1E3;
-    --color-text-on-dark-muted: #A9A79B;
+    --color-text: #111827;
+    --color-text-muted: #4B5563;
+    --color-text-on-dark: #FFFFFF;
+    --color-text-on-dark-muted: #CBD5E1;
 
     --color-primary: #C9A227;       /* dorado Mix Point */
-    --color-primary-dark: #A2801A;
+    --color-primary-dark: #856404;
     --color-primary-tint: #F6EDCD;
 
     --color-accent: #D98A2B;        /* mandarina / fruto */
@@ -208,6 +208,9 @@ html[data-font-size="md"] {
 }
 html[data-font-size="lg"] {
     font-size: 16px;
+}
+html[data-font-size="xl"] {
+    font-size: 17.5px;
 }
 
 /* =========================================================
@@ -2324,3 +2327,180 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
         flex-direction: column;
     }
 }
+
+/* =========================================================
+   MODO ALTA VISIBILIDAD / LECTURA FÁCIL (data-high-visibility="true")
+   Diseñado para máxima nitidez, contraste WCAG AAA y tipografía clara.
+   ========================================================= */
+html[data-high-visibility="true"] {
+    --color-bg: #FFFFFF !important;
+    --color-surface: #FFFFFF !important;
+    --color-surface-sunken: #E2E8F0 !important;
+    --color-sidebar: #000000 !important;
+    --color-sidebar-hover: #1E293B !important;
+    --color-border: #475569 !important;
+    --color-border-strong: #0F172A !important;
+
+    --color-text: #000000 !important;
+    --color-text-muted: #1E293B !important;
+    --color-text-on-dark: #FFFFFF !important;
+    --color-text-on-dark-muted: #F1F5F9 !important;
+
+    --color-primary: #0B3D91 !important;
+    --color-primary-dark: #06255C !important;
+    --color-primary-tint: #DBEAFE !important;
+
+    --font-display: 'Inter', 'Poppins', Arial, sans-serif !important;
+    --font-body: 'Inter', 'Poppins', Arial, sans-serif !important;
+}
+
+html[data-high-visibility="true"] body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 16.5px !important;
+    line-height: 1.55 !important;
+    font-weight: 500 !important;
+}
+
+html[data-high-visibility="true"] h1,
+html[data-high-visibility="true"] h2,
+html[data-high-visibility="true"] h3,
+html[data-high-visibility="true"] h4 {
+    color: #000000 !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+}
+
+html[data-high-visibility="true"] .muted {
+    color: #1E293B !important;
+    opacity: 1 !important;
+    font-weight: 600 !important;
+}
+
+html[data-high-visibility="true"] .text-xs {
+    font-size: 13.5px !important;
+    font-weight: 600;
+}
+
+html[data-high-visibility="true"] .text-sm {
+    font-size: 15px !important;
+}
+
+html[data-high-visibility="true"] .card {
+    background: #FFFFFF !important;
+    border: 2px solid #475569 !important;
+    box-shadow: none !important;
+}
+
+html[data-high-visibility="true"] .data-table th {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #000000 !important;
+    background: #E2E8F0 !important;
+    border-bottom: 2px solid #0F172A !important;
+}
+
+html[data-high-visibility="true"] .data-table td {
+    font-size: 15.5px !important;
+    font-weight: 500 !important;
+    color: #000000 !important;
+    padding: 13px 14px !important;
+    border-bottom: 1.5px solid #94A3B8 !important;
+}
+
+html[data-high-visibility="true"] input,
+html[data-high-visibility="true"] select,
+html[data-high-visibility="true"] textarea {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #000000 !important;
+    background-color: #FFFFFF !important;
+    border: 2px solid #0F172A !important;
+    min-height: 44px;
+}
+
+html[data-high-visibility="true"] input::placeholder,
+html[data-high-visibility="true"] textarea::placeholder {
+    color: #334155 !important;
+    opacity: 1 !important;
+}
+
+html[data-high-visibility="true"] :focus-visible,
+html[data-high-visibility="true"] input:focus,
+html[data-high-visibility="true"] select:focus,
+html[data-high-visibility="true"] textarea:focus {
+    outline: 3px solid #D97706 !important;
+    outline-offset: 2px !important;
+}
+
+html[data-high-visibility="true"] .btn {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    min-height: 40px;
+    border-width: 2px !important;
+}
+
+html[data-high-visibility="true"] .btn-primary {
+    background: #0B3D91 !important;
+    color: #FFFFFF !important;
+    border-color: #06255C !important;
+}
+
+html[data-high-visibility="true"] .btn-secondary {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    border: 2px solid #0F172A !important;
+}
+
+html[data-high-visibility="true"] .btn-ghost {
+    color: #0F172A !important;
+    border: 1.5px solid #64748B !important;
+}
+
+html[data-high-visibility="true"] .app-sidebar .btn-ghost {
+    color: #FFFFFF !important;
+    border-color: #94A3B8 !important;
+}
+
+html[data-high-visibility="true"] .badge {
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    border: 1.5px solid currentColor !important;
+    padding: 4px 10px !important;
+}
+
+html[data-high-visibility="true"] .app-sidebar {
+    background: #000000 !important;
+    border-right: 3px solid #FACC15 !important;
+}
+
+html[data-high-visibility="true"] .sidebar-nav .sidebar-link {
+    font-size: 15.5px !important;
+    font-weight: 700 !important;
+    color: #FFFFFF !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+}
+
+html[data-high-visibility="true"] .sidebar-nav .sidebar-link:hover {
+    background: #1E293B !important;
+    color: #FFFFFF !important;
+}
+
+html[data-high-visibility="true"] .sidebar-nav .sidebar-link.active {
+    background: #FACC15 !important;
+    color: #000000 !important;
+    font-weight: 900 !important;
+}
+
+html[data-high-visibility="true"] .desktop-topbar {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+    border-bottom: 2px solid #475569 !important;
+}
+
+html[data-high-visibility="true"] .desktop-topbar .btn-ghost {
+    color: #FFFFFF !important;
+    border-color: #94A3B8 !important;
+}
+

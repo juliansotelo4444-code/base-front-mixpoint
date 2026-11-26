@@ -36,12 +36,27 @@ const NAV_ITEMS = [
 
 export default function Layout() {
     const { usuario, logout, tienePermiso } = useAuth();
-    const { preferences } = usePreferences();
+    const { preferences, updatePreferences } = usePreferences();
     const navigate = useNavigate();
     const location = useLocation();
 
     const [menuAbierto, setMenuAbierto] = useState(false);
     const [modalPrefsAbierto, setModalPrefsAbierto] = useState(false);
+
+    const highVisibility = Boolean(preferences?.highVisibility);
+
+    function toggleHighVisibility() {
+        if (highVisibility) {
+            updatePreferences({ highVisibility: false, fontSize: 'md' });
+        } else {
+            updatePreferences({
+                highVisibility: true,
+                fontSize: 'xl',
+                tableDensity: 'spacious',
+                fontFamily: 'modern'
+            });
+        }
+    }
 
     function handleLogout() {
         logout();
@@ -89,6 +104,23 @@ export default function Layout() {
                     </div>
                 </div>
                 <div className="row gap-xs" style={{ alignItems: 'center' }}>
+                    <button
+                        type="button"
+                        onClick={toggleHighVisibility}
+                        style={{
+                            background: highVisibility ? '#FACC15' : 'transparent',
+                            border: highVisibility ? '1px solid #FACC15' : '1px solid rgba(255,255,255,0.2)',
+                            color: highVisibility ? '#000000' : 'var(--color-text-on-dark)',
+                            borderRadius: 6,
+                            cursor: 'pointer',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            padding: '3px 7px'
+                        }}
+                        title={highVisibility ? 'Desactivar Modo Alta Visibilidad' : 'Activar Modo Alta Visibilidad (Lectura Fácil)'}
+                    >
+                        👁️
+                    </button>
                     <button
                         type="button"
                         onClick={() => setModalPrefsAbierto(true)}
@@ -213,15 +245,32 @@ export default function Layout() {
                                 {usuario?.rol}
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setModalPrefsAbierto(true)}
-                            className="btn btn-ghost btn-xs"
-                            style={{ color: 'var(--color-text-on-dark-muted)', padding: '4px 8px', fontSize: 12 }}
-                            title="Personalización y preferencias"
-                        >
-                            ⚙️
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <button
+                                type="button"
+                                onClick={toggleHighVisibility}
+                                className="btn btn-ghost btn-xs"
+                                style={{
+                                    background: highVisibility ? '#FACC15' : 'transparent',
+                                    color: highVisibility ? '#000000' : 'var(--color-text-on-dark-muted)',
+                                    padding: '4px 7px',
+                                    fontSize: 12,
+                                    fontWeight: 700
+                                }}
+                                title={highVisibility ? 'Desactivar Lectura Fácil' : 'Activar Modo Alta Visibilidad'}
+                            >
+                                👁️
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setModalPrefsAbierto(true)}
+                                className="btn btn-ghost btn-xs"
+                                style={{ color: 'var(--color-text-on-dark-muted)', padding: '4px 8px', fontSize: 12 }}
+                                title="Personalización y preferencias"
+                            >
+                                ⚙️
+                            </button>
+                        </div>
                     </div>
 
                     <button
@@ -263,15 +312,33 @@ export default function Layout() {
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'capitalize' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ fontSize: 12.5, color: 'var(--color-text-on-dark-muted)', fontWeight: 500, textTransform: 'capitalize' }}>
                             📅 {fechaHoyFormato}
                         </div>
                         <button
                             type="button"
+                            onClick={toggleHighVisibility}
+                            className="btn btn-ghost btn-sm"
+                            style={{
+                                background: highVisibility ? '#FACC15' : 'transparent',
+                                color: highVisibility ? '#000000' : 'var(--color-text-on-dark)',
+                                borderColor: highVisibility ? '#FACC15' : 'rgba(255, 255, 255, 0.22)',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5
+                            }}
+                            title="Activar/Desactivar contraste alto y letras más grandes para mejor lectura"
+                        >
+                            👁️ {highVisibility ? 'Lectura Fácil ✓' : 'Lectura Fácil'}
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => setModalPrefsAbierto(true)}
                             className="btn btn-ghost btn-sm"
-                            style={{ color: 'var(--color-text-on-dark-muted)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            style={{ color: 'var(--color-text-on-dark)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                         >
                             ⚙️ Preferencias
                         </button>
