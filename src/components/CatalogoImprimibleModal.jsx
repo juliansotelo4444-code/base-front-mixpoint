@@ -56,8 +56,49 @@ function getPrintCss() {
             page-break-after: avoid;
             break-after: avoid;
         }
-        .no-print {
-            display: none !important;
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    `;
+}
+
+function getPreviewCss() {
+    return `
+        .catalogo-print-sheet {
+            width: 210mm;
+            height: 297mm;
+            min-height: 297mm;
+            max-height: 297mm;
+            margin: 0 auto;
+            position: relative;
+            background: #ffffff;
+            color: #111827;
+            overflow: hidden;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 10px;
+            line-height: 1.3;
+        }
+        .catalogo-print-sheet * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .catalogo-print-sheet.sheet-portada {
+            padding: 0;
+        }
+        .catalogo-print-sheet.sheet-content {
+            padding: 10mm 12mm 8mm 12mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
         }
     `;
 }
@@ -199,7 +240,7 @@ export default function CatalogoImprimibleModal({ productos = [], categorias = [
                 }
             }}
         >
-            <style>{getPrintCss()}</style>
+            <style>{getPreviewCss()}</style>
 
             {/* BARRA SUPERIOR DE HERRAMIENTAS Y ACCIONES */}
             <header
