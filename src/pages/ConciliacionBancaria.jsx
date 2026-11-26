@@ -25,6 +25,39 @@ export default function ConciliacionBancaria() {
     // Mapeo local de selección de cliente por fila
     const [clientesSeleccionados, setClientesSeleccionados] = useState({});
 
+    // Configuración e integración en vivo de Mercado Pago
+    const [mpConfig, setMpConfig] = useState({
+        configurado: false,
+        token_enmascarado: '',
+        cuenta_info: null,
+        auto_sync: true,
+        ultimo_sync: null
+    });
+    const [esAdminMp, setEsAdminMp] = useState(false);
+    const [mostrarConfigMp, setMostrarConfigMp] = useState(false);
+    const [mpTokenInput, setMpTokenInput] = useState('');
+    const [mpAutoSyncInput, setMpAutoSyncInput] = useState(true);
+    const [sincronizandoMp, setSincronizandoMp] = useState(false);
+    const [probandoMp, setProbandoMp] = useState(false);
+    const [guardandoMp, setGuardandoMp] = useState(false);
+    const [webhookCopiado, setWebhookCopiado] = useState(false);
+
+    const apiBaseUrl = (import.meta.env.VITE_API_URL || `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:4000/api`).replace(/\/$/, '');
+    const mpWebhookUrl = `${apiBaseUrl}/mercadopago/webhook`;
+
+    async function cargarConfigMp() {
+        try {
+            const data = await api.get('/mercadopago/config');
+            setMpConfig(data);
+            setMpAutoSyncInput(data.auto_sync !== false);
+            setEsAdminMp(true);
+        } catch (err) {
+            if (err.response?.status === 403) {
+                setEsAdminMp(false);
+            }
+        }
+    }
+
     async function cargarDatos() {
         setCargando(true);
         try {
@@ -44,8 +77,86 @@ export default function ConciliacionBancaria() {
     }
 
     useEffect(() => {
+        cargarConfigMp();
+    }, []);
+
+    useEffect(() => {
         cargarDatos();
     }, [estadoFiltro, cuentaFiltro]);
+
+    async function handleSincronizarMp() {
+        setSincronizandoMp(true);
+        setFeedback(null);
+        try {
+            const res = await api.post('/mercadopago/sincronizar', { dias: 7 });
+            setFeedback({
+                tipo: 'exito',
+                texto: res.importados > 0
+                    ? `Mercado Pago sincronizado: ${res.importados} cobro(s) nuevo(s) importado(s) de ${res.total_api} consultados.`
+                    : `Mercado Pago al día: se verificaron ${res.total_api} cobros recientes y no hay pendientes nuevos.`
+            });
+            cargarConfigMp();
+            cargarDatos();
+        } catch (err) {
+            setFeedback({
+                tipo: 'error',
+                texto: err.response?.data?.error || err.message || 'No se pudo sincronizar Mercado Pago. Verificá tu Access Token.'
+            });
+        } finally {
+            setSincronizandoMp(false);
+        }
+    }
+
+    async function handleProbarMp() {
+        setProbandoMp(true);
+        setFeedback(null);
+        try {
+            const res = await api.post('/mercadopago/probar-conexion', {
+                access_token: mpTokenInput.trim() || undefined
+            });
+            if (res.ok) {
+                setFeedback({
+                    tipo: 'exito',
+                    texto: `✅ Conexión exitosa con Mercado Pago (${res.cuenta?.nickname || res.cuenta?.email || res.cuenta?.id}).`
+                });
+                cargarConfigMp();
+            } else {
+                setFeedback({ tipo: 'error', texto: `❌ Error de conexión: ${res.error}` });
+            }
+        } catch (err) {
+            setFeedback({ tipo: 'error', texto: err.response?.data?.error || err.message || 'Error probando conexión.' });
+        } finally {
+            setProbandoMp(false);
+        }
+    }
+
+    async function handleGuardarConfigMp(e) {
+        e.preventDefault();
+        setGuardandoMp(true);
+        setFeedback(null);
+        try {
+            const payload = {
+                auto_sync: mpAutoSyncInput
+            };
+            if (mpTokenInput.trim()) {
+                payload.access_token = mpTokenInput.trim();
+            }
+            const res = await api.post('/mercadopago/config', payload);
+            setMpConfig(res.config);
+            setMpTokenInput('');
+            if (res.prueba && !res.prueba.ok) {
+                setFeedback({ tipo: 'error', texto: `Configuración guardada, pero la prueba de token falló: ${res.prueba.error}` });
+            } else if (res.prueba?.ok) {
+                setFeedback({ tipo: 'exito', texto: `✅ Mercado Pago conectado a ${res.prueba.cuenta?.nickname || res.prueba.cuenta?.email} y configuración guardada.` });
+            } else {
+                setFeedback({ tipo: 'exito', texto: 'Configuración de Mercado Pago guardada correctamente.' });
+            }
+        } catch (err) {
+            setFeedback({ tipo: 'error', texto: err.response?.data?.error || err.message || 'Error guardando configuración.' });
+        } finally {
+            setGuardandoMp(false);
+        }
+    }
 
     async function handleImportar(e) {
         e.preventDefault();
@@ -124,8 +235,27 @@ export default function ConciliacionBancaria() {
                         Cruce automático de transferencias bancarias y Mercado Pago con remitos y cuentas corrientes.
                     </p>
                 </div>
-                <div className="row gap-sm">
+                <div className="row gap-sm" style={{ flexWrap: 'wrap' }}>
                     <button
+                        type="button"
+                        className="btn"
+                        onClick={handleSincronizarMp}
+                        disabled={sincronizandoMp}
+                        style={{ background: '#009EE3', color: '#FFFFFF', fontWeight: 700, border: 'none' }}
+                    >
+                        {sincronizandoMp ? '⏳ Sincronizando MP...' : '⚡ Sincronizar Mercado Pago'}
+                    </button>
+                    {esAdminMp && (
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => setMostrarConfigMp(!mostrarConfigMp)}
+                        >
+                            ⚙️ {mostrarConfigMp ? 'Cerrar Config MP' : 'Configurar Mercado Pago'}
+                        </button>
+                    )}
+                    <button
+                        type="button"
                         className="btn btn-secondary"
                         onClick={() => setMostrarImportador(!mostrarImportador)}
                     >
@@ -133,6 +263,7 @@ export default function ConciliacionBancaria() {
                     </button>
                     {estadoFiltro === 'pendiente' && movimientos.some(m => m.cliente_id) && (
                         <button
+                            type="button"
                             className="btn btn-primary"
                             onClick={handleConciliarMasivo}
                         >
@@ -141,6 +272,124 @@ export default function ConciliacionBancaria() {
                     )}
                 </div>
             </div>
+
+            {/* PANEL DE CONFIGURACIÓN MERCADO PAGO */}
+            {mostrarConfigMp && esAdminMp && (
+                <div className="card" style={{ padding: 20, marginBottom: 24, background: '#F0F9FF', border: '1.5px solid #7DD3FC' }}>
+                    <div className="spread" style={{ flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+                        <div>
+                            <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: '#0369A1' }}>
+                                💳 Conexión API Mercado Pago (Cobros en Tiempo Real)
+                            </h2>
+                            <p style={{ fontSize: 12, margin: '3px 0 0', color: '#0C4A6E' }}>
+                                Sincroniza transferencias CVU, cobros QR y links para que el reparto valide pagos al instante.
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{
+                                padding: '4px 10px',
+                                borderRadius: 20,
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                background: mpConfig.configurado ? '#DCFCE7' : '#FEF3C7',
+                                color: mpConfig.configurado ? '#166534' : '#92400E',
+                                border: `1px solid ${mpConfig.configurado ? '#86EFAC' : '#FDE68A'}`
+                            }}>
+                                {mpConfig.configurado
+                                    ? `✅ Conectado${mpConfig.cuenta_info?.nickname ? `: ${mpConfig.cuenta_info.nickname}` : ''}`
+                                    : '⚪ Sin configurar'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleGuardarConfigMp} className="stack gap-md">
+                        <div style={{ background: '#FFFFFF', padding: '10px 14px', borderRadius: 8, border: '1px solid #BAE6FD', fontSize: 12, lineHeight: 1.5, color: '#1E293B' }}>
+                            <strong>¿Cómo obtener el Access Token en 2 minutos?</strong>
+                            <ol style={{ margin: '5px 0 0 18px', padding: 0 }}>
+                                <li>Ingresá a <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer" style={{ color: '#0284C7', fontWeight: 700 }}>mercadopago.com.ar/developers</a> con la cuenta de Mix Point.</li>
+                                <li>Elegí o creá una app (ej. <em>Mix Point Gestión</em>) y entrá a <strong>Credenciales de producción</strong>.</li>
+                                <li>Copiá el <strong>Access Token</strong> (empieza con <code>APP_USR-...</code>) y pegalo abajo.</li>
+                            </ol>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4, color: '#0F172A' }}>
+                                    Access Token de Producción {mpConfig.configurado && `(Actual: ${mpConfig.token_enmascarado})`}
+                                </label>
+                                <input
+                                    type="password"
+                                    className="form-control"
+                                    value={mpTokenInput}
+                                    onChange={(e) => setMpTokenInput(e.target.value)}
+                                    placeholder={mpConfig.configurado ? 'Dejar vacío para conservar el actual' : 'APP_USR-1234567890...'}
+                                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #94A3B8', background: '#FFFFFF' }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4, color: '#0F172A' }}>
+                                    URL de Webhook (Notificaciones instantáneas)
+                                </label>
+                                <div className="row gap-xs">
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value={mpWebhookUrl}
+                                        style={{ flex: 1, padding: '8px 10px', fontSize: 11.5, borderRadius: 6, border: '1px solid #CBD5E1', background: '#F8FAFC', fontFamily: 'monospace' }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(mpWebhookUrl);
+                                            setWebhookCopiado(true);
+                                            setTimeout(() => setWebhookCopiado(false), 2500);
+                                        }}
+                                    >
+                                        {webhookCopiado ? '✓ Copiado' : 'Copiar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="spread" style={{ flexWrap: 'wrap', gap: 12 }}>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={mpAutoSyncInput}
+                                    onChange={(e) => setMpAutoSyncInput(e.target.checked)}
+                                />
+                                Sincronizar cobros automáticamente cada 3 minutos
+                                {mpConfig.ultimo_sync && (
+                                    <span className="muted text-xs mono">
+                                        (Último sync: {new Date(mpConfig.ultimo_sync).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })})
+                                    </span>
+                                )}
+                            </label>
+
+                            <div className="row gap-sm">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={handleProbarMp}
+                                    disabled={probandoMp}
+                                >
+                                    {probandoMp ? 'Probando...' : '🔌 Probar Conexión'}
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={guardandoMp}
+                                    style={{ background: '#009EE3', borderColor: '#009EE3', fontWeight: 700 }}
+                                >
+                                    {guardandoMp ? 'Guardando...' : '💾 Guardar Configuración'}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             {/* TARJETAS KPI */}
             <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 20 }}>

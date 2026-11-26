@@ -7,6 +7,7 @@ import RemitoImprimible from '../components/RemitoImprimible';
 import HojaDeRutaModal from '../components/HojaDeRutaModal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import EtiquetaDespachoModal from '../components/EtiquetaDespachoModal';
+import MercadoPagoLiveModal from '../components/MercadoPagoLiveModal';
 import { IconPlus, IconBuscar } from '../components/Icons';
 import { getFechaHoyLocal, formatearFecha, esFechaDeHoy, esFechaDeEsteMes, getNombreMesActual } from '../utils/fechas';
 import { exportarRemitoAWord } from '../utils/remitoWordExport';
@@ -73,6 +74,8 @@ export default function Remitos() {
     const [remitoParaImprimir, setRemitoParaImprimir] = useState(null);
     const [hojaDeRutaOpen, setHojaDeRutaOpen] = useState(false);
     const [etiquetaModalRemito, setEtiquetaModalRemito] = useState(null);
+    const [mpModalOpen, setMpModalOpen] = useState(false);
+    const [mpRemitoTarget, setMpRemitoTarget] = useState(null);
     const [remitoRecienCreado, setRemitoRecienCreado] = useState(null);
     const [seleccionados, setSeleccionados] = useState([]);
     const [error, setError] = useState('');
@@ -595,6 +598,18 @@ export default function Remitos() {
                             )}
                         </>
                     )}
+                    <button
+                        type="button"
+                        className="btn"
+                        onClick={() => {
+                            setMpRemitoTarget(null);
+                            setMpModalOpen(true);
+                        }}
+                        style={{ background: '#009EE3', color: '#FFFFFF', fontWeight: 700, border: 'none', fontSize: 13.5, padding: '9px 14px' }}
+                        title="Ver cobros recientes de Mercado Pago en tiempo real"
+                    >
+                        💳 Pagos MP en Vivo
+                    </button>
                     <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14, fontWeight: 700, padding: '9px 18px' }}>
                         <IconPlus /> Generar nuevo remito
                     </button>
@@ -1096,6 +1111,20 @@ export default function Remitos() {
 
                                                 {/* ACCIONES DE DOCUMENTO Y EDICIÓN */}
                                                 <div className="row gap-xs" style={{ flexWrap: 'wrap', paddingTop: 4 }}>
+                                                    {!r.pago_validado && r.estado_pago !== 'pagado' && !['anulado', 'cancelado'].includes(r.estado) && (
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-sm"
+                                                            onClick={() => {
+                                                                setMpRemitoTarget(r);
+                                                                setMpModalOpen(true);
+                                                            }}
+                                                            style={{ padding: '5px 11px', fontSize: 12, background: '#009EE3', color: '#FFFFFF', fontWeight: 700, border: 'none' }}
+                                                            title="Verificar en vivo si entró el pago en Mercado Pago"
+                                                        >
+                                                            💳 Verificar MP
+                                                        </button>
+                                                    )}
                                                     <button
                                                         className="btn btn-primary btn-sm"
                                                         onClick={() => imprimirRemito(r.id)}
@@ -1284,6 +1313,20 @@ export default function Remitos() {
                                                 </td>
                                                 <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
                                                     <div className="row gap-xs" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                                                        {!r.pago_validado && r.estado_pago !== 'pagado' && !['anulado', 'cancelado'].includes(r.estado) && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm"
+                                                                onClick={() => {
+                                                                    setMpRemitoTarget(r);
+                                                                    setMpModalOpen(true);
+                                                                }}
+                                                                style={{ background: '#009EE3', color: '#FFFFFF', border: 'none', padding: '5px 8px', fontSize: 12, fontWeight: 700 }}
+                                                                title="Verificar en vivo si entró el pago en Mercado Pago"
+                                                            >
+                                                                💳 MP
+                                                            </button>
+                                                        )}
                                                         <a
                                                             href={buildWhatsAppLink(r)}
                                                             target="_blank"
@@ -1423,6 +1466,19 @@ export default function Remitos() {
                                         </div>
 
                                         <div className="remito-mobile-actions">
+                                            {!r.pago_validado && r.estado_pago !== 'pagado' && !['anulado', 'cancelado'].includes(r.estado) && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm"
+                                                    onClick={() => {
+                                                        setMpRemitoTarget(r);
+                                                        setMpModalOpen(true);
+                                                    }}
+                                                    style={{ background: '#009EE3', color: '#FFFFFF', border: 'none', fontWeight: 700 }}
+                                                >
+                                                    💳 Verificar MP
+                                                </button>
+                                            )}
                                             <a
                                                 href={buildWhatsAppLink(r)}
                                                 target="_blank"
@@ -1892,6 +1948,19 @@ export default function Remitos() {
                                         );
                                     })()}
                                 </div>
+                                {!detalle.pago_validado && detalle.estado_pago !== 'pagado' && !['anulado', 'cancelado'].includes(detalle.estado) && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm"
+                                        onClick={() => {
+                                            setMpRemitoTarget(detalle);
+                                            setMpModalOpen(true);
+                                        }}
+                                        style={{ marginTop: 6, background: '#009EE3', color: '#FFFFFF', fontWeight: 700, border: 'none' }}
+                                    >
+                                        💳 Verificar Pago MP en Vivo
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -2444,6 +2513,26 @@ export default function Remitos() {
                 <HojaDeRutaModal
                     remitoIds={seleccionados}
                     onClose={() => setHojaDeRutaOpen(false)}
+                />
+            )}
+
+            {/* VERIFICACIÓN DE PAGOS MERCADO PAGO EN VIVO */}
+            {mpModalOpen && (
+                <MercadoPagoLiveModal
+                    remitoTarget={mpRemitoTarget}
+                    onClose={() => {
+                        setMpModalOpen(false);
+                        setMpRemitoTarget(null);
+                    }}
+                    onPagoConfirmado={async () => {
+                        await cargar();
+                        if (detalle && mpRemitoTarget && Number(detalle.id) === Number(mpRemitoTarget.id)) {
+                            try {
+                                const { data } = await client.get(`/remitos/${detalle.id}`, { params: { _t: Date.now() } });
+                                setDetalle(data);
+                            } catch {}
+                        }
+                    }}
                 />
             )}
         </div>
