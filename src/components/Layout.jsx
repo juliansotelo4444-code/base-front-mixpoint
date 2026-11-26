@@ -16,6 +16,7 @@ import PreferenciasModal from './PreferenciasModal';
 const NAV_ITEMS = [
     { to: '/', label: 'Panel', icon: IconDashboard, end: true },
     { to: '/remitos', label: 'Remitos', icon: IconRemito },
+    { to: '/mi-ruta', label: 'Mi Ruta de Reparto', icon: IconCamion },
     { to: '/deposito-kanban', label: 'Preparación & Despacho', icon: IconCamion },
     { to: '/pagos-mp', label: 'Pagos Mercado Pago', icon: IconBanco },
     { to: '/pedidos-web', label: 'Pedidos Web', icon: IconCarrito },
@@ -367,25 +368,37 @@ export default function Layout() {
                     <IconDashboard />
                     <span>Panel</span>
                 </NavLink>
-                <NavLink to="/remitos" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
-                    <IconRemito />
-                    <span>Remitos</span>
-                </NavLink>
                 {usuario?.rol === 'repartidor' ? (
-                    <NavLink to="/pagos-mp" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
-                        <IconBanco />
-                        <span>Pagos MP</span>
-                    </NavLink>
+                    <>
+                        <NavLink to="/mi-ruta" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                            <IconCamion />
+                            <span>Mi Ruta</span>
+                        </NavLink>
+                        <NavLink to="/pagos-mp" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                            <IconBanco />
+                            <span>Pagos MP</span>
+                        </NavLink>
+                        <NavLink to="/remitos" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                            <IconRemito />
+                            <span>Remitos</span>
+                        </NavLink>
+                    </>
                 ) : (
-                    <NavLink to="/pedidos-web" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
-                        <IconCarrito />
-                        <span>Pedidos</span>
-                    </NavLink>
+                    <>
+                        <NavLink to="/remitos" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                            <IconRemito />
+                            <span>Remitos</span>
+                        </NavLink>
+                        <NavLink to="/pedidos-web" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                            <IconCarrito />
+                            <span>Pedidos</span>
+                        </NavLink>
+                        <NavLink to="/productos" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
+                            <IconProducto />
+                            <span>Stock</span>
+                        </NavLink>
+                    </>
                 )}
-                <NavLink to="/productos" className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}>
-                    <IconProducto />
-                    <span>Stock</span>
-                </NavLink>
                 <button
                     type="button"
                     className={`bottom-tab ${menuAbierto ? 'active' : ''}`}

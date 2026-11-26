@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import client from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import useKanbanSocket from '../hooks/useKanbanSocket';
 import Modal from '../components/Modal';
 import ProductPicker from '../components/ProductPicker';
@@ -8,6 +9,7 @@ import HojaDeRutaModal from '../components/HojaDeRutaModal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import EtiquetaDespachoModal from '../components/EtiquetaDespachoModal';
 import MercadoPagoLiveModal from '../components/MercadoPagoLiveModal';
+import LinkPagoMPModal from '../components/LinkPagoMPModal';
 import { IconPlus, IconBuscar } from '../components/Icons';
 import { getFechaHoyLocal, formatearFecha, esFechaDeHoy, esFechaDeEsteMes, getNombreMesActual } from '../utils/fechas';
 import { exportarRemitoAWord } from '../utils/remitoWordExport';
@@ -59,6 +61,7 @@ export function buildWhatsAppLink(remito) {
 }
 
 export default function Remitos() {
+    const { usuario } = useAuth();
     const [remitos, setRemitos] = useState([]);
     const [clientes, setClientes] = useState([]);
     const [productos, setProductos] = useState([]);
@@ -76,6 +79,7 @@ export default function Remitos() {
     const [etiquetaModalRemito, setEtiquetaModalRemito] = useState(null);
     const [mpModalOpen, setMpModalOpen] = useState(false);
     const [mpRemitoTarget, setMpRemitoTarget] = useState(null);
+    const [linkMpRemito, setLinkMpRemito] = useState(null);
     const [remitoRecienCreado, setRemitoRecienCreado] = useState(null);
     const [seleccionados, setSeleccionados] = useState([]);
     const [error, setError] = useState('');
@@ -1112,18 +1116,31 @@ export default function Remitos() {
                                                 {/* ACCIONES DE DOCUMENTO Y EDICIÓN */}
                                                 <div className="row gap-xs" style={{ flexWrap: 'wrap', paddingTop: 4 }}>
                                                     {!r.pago_validado && r.estado_pago !== 'pagado' && !['anulado', 'cancelado'].includes(r.estado) && (
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-sm"
-                                                            onClick={() => {
-                                                                setMpRemitoTarget(r);
-                                                                setMpModalOpen(true);
-                                                            }}
-                                                            style={{ padding: '5px 11px', fontSize: 12, background: '#009EE3', color: '#FFFFFF', fontWeight: 700, border: 'none' }}
-                                                            title="Verificar en vivo si entró el pago en Mercado Pago"
-                                                        >
-                                                            💳 Verificar MP
-                                                        </button>
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm"
+                                                                onClick={() => {
+                                                                    setMpRemitoTarget(r);
+                                                                    setMpModalOpen(true);
+                                                                }}
+                                                                style={{ padding: '5px 11px', fontSize: 12, background: '#009EE3', color: '#FFFFFF', fontWeight: 700, border: 'none' }}
+                                                                title="Verificar en vivo si entró el pago en Mercado Pago"
+                                                            >
+                                                                💳 Verificar MP
+                                                            </button>
+                                                            {usuario?.rol !== 'repartidor' && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-sm"
+                                                                    onClick={() => setLinkMpRemito(r)}
+                                                                    style={{ padding: '5px 10px', fontSize: 12, background: '#E0F2FE', color: '#0369A1', fontWeight: 700, border: '1px solid #7DD3FC' }}
+                                                                    title="Generar Link de Pago / QR de Mercado Pago para este remito"
+                                                                >
+                                                                    🔗 Link MP
+                                                                </button>
+                                                            )}
+                                                        </>
                                                     )}
                                                     <button
                                                         className="btn btn-primary btn-sm"
@@ -1314,18 +1331,31 @@ export default function Remitos() {
                                                 <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
                                                     <div className="row gap-xs" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
                                                         {!r.pago_validado && r.estado_pago !== 'pagado' && !['anulado', 'cancelado'].includes(r.estado) && (
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-sm"
-                                                                onClick={() => {
-                                                                    setMpRemitoTarget(r);
-                                                                    setMpModalOpen(true);
-                                                                }}
-                                                                style={{ background: '#009EE3', color: '#FFFFFF', border: 'none', padding: '5px 8px', fontSize: 12, fontWeight: 700 }}
-                                                                title="Verificar en vivo si entró el pago en Mercado Pago"
-                                                            >
-                                                                💳 MP
-                                                            </button>
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-sm"
+                                                                    onClick={() => {
+                                                                        setMpRemitoTarget(r);
+                                                                        setMpModalOpen(true);
+                                                                    }}
+                                                                    style={{ background: '#009EE3', color: '#FFFFFF', border: 'none', padding: '5px 8px', fontSize: 12, fontWeight: 700 }}
+                                                                    title="Verificar en vivo si entró el pago en Mercado Pago"
+                                                                >
+                                                                    💳 MP
+                                                                </button>
+                                                                {usuario?.rol !== 'repartidor' && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-sm"
+                                                                        onClick={() => setLinkMpRemito(r)}
+                                                                        style={{ background: '#E0F2FE', color: '#0369A1', border: '1px solid #7DD3FC', padding: '5px 8px', fontSize: 12, fontWeight: 700 }}
+                                                                        title="Generar Link / QR Mercado Pago"
+                                                                    >
+                                                                        🔗
+                                                                    </button>
+                                                                )}
+                                                            </>
                                                         )}
                                                         <a
                                                             href={buildWhatsAppLink(r)}
@@ -1949,17 +1979,29 @@ export default function Remitos() {
                                     })()}
                                 </div>
                                 {!detalle.pago_validado && detalle.estado_pago !== 'pagado' && !['anulado', 'cancelado'].includes(detalle.estado) && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-sm"
-                                        onClick={() => {
-                                            setMpRemitoTarget(detalle);
-                                            setMpModalOpen(true);
-                                        }}
-                                        style={{ marginTop: 6, background: '#009EE3', color: '#FFFFFF', fontWeight: 700, border: 'none' }}
-                                    >
-                                        💳 Verificar Pago MP en Vivo
-                                    </button>
+                                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap', marginTop: 6 }}>
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm"
+                                            onClick={() => {
+                                                setMpRemitoTarget(detalle);
+                                                setMpModalOpen(true);
+                                            }}
+                                            style={{ background: '#009EE3', color: '#FFFFFF', fontWeight: 700, border: 'none' }}
+                                        >
+                                            💳 Verificar Pago MP en Vivo
+                                        </button>
+                                        {usuario?.rol !== 'repartidor' && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm"
+                                                onClick={() => setLinkMpRemito(detalle)}
+                                                style={{ background: '#E0F2FE', color: '#0369A1', fontWeight: 700, border: '1px solid #7DD3FC' }}
+                                            >
+                                                🔗 Link / QR MP
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -2532,6 +2574,16 @@ export default function Remitos() {
                                 setDetalle(data);
                             } catch {}
                         }
+                    }}
+                />
+            )}
+            {/* LINK / QR DINÁMICO DE PAGO MERCADO PAGO */}
+            {linkMpRemito && (
+                <LinkPagoMPModal
+                    remito={linkMpRemito}
+                    onClose={() => setLinkMpRemito(null)}
+                    onLinkGenerado={async () => {
+                        await cargar();
                     }}
                 />
             )}

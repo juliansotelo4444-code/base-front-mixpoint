@@ -33,6 +33,7 @@ export default function Dashboard() {
     const [resumen, setResumen] = useState(null);
     const [evolucion, setEvolucion] = useState(null);
     const [predicciones, setPredicciones] = useState([]);
+    const [rentabilidad, setRentabilidad] = useState(null);
     const [loading, setLoading] = useState(true);
     const [vistaActiva, setVistaActiva] = useState(usuario?.rol === 'admin' ? 'ejecutiva' : 'operativa');
 
@@ -50,11 +51,13 @@ export default function Dashboard() {
         Promise.all([
             client.get('/dashboard/resumen'),
             client.get('/dashboard/evolucion-mensual'),
-            client.get('/jarvis/prediccion-stock').catch(() => ({ data: { predicciones: [] } }))
-        ]).then(([r1, r2, r3]) => {
+            client.get('/jarvis/prediccion-stock').catch(() => ({ data: { predicciones: [] } })),
+            client.get('/dashboard/rentabilidad').catch(() => ({ data: null }))
+        ]).then(([r1, r2, r3, r4]) => {
             setResumen(r1.data);
             setEvolucion(r2.data);
             setPredicciones(r3.data?.predicciones || []);
+            setRentabilidad(r4.data || null);
         }).finally(() => setLoading(false));
     }, []);
 
@@ -346,6 +349,15 @@ export default function Dashboard() {
                         isTactical={isTactical}
                     />
                 )}
+                {rentabilidad && metricsConfig.ventas && (
+                    <StatCard
+                        label="Ganancia Bruta Real"
+                        value={fmtMoney(rentabilidad.ganancia_bruta)}
+                        sub={`Margen ${rentabilidad.margen_bruto_pct}% · Neta: ${fmtMoney(rentabilidad.ganancia_neta_estimada)}`}
+                        accent={rentabilidad.ganancia_bruta >= 0 ? 'success' : 'danger'}
+                        isTactical={isTactical}
+                    />
+                )}
                 {metricsConfig.stock && (
                     <StatCard
                         label="Stock valorizado"
@@ -435,6 +447,101 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
+
+                    {/* SECCIÓN RENTABILIDAD REAL DEL MES */}
+                    {rentabilidad && (
+                        <div style={{
+                            gridColumn: '1 / -1',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
+                            gap: 16
+                        }}>
+                            {/* TOP PRODUCTOS RENTABLES */}
+                            <div className={`card card-pad card-hover-gold ${isTactical ? 'tactical-hud-card' : ''}`} style={{ background: isTactical ? 'rgba(16, 21, 34, 0.9)' : '#FFFFFF' }}>
+                                <div className="spread" style={{ marginBottom: 10 }}>
+                                    <h3 style={{ fontSize: 14.5, fontWeight: 700, color: isTactical ? '#FF9800' : 'inherit' }}>
+                                        🏆 Top Productos Rentables (Mes)
+                                    </h3>
+                                    <span className="text-xs muted">Sobre costo</span>
+                                </div>
+                                {(rentabilidad.top_productos_rentables || []).length === 0 ? (
+                                    <p className="text-sm muted">Sin ventas suficientes este mes.</p>
+                                ) : (
+                                    <div className="stack gap-xs">
+                                        {rentabilidad.top_productos_rentables.map((p) => (
+                                            <div key={p.id} className="spread text-sm" style={{ padding: '6px 8px', borderRadius: 6, background: isTactical ? 'rgba(255,255,255,0.04)' : '#FAF9F4', border: isTactical ? '1px solid rgba(255,152,0,0.2)' : '1px solid var(--color-border)' }}>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{ fontWeight: 700, color: isTactical ? '#F8FAFC' : 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nombre}</div>
+                                                    <div className="text-xs muted">{p.cantidad} {p.unidad_medida}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                    <div className="mono" style={{ fontWeight: 800, color: '#059669' }}>{fmtMoney(p.ganancia)}</div>
+                                                    <span className="mono badge badge-success" style={{ fontSize: 10.5 }}>{p.margen_pct}%</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* TOP CLIENTES RENTABLES */}
+                            <div className={`card card-pad card-hover-gold ${isTactical ? 'tactical-hud-card' : ''}`} style={{ background: isTactical ? 'rgba(16, 21, 34, 0.9)' : '#FFFFFF' }}>
+                                <div className="spread" style={{ marginBottom: 10 }}>
+                                    <h3 style={{ fontSize: 14.5, fontWeight: 700, color: isTactical ? '#FF9800' : 'inherit' }}>
+                                        👑 Top Clientes Rentables (Mes)
+                                    </h3>
+                                    <span className="text-xs muted">Margen aportado</span>
+                                </div>
+                                {(rentabilidad.top_clientes_rentables || []).length === 0 ? (
+                                    <p className="text-sm muted">Sin ventas suficientes este mes.</p>
+                                ) : (
+                                    <div className="stack gap-xs">
+                                        {rentabilidad.top_clientes_rentables.map((c) => (
+                                            <div key={c.id} className="spread text-sm" style={{ padding: '6px 8px', borderRadius: 6, background: isTactical ? 'rgba(255,255,255,0.04)' : '#FAF9F4', border: isTactical ? '1px solid rgba(255,152,0,0.2)' : '1px solid var(--color-border)' }}>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{ fontWeight: 700, color: isTactical ? '#F8FAFC' : 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.razon_social}</div>
+                                                    <div className="text-xs muted">{c.pedidos} pedido{c.pedidos === 1 ? '' : 's'}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                    <div className="mono" style={{ fontWeight: 800, color: '#059669' }}>{fmtMoney(c.ganancia)}</div>
+                                                    <span className="mono badge badge-success" style={{ fontSize: 10.5 }}>{c.margen_pct}%</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* ALERTAS MARGEN BAJO */}
+                            <div className={`card card-pad card-hover-gold ${isTactical ? 'tactical-hud-card' : ''}`} style={{ background: isTactical ? 'rgba(16, 21, 34, 0.9)' : '#FFFFFF' }}>
+                                <div className="spread" style={{ marginBottom: 10 }}>
+                                    <h3 style={{ fontSize: 14.5, fontWeight: 700, color: isTactical ? '#F43F5E' : 'var(--color-danger)' }}>
+                                        ⚠️ Alertas Margen Bajo (&lt; 15%)
+                                    </h3>
+                                    <Link to="/productos" className="text-xs" style={{ fontWeight: 700, color: isTactical ? '#FF9800' : 'var(--color-primary-dark)', textDecoration: 'none' }}>
+                                        Ajustar precios →
+                                    </Link>
+                                </div>
+                                {(rentabilidad.alertas_margen_bajo || []).length === 0 ? (
+                                    <p className="text-sm muted">✅ Todos los productos con costo cargado tienen margen ≥ 15%.</p>
+                                ) : (
+                                    <div className="stack gap-xs">
+                                        {rentabilidad.alertas_margen_bajo.slice(0, 5).map((a) => (
+                                            <div key={a.id} className="spread text-sm" style={{ padding: '6px 8px', borderRadius: 6, background: isTactical ? 'rgba(239,68,68,0.12)' : '#FEF2F2', border: isTactical ? '1px solid rgba(239,68,68,0.3)' : '1px solid #FECACA' }}>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{ fontWeight: 700, color: isTactical ? '#F8FAFC' : '#7F1D1D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nombre}</div>
+                                                    <div className="text-xs mono muted">Costo {fmtMoney(a.precio_compra)} · Venta {fmtMoney(a.precio_venta)}</div>
+                                                </div>
+                                                <span className={`mono badge ${Number(a.margen_pct) <= 0 ? 'badge-danger' : 'badge-warning'}`} style={{ fontWeight: 800, flexShrink: 0 }}>
+                                                    {a.margen_pct}%
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : (
                 /* VISTA OPERATIVA: DEPÓSITO, PICKING FEFO Y LOTES POR VENCER */

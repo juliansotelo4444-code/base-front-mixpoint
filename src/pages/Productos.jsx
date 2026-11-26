@@ -1,7 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import client from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import ImageFinderModal from '../components/ImageFinderModal';
+import AjusteMasivoPreciosModal from '../components/AjusteMasivoPreciosModal';
 import VoiceSearchButton from '../components/VoiceSearchButton';
 import { IconPlus, IconBuscar, IconEditar } from '../components/Icons';
 import { obtenerImagenProducto } from '../utils/imagenProducto';
@@ -60,7 +62,9 @@ function comprimirImagen(file, maxWidth = 800, maxHeight = 800, quality = 0.82) 
 }
 
 export default function Productos() {
+    const { usuario } = useAuth();
     const [productos, setProductos] = useState([]);
+    const [ajusteMasivoOpen, setAjusteMasivoOpen] = useState(false);
     const [categorias, setCategorias] = useState([]);
     const [q, setQ] = useState('');
     const [categoriaFiltro, setCategoriaFiltro] = useState('');
@@ -341,7 +345,17 @@ export default function Productos() {
                         {productos.length} productos en catálogo · Distribuidora Mix Point
                     </p>
                 </div>
-                <div className="row gap-sm">
+                <div className="row gap-sm" style={{ flexWrap: 'wrap' }}>
+                    {['admin', 'administracion'].includes(usuario?.rol) && (
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => setAjusteMasivoOpen(true)}
+                            style={{ fontSize: 13.5, fontWeight: 700, borderColor: 'var(--color-primary)', color: 'var(--color-primary-dark)' }}
+                        >
+                            📈 Ajuste Masivo %
+                        </button>
+                    )}
                     <button className="btn btn-primary" onClick={abrirNuevo} style={{ fontSize: 14 }}>
                         <IconPlus /> Nuevo producto
                     </button>
@@ -1117,6 +1131,16 @@ export default function Productos() {
                         </div>
                     </div>
                 </Modal>
+            )}
+            {/* MODAL AJUSTE MASIVO DE PRECIOS (%) */}
+            {ajusteMasivoOpen && (
+                <AjusteMasivoPreciosModal
+                    categorias={categorias}
+                    onClose={() => setAjusteMasivoOpen(false)}
+                    onAplicado={() => {
+                        cargar();
+                    }}
+                />
             )}
         </div>
     );
