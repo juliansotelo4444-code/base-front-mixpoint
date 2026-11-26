@@ -89,10 +89,14 @@ export default function Dashboard() {
 
     const chartData = meses.map(mes => ({
         mes,
-        Ventas: evolucion.ventas?.find(v => v.mes === mes)?.total || 0,
-        Compras: evolucion.compras?.find(v => v.mes === mes)?.total || 0,
-        Gastos: evolucion.gastos?.find(v => v.mes === mes)?.total || 0,
+        Ventas: Number(evolucion.ventas?.find(v => v.mes === mes)?.total || 0),
+        Compras: Number(evolucion.compras?.find(v => v.mes === mes)?.total || 0),
+        Gastos: Number(evolucion.gastos?.find(v => v.mes === mes)?.total || 0),
     }));
+
+    const balanceMes = resumen.balance_mes !== undefined
+        ? Number(resumen.balance_mes)
+        : (Number(resumen.ventas_mes?.total || 0) - Number(resumen.compras_mes?.total || 0) - Number(resumen.gastos_mes?.total || 0));
 
     // Contadores por estado de pedidos
     const estadosContadores = (resumen.estados_pedidos || []).reduce((acc, it) => {
@@ -207,7 +211,7 @@ export default function Dashboard() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, margin: '14px 0' }}>
                             <div>
                                 <div className="mono" style={{ fontSize: 10, color: '#94A3B8' }}>PEDIDOS HOY</div>
-                                <div className="mono" style={{ fontSize: 20, color: '#F8FAFC', fontWeight: 700 }}>{resumen.pedidos_hoy || 0}</div>
+                                <div className="mono" style={{ fontSize: 20, color: '#F8FAFC', fontWeight: 700 }}>{resumen.pedidos_hoy ?? resumen.pedidos_hoy_info?.cantidad ?? 0}</div>
                                 <div className="mono" style={{ fontSize: 10, color: '#00E676' }}>▲ FLUJO CONSTANTE</div>
                             </div>
                             <div>
@@ -240,7 +244,7 @@ export default function Dashboard() {
                             <div style={{ color: '#00E676' }}>✔ POSTGRESQL NEON: 200 OK</div>
                             <div style={{ color: '#00E676' }}>✔ REPORTE 8:00 AM: ACTIVO</div>
                             <div style={{ color: '#00E676' }}>✔ JARVIS IA: SINTONIZADO</div>
-                            <div style={{ color: '#FF9800' }}>⚡ SESIÓN PERSISTENTE: 1 HORA</div>
+                            <div style={{ color: '#FF9800' }}>⚡ SESIÓN PERSISTENTE: 4 HORAS</div>
                         </div>
                         <div className="mono" style={{ fontSize: 10, color: '#64748B', marginTop: 10 }}>
                             DEPÓSITO: SAN ISIDRO 2135
@@ -257,7 +261,7 @@ export default function Dashboard() {
                             Tracker de Pedidos y Remitos (Pipeline de 7 Estados)
                         </h3>
                         <p className="text-xs muted" style={{ color: isTactical ? '#94A3B8' : 'inherit' }}>
-                            Estado de los pedidos de los últimos 30 días
+                            Estado de los pedidos del mes en curso (los cancelados no suman a Ventas del mes)
                         </p>
                     </div>
                     <Link to="/remitos" className="text-sm" style={{ color: isTactical ? '#FF9800' : 'var(--color-primary-dark)', fontWeight: 600, textDecoration: 'none' }}>
@@ -305,12 +309,12 @@ export default function Dashboard() {
             </div>
 
             {/* TARJETAS DE MÉTRICAS CONSOLIDADAS (FILTRABLES SEGÚN PREFERENCIAS) */}
-            <div className="dashboard-stats-grid">
+            <div className="dashboard-stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(210px, 100%), 1fr))' }}>
                 {metricsConfig.ventas && (
                     <StatCard
                         label="Ventas del mes"
                         value={fmtMoney(resumen.ventas_mes.total)}
-                        sub={`${resumen.ventas_mes.cantidad} remitos emitidos`}
+                        sub={`${resumen.ventas_mes.cantidad} remitos válidos`}
                         accent="primary"
                         isTactical={isTactical}
                     />
@@ -330,6 +334,15 @@ export default function Dashboard() {
                         value={fmtMoney(resumen.gastos_mes.total)}
                         sub={`${resumen.gastos_mes.cantidad} registros`}
                         accent="danger"
+                        isTactical={isTactical}
+                    />
+                )}
+                {(metricsConfig.ventas || metricsConfig.compras || metricsConfig.gastos) && (
+                    <StatCard
+                        label="Balance del mes"
+                        value={fmtMoney(balanceMes)}
+                        sub="Ventas − Compras − Gastos"
+                        accent={balanceMes >= 0 ? 'primary' : 'danger'}
                         isTactical={isTactical}
                     />
                 )}

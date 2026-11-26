@@ -179,21 +179,26 @@ export default function Remitos() {
 
     useKanbanSocket(handleSocketRemito);
 
-    // Métricas del Mes Actual (por defecto muestra todo lo del mes en curso)
+    // Métricas del Mes Actual (por defecto muestra todo lo del mes en curso; anulados/cancelados se excluyen del monto facturado)
+    const esRemitoActivo = r => !['anulado', 'cancelado'].includes(r.estado);
     const remitosMes = remitos.filter(r => esFechaDeEsteMes(r.fecha));
+    const remitosMesActivos = remitosMes.filter(esRemitoActivo);
+    const canceladosMes = remitosMes.filter(r => !esRemitoActivo(r));
     const pendientesMes = remitosMes.filter(r => r.estado === 'pendiente');
     const preparacionMes = remitosMes.filter(r => r.estado === 'en_preparacion');
     const caminoMes = remitosMes.filter(r => r.estado === 'en_camino');
     const entregadosMes = remitosMes.filter(r => r.estado === 'entregado');
-    const totalMontoMes = remitosMes.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
+    const totalMontoMes = remitosMesActivos.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
 
     // Métricas del Día (Hoy)
     const remitosHoy = remitos.filter(r => esFechaDeHoy(r.fecha));
+    const remitosHoyActivos = remitosHoy.filter(esRemitoActivo);
+    const canceladosHoy = remitosHoy.filter(r => !esRemitoActivo(r));
     const pendientesHoy = remitosHoy.filter(r => r.estado === 'pendiente');
     const preparacionHoy = remitosHoy.filter(r => r.estado === 'en_preparacion');
     const caminoHoy = remitosHoy.filter(r => r.estado === 'en_camino');
     const entregadosHoy = remitosHoy.filter(r => r.estado === 'entregado');
-    const totalMontoHoy = remitosHoy.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
+    const totalMontoHoy = remitosHoyActivos.reduce((acc, r) => acc + (Number(r.total) || 0), 0);
 
     let remitosFiltradosPorPeriodo = remitosMes;
     if (filtroPeriodo === 'mes') {
@@ -614,8 +619,8 @@ export default function Remitos() {
                                     {filtroPeriodo === 'todos'
                                         ? `Mostrando los ${remitos.length} remitos históricos registrados`
                                         : (filtroPeriodo === 'hoy'
-                                            ? `Resumen de hoy: ${remitosHoy.length} pedidos emitidos (${fmtMoney(totalMontoHoy)})`
-                                            : `Resumen de ${getNombreMesActual()}: ${remitosMes.length} pedidos emitidos (${fmtMoney(totalMontoMes)})`)}
+                                            ? `Resumen de hoy: ${remitosHoyActivos.length} pedidos válidos (${fmtMoney(totalMontoHoy)})${canceladosHoy.length > 0 ? ` · ${canceladosHoy.length} cancelados excluidos del total` : ''}`
+                                            : `Resumen de ${getNombreMesActual()}: ${remitosMesActivos.length} pedidos válidos (${fmtMoney(totalMontoMes)})${canceladosMes.length > 0 ? ` · ${canceladosMes.length} cancelados excluidos del total` : ''}`)}
                                 </p>
                             </div>
                         </div>
@@ -697,7 +702,7 @@ export default function Remitos() {
                             {filtroPeriodo === 'hoy' ? '🌟 Total Hoy' : '🌟 Total Mes'}
                         </div>
                         <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.15, marginTop: 4 }}>
-                            {filtroPeriodo === 'hoy' ? remitosHoy.length : remitosMes.length}
+                            {filtroPeriodo === 'hoy' ? remitosHoyActivos.length : remitosMesActivos.length}
                         </div>
                         <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4, opacity: 0.9 }}>
                             {fmtMoney(filtroPeriodo === 'hoy' ? totalMontoHoy : totalMontoMes)}
