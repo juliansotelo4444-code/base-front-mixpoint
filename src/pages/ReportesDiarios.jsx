@@ -16,8 +16,34 @@ export default function ReportesDiarios() {
         telegram_chat_id: '',
         reporte_webhook_url: '',
         alertas_webhook_url: '',
+        callmebot_destinatarios: [],
         ultimo_reporte_enviado: null
     });
+
+    function agregarDestinatario() {
+        setConfig(prev => ({
+            ...prev,
+            callmebot_destinatarios: [
+                ...(prev.callmebot_destinatarios || []),
+                { nombre: '', telefono: '', apikey: '' }
+            ]
+        }));
+    }
+
+    function eliminarDestinatario(idx) {
+        setConfig(prev => ({
+            ...prev,
+            callmebot_destinatarios: (prev.callmebot_destinatarios || []).filter((_, i) => i !== idx)
+        }));
+    }
+
+    function actualizarDestinatario(idx, campo, valor) {
+        setConfig(prev => {
+            const list = [...(prev.callmebot_destinatarios || [])];
+            list[idx] = { ...list[idx], [campo]: valor };
+            return { ...prev, callmebot_destinatarios: list };
+        });
+    }
 
     async function cargarPreview(fecha = null) {
         setCargando(true);
@@ -191,57 +217,204 @@ export default function ReportesDiarios() {
 
                 {/* CONFIGURACIÓN DE CANALES EXTERNOS */}
                 <div className="card" style={{ padding: 20, background: '#FFFFFF' }}>
-                    <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--color-text)' }}>
-                        Canales de Envío Externo (WhatsApp / Telegram)
-                    </h2>
+                    <div className="spread" style={{ alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                        <div>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
+                                Canales de Envío a Celulares (8:00 AM)
+                            </h2>
+                            <p className="text-xs muted" style={{ marginTop: 2 }}>
+                                Configuración de WhatsApp directo (CallMeBot) y canales adicionales.
+                            </p>
+                        </div>
+                    </div>
+
                     <form onSubmit={handleGuardarConfig}>
-                        <div className="form-group" style={{ marginBottom: 14 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
-                                Webhook WhatsApp / Integrador (Make, Zapier, Twilio)
-                            </label>
-                            <input
-                                type="url"
-                                className="form-control"
-                                value={config.reporte_webhook_url}
-                                onChange={(e) => setConfig({ ...config, reporte_webhook_url: e.target.value })}
-                                placeholder="https://api.gateway-whatsapp.com/v1/messages"
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
-                            />
-                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
-                                Recibe un POST con el texto y la estructura de ventas para enviarlo por WhatsApp.
+                        {/* SECCIÓN WHATSAPP CALLMEBOT DIRECTO */}
+                        <div style={{
+                            background: '#F0FDF4',
+                            border: '1.5px solid #86EFAC',
+                            borderRadius: 10,
+                            padding: 16,
+                            marginBottom: 20
+                        }}>
+                            <div className="spread" style={{ alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontSize: 22 }}>📲</span>
+                                    <div>
+                                        <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: '#166534' }}>
+                                            WhatsApp Directo (CallMeBot)
+                                        </h3>
+                                        <p style={{ fontSize: 11.5, margin: 0, color: '#15803D' }}>
+                                            Envío matutino directo a cada celular personal
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href="https://wa.me/34644718199?text=I%20allow%20callmebot%20to%20send%20me%20messages"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-sm"
+                                    style={{
+                                        background: '#25D366',
+                                        color: '#FFFFFF',
+                                        fontWeight: 700,
+                                        border: 'none',
+                                        textDecoration: 'none',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '6px 12px',
+                                        borderRadius: 6
+                                    }}
+                                >
+                                    💬 Abrir Chat de Activación en WhatsApp
+                                </a>
+                            </div>
+
+                            {/* GUÍA DE 3 PASOS */}
+                            <div style={{
+                                background: '#FFFFFF',
+                                border: '1px solid #BBF7D0',
+                                borderRadius: 8,
+                                padding: '10px 14px',
+                                marginBottom: 14,
+                                fontSize: 12,
+                                lineHeight: 1.5,
+                                color: '#1F2937'
+                            }}>
+                                <strong style={{ color: '#166534' }}>¿Cómo activar un celular en 3 pasos?</strong>
+                                <ol style={{ margin: '6px 0 0 18px', padding: 0 }}>
+                                    <li>Hacé clic en el botón verde arriba (o agendá al <code>+34 644 71 81 99</code> en WhatsApp).</li>
+                                    <li>Enviá el mensaje: <code>I allow callmebot to send me messages</code></li>
+                                    <li>CallMeBot te responderá con tu <strong>apikey</strong>. Agregá tu celular y esa apikey en la lista de abajo.</li>
+                                </ol>
+                            </div>
+
+                            {/* LISTADO DE DESTINATARIOS */}
+                            {(config.callmebot_destinatarios || []).length === 0 ? (
+                                <div style={{
+                                    textAlign: 'center',
+                                    padding: '14px',
+                                    background: '#FFFFFF',
+                                    borderRadius: 6,
+                                    border: '1px dashed #86EFAC',
+                                    color: '#15803D',
+                                    fontSize: 12
+                                }}>
+                                    No hay celulares cargados aún. Tocá el botón "+ Agregar Celular" para dar de alta el tuyo.
+                                </div>
+                            ) : (
+                                <div className="stack gap-xs">
+                                    {(config.callmebot_destinatarios || []).map((dest, idx) => (
+                                        <div key={idx} style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr)) auto',
+                                            gap: 8,
+                                            background: '#FFFFFF',
+                                            padding: '8px 10px',
+                                            borderRadius: 6,
+                                            border: '1px solid #D1FAE5',
+                                            alignItems: 'center'
+                                        }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Nombre (ej: Julián)"
+                                                value={dest.nombre || ''}
+                                                onChange={e => actualizarDestinatario(idx, 'nombre', e.target.value)}
+                                                style={{ padding: '6px 8px', fontSize: 12, borderRadius: 4, border: '1px solid #CBD5E1', width: '100%' }}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Tel: 54911xxxxxxxx"
+                                                value={dest.telefono || ''}
+                                                onChange={e => actualizarDestinatario(idx, 'telefono', e.target.value)}
+                                                title="Formato internacional sin el +, ej: 5491157077061"
+                                                style={{ padding: '6px 8px', fontSize: 12, borderRadius: 4, border: '1px solid #CBD5E1', width: '100%' }}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="ApiKey (números)"
+                                                value={dest.apikey || ''}
+                                                onChange={e => actualizarDestinatario(idx, 'apikey', e.target.value)}
+                                                style={{ padding: '6px 8px', fontSize: 12, borderRadius: 4, border: '1px solid #CBD5E1', width: '100%' }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => eliminarDestinatario(idx)}
+                                                className="btn btn-ghost btn-sm"
+                                                style={{ color: '#EF4444', padding: '4px 8px', fontSize: 16 }}
+                                                title="Eliminar este número"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div style={{ marginTop: 10 }}>
+                                <button
+                                    type="button"
+                                    onClick={agregarDestinatario}
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ fontSize: 12, border: '1px solid #86EFAC', background: '#FFFFFF', color: '#166534', fontWeight: 600 }}
+                                >
+                                    + Agregar Celular
+                                </button>
                             </div>
                         </div>
 
-                        <div className="form-group" style={{ marginBottom: 14 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
-                                Telegram Bot Token
-                            </label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={config.telegram_bot_token}
-                                onChange={(e) => setConfig({ ...config, telegram_bot_token: e.target.value })}
-                                placeholder="123456789:ABCdefGhIJKlmNoPQRstuvWXyz"
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
-                            />
+                        {/* OTROS CANALES (TELEGRAM Y WEBHOOK) */}
+                        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 14, marginBottom: 16 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: 'var(--color-text)' }}>
+                                Canales Alternativos Opcionales
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: 12 }}>
+                                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
+                                    Telegram Bot Token (Opcional)
+                                </label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={config.telegram_bot_token}
+                                    onChange={(e) => setConfig({ ...config, telegram_bot_token: e.target.value })}
+                                    placeholder="123456789:ABCdefGhIJKlmNoPQRstuvWXyz"
+                                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, fontSize: 12, border: '1px solid var(--color-border-strong)' }}
+                                />
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: 12 }}>
+                                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
+                                    Telegram Chat ID (Grupo o usuario)
+                                </label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={config.telegram_chat_id}
+                                    onChange={(e) => setConfig({ ...config, telegram_chat_id: e.target.value })}
+                                    placeholder="-1001234567890 o 98765432"
+                                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, fontSize: 12, border: '1px solid var(--color-border-strong)' }}
+                                />
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: 16 }}>
+                                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
+                                    Webhook WhatsApp / Integrador Make, Zapier (Opcional)
+                                </label>
+                                <input
+                                    type="url"
+                                    className="form-control"
+                                    value={config.reporte_webhook_url}
+                                    onChange={(e) => setConfig({ ...config, reporte_webhook_url: e.target.value })}
+                                    placeholder="https://api.gateway-whatsapp.com/v1/messages"
+                                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, fontSize: 12, border: '1px solid var(--color-border-strong)' }}
+                                />
+                            </div>
                         </div>
 
-                        <div className="form-group" style={{ marginBottom: 18 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--color-text-muted)' }}>
-                                Telegram Chat ID (Grupo gerencial o usuario)
-                            </label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={config.telegram_chat_id}
-                                onChange={(e) => setConfig({ ...config, telegram_chat_id: e.target.value })}
-                                placeholder="-1001234567890 o 98765432"
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--color-border-strong)' }}
-                            />
-                        </div>
-
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                            Guardar Canales de Notificación
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '10px 14px', fontSize: 13, fontWeight: 700 }}>
+                            💾 Guardar Canales de Notificación
                         </button>
                     </form>
                 </div>
